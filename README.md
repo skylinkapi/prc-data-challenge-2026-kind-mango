@@ -4,7 +4,9 @@ Solo entry. Predicts **taxi-out time in seconds** (`TAXITIME_SEC_mvt`) for
 departing flights at 10 major European airports. Metric is RMSE against
 airport-reported truth.
 
-Challenge home: https://ansperformance.eu/study/data-challenge/dc2026/
+- **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
+- **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
+- **Current leaderboard score:** 561.52 s RMSE (`kind-mango_v3.parquet`)
 
 ## License
 
