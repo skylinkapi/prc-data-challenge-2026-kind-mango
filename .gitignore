@@ -1,0 +1,69 @@
+# Credentials — NEVER commit
+.osn_credentials.txt
+*.credentials.txt
+*_credentials*
+*.key
+*.pem
+.env
+.env.*
+
+# Large source datasets (fetch via scripts in src/build_*.py)
+training/*.parquet
+submission/ranking.parquet
+submission/submitting.parquet
+submission/backup_pre_julyfix/
+external/metar/*.csv
+external/eurocontrol/*.xlsx
+external/eurocontrol/*.parquet
+external/osm/*.json
+external/osm/*.geojson
+external/osm/*.parquet
+external/osm/raw_taxi/
+external/airports/*.csv
+external/opdi/**
+external/vrs/*.parquet
+
+# Model artifacts (regeneratable; too big for git)
+models/*.txt
+models/*.pkl
+models/features_cache*
+
+# Submission outputs (produced by predict.py; keep result JSONs)
+submission/kind-mango_v*.parquet
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Scratch / temp
+scratchpad/
+tmp/
+*.log
