@@ -1,0 +1,12 @@
+{
+  "EDDF": "R_norm",
+  "EDDM": "R_norm",
+  "EGLL": "R+mix",
+  "EHAM": "v18",
+  "LEBL": "R+mix",
+  "LEMD": "R_norm",
+  "LFPG": "R_norm",
+  "LIRF": "v18",
+  "LTFM": "R+mix",
+  "LSZH": "R_norm"
+}

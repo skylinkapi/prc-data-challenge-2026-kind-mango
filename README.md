@@ -6,7 +6,8 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **561.04 s RMSE** (`kind-mango_v9.parquet`, 5-model ensemble)
+- **Current leaderboard best:** **330.12 s RMSE** (`kind-mango_v21.parquet`),
+  rank 44 of 86 teams
 
 ## License
 
@@ -15,41 +16,167 @@ public, open-data only, documented reproduction path.
 
 ## Ethics — features we deliberately did NOT use
 
-The challenge brief explicitly forbids "exploiting the ranking process".
-Two features that would have given a large leaderboard boost but that we
-deliberately avoided:
+The challenge brief forbids "exploiting the ranking process". We stay off two
+inputs that would place us in the top 3 but that we read as excluded:
 
-1. **`AOBT_3_flt` on ranking DEP rows** — present on 98.5 % of ranking DEP
-   rows; `(MVT_TIME − AOBT_3_flt)` reconstructs the hidden label to within
-   the per-airport reporting-offset noise (150–250 s equivalent leaderboard
-   RMSE). The brief warns "using them is probably exploiting the ranking
-   process (explicitly forbidden)".
-2. **Per-flight own-flight OPDI event reconstruction** — `exit-parking_position`
-   + `entry-runway` from the current flight's own OPDI events would give
-   its actual taxi-out to the second. Espinielli clarified on Discord that
-   OPDI is open data BUT that OPDI has "no off-block milestone" — we read
-   this as not endorsing per-flight AOBT reconstruction as intended use.
+1. **`AOBT_3_flt` on ranking DEP rows** — present on 98.9 % of ranking rows;
+   `MVT_TIME - AOBT_3_flt` reconstructs the hidden off-block time to within
+   the reporting-offset noise. The brief warns "using them is probably
+   exploiting the ranking process".
+2. **`LOBT_flt`** — equals `AOBT_3_flt` on 4.3 % of rows and is otherwise a
+   planned time, not an actual off-block. Excluded for the same reason.
 
-Both would place us in the top-3 by score. We chose eligibility over rank.
+Both fields are visible in the training and ranking files. Our submissions never
+read them. The exclusion sets the floor near 300 s on the leaderboard, per the
+analysis in `docs/MODEL_ANALYSIS.md`.
+
+## What the model is
+
+The scoring stack is documented in `docs/MODEL_ANALYSIS.md`. In one line:
+
+**One LightGBM regressor with `linear_tree` (`R_all_v21`), plus one LIRF band-lookup
+rule, plus one LIRF-null-flight classifier, plus a 1-in-a-year ITY340 offset rule.**
+
+Per-airport delegation (all Jan+Jul 2025 acceptance calls):
+
+| airport | scoring component |
+|---|---|
+| LIRF | v21_old base + Step A band table (`sd > 14,400`, null flight) + Section 6.3 classifier mixed with 1,220 s (`3,600 < sd <= 14,400`, null flight) + ITY340 rule (`sd > 70,000`, any flight record) |
+| every other airport | `R_all_v21` |
+
+The single classifier ever deployed lives at LIRF with a null flight record. It
+was chosen because that group carries 55 % of the hold-out MSE. Every other
+regime rule the audit tested lost live points and was retired.
+
+## Live leaderboard progression
+
+Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
+344,841-row 2026 Jan+Jul ranking set. RMSE decreases are the improvement.
+
+| upload | live RMSE | change | headline |
+|---|---|---|---|
+| kind-mango_v1 to v10 | 560-562 | — | Old metric era; label filter hid the tail |
+| kind-mango_v13 | **430.45** | **-130** | Unfiltered labels + unclipped `sd` + `EOBT_1_flt`, `IOBT_flt` deltas |
+| kind-mango_v16 | **372.40** | **-58** | + LIRF band-lookup rule for `sd > 14,400` null-flight rows |
+| kind-mango_v18 | 370.63 | -1.8 | + Section 6.3 LIRF null-flight `3,600 < sd <= 14,400` classifier |
+| kind-mango_v19 | 359.46 | -11.2 | + per-airport R_norm switch on the wins |
+| kind-mango_v20 | 345.70 | -13.8 | + turnaround family + disruption meters + ITY340 rule |
+| **kind-mango_v21** | **330.12** | **-15.6** | + linear_tree + signed-log copies + OPDI-live leak fix + temperature |
+
+The `RECAP.md` file tracks every attempt, including the failures. The
+`docs/MODEL_ANALYSIS.md` file is the audit that drove each step.
+
+## Model card (v21)
+
+- **Algorithm:** LightGBM regressor, `linear_tree=True`, `linear_lambda=1.0`.
+- **Objective:** RMSE.
+- **Rows kept:** 2,084,659 departures at the 10 target airports for 2025 (only
+  `y > 0`).
+- **Split:** train = months 2 to 6 and 8 to 10; early-stop = 11 and 12;
+  hold-out = 1 and 7 (Jan+Jul).
+- **Features:** 153 total.
+  - 10 categoricals: airport, destination, runway, stand, aircraft type, wake,
+    market segment, operator, flight rule, flight type.
+  - 14 time and schedule: `hour`, `dow`, `month`, `sched_delay`,
+    `sd_mod_86400`, `mvt_eobt1`, `mvt_iobt`, `eobt1_sched`, `eobt1_iobt`, the
+    signed-log copies of the 5 previous fields, `flt_null`, `flt_id_null`.
+  - 18 METAR: crosswind and headwind on the active runway, gust, visibility,
+    ceiling, cloud codes, precip / snow / thunder / freezing, and the Step 7
+    temperature block (`tmpc`, `dwpc`, `dewpt_spread`, `ice_accretion_1hr`,
+    `deicing_gate = wx_precip * (tmpc < 3)`).
+  - 13 congestion v2 (ADES-keyed arrival counts, same-runway ARR/DEP counts,
+    arrival taxi-in rolling mean, next-10-min queue).
+  - 6 turnaround (`ground_time`, `slack_eobt`, `slack_sched`, `in_delay`,
+    `taxi_in_prev`, `link_ambiguous`) linking each departure to the last
+    arrival on the same stand, using `BLOCK_TIME_UTC_mvt` for the join.
+  - 4 disruption meters over a 60-minute window before take-off
+    (`dep_sd_mean_60m`, `dep_fnull_60m`, `arr_txi_mean_60m`, `arr_txi_p90_60m`).
+  - 18 Eurocontrol daily ATFM per airport.
+  - 16 operator historic encoders per (op × airport / runway / hour-bin / stand).
+  - Physical: OSM haversine stand→runway, real path length, turn count.
+  - 5 advanced physical (scheduled pushback load, runway diversity, secs since
+    last DEP on runway, runway-bank intensity, ADES arrival ATFM delay).
+  - 9 OPDI raw event counts (entry-runway, entry-taxiway, exit-parking, all in
+    prev 15/30/60 min) — leak-fixed by a 600 s lag on the window end.
+  - 9 OPDI live-taxi rolling stats (mean / median / count of ACTUAL observed
+    taxi times of OTHER completed flights, 30/60/120 min).
+- **Hyperparameters (Optuna trial 31, kept, plus `linear_tree`):**
+  - `learning_rate` 0.0228, `num_leaves` 220 (halved from 440 for linear
+    leaves), `min_data_in_leaf` 76, `feature_fraction` 0.674, `bagging_fraction`
+    0.937, `lambda_l1` 0.089, `lambda_l2` 0.342, `min_gain_to_split` 1.83.
+  - Best iteration on Nov+Dec early-stop: 372.
+
+- **Hold-out RMSE on Jan+Jul 2025** (single number is misleading — see
+  `docs/MODEL_ANALYSIS.md` section 5 on the bootstrap width):
+
+  | metric | value |
+  |---|---|
+  | FULL RMSE (all rows) | 425.92 |
+  | CLEAN RMSE (`30 <= y <= 7,200`) | 274.08 |
+  | per-airport clean (LIRF / EGLL / LFPG / LEMD) | 546.6 / 278.4 / 275.5 / 188.5 |
+
+## Tail rules applied on top of `R_all_v21` on the submission
+
+Every rule is deterministic. See `src/predict_v21_final.py`.
+
+1. **Step A band table.** LIRF, null flight record, `sd > 14,400`. Prediction:
+   `P(fb) * sd + P(24h) * (86,400 + 1,150) + (1 - P(fb) - P(24h)) * v21_base`.
+   Bands and probabilities are in the appendix of `docs/MODEL_ANALYSIS.md`.
+   Covers 43 rows on the ranking set.
+2. **Section 6.3 classifier.** LIRF, null flight record, `3,600 < sd <= 14,400`.
+   A LightGBM binary classifier for `|y - sd| < 60` trained on the LIRF-null
+   subset with flight-number prefix, stand prefix, aircraft, runway, hour and
+   `sd`. Applied as `p * sd + (1 - p) * 1,220` (mean of normal LIRF-null rows).
+   The raw probability is shrunk by 0.6 (a conservative de-calibration).
+   Covers 305 rows.
+3. **ITY340 rule.** LIRF, any flight record, `sd > 70,000`, outside the Step A
+   cell. Prediction: `(5/6) * (86,400 + R_all_v21) + (1/6) * R_all_v21`.
+   Fires on 1 row per year at LIRF. This row alone is worth about 18 s of
+   full RMSE in expectation.
+
+## Data sources (all open)
+
+| Source | Data | Licence |
+|---|---|---|
+| PRC / OpenSky Network | Movements at 10 EU airports (2025 train, 2026 ranking) | Challenge data licence |
+| Iowa State ASOS | METAR reports, hourly, per station | Public domain |
+| OurAirports | Runway coordinates, headings, lengths | Public domain |
+| OSM Overpass | `aeroway=parking_position`, `taxiway`, `runway` | ODbL |
+| Eurocontrol NM | Daily ATC pre-dep delay, ATFM slot adherence, airport traffic | Open |
+| OPDI (PRC + OSN) | Flight events (entry-runway, entry-taxiway, exit-parking, …) | Open (CC-BY 4.0, confirmed by organiser) |
+| VRS StandingData | Aircraft-type metadata | Open |
 
 ## Quick start
 
 Python 3.13, one virtualenv.
 
 ```bash
-pip install pandas pyarrow numpy scikit-learn lightgbm optuna openpyxl networkx
-# Fetch open external data (~50 min incl. rate-limited APIs)
+pip install pandas pyarrow numpy scikit-learn lightgbm optuna openpyxl networkx minio
+
+# 1. Fetch open external data (~60 min, several rate-limited APIs)
 python src/build_eurocontrol_daily.py     # daily ATFM per airport
 python src/build_osm_stands.py            # OSM stand centroids
-python src/build_osm_taxi_paths.py        # OSM taxiway graph -> path lengths
-python src/build_vrs_aircraft.py          # aircraft type metadata
+python src/build_osm_taxi_paths.py        # OSM taxiway graph
 python src/fetch_opdi_events.py           # OPDI ADS-B events (~50 min, 560 MB)
-# Then run the METAR fetch (see scratchpad/fetch_metar.py or bootstrap script)
-# Train the best single model
-python src/train_lgbm_v15.py              # OPDI live-taxi + full stack
-# Predict on ranking
-python src/predict_ensemble_v15.py kind-mango_v<n>.parquet
-mc cp submission/kind-mango_v<n>.parquet osn/prc-2026-<team>/
+python src/build_opdi_taxi_v2.py          # OPDI taxi-out record aggregation
+# METAR: see scratchpad/fetch_metar.py or the bootstrap script
+
+# 2. Train the base regressor
+python src/train_r_all_v21.py             # R_all_v21 with linear_tree
+
+# 3. Train the LIRF classifier and band table (Section 6.3)
+python src/build_lirf_band_table.py
+python src/train_lirf_noflt_detector.py
+
+# 4. Predict on the ranking set
+python src/predict_v21_final.py kind-mango_v21.parquet
+
+# 5. Submit
+python -c "\
+from minio import Minio; \
+c = {l.split('=')[0].strip(): l.split('=',1)[1].strip() for l in open('.osn_credentials.txt') if '=' in l}; \
+Minio('s3.opensky-network.org', access_key=c['access_key'], secret_key=c['secret_key'], secure=True) \
+    .fput_object(c['bucket'], 'kind-mango_v21.parquet', 'submission/kind-mango_v21.parquet')"
 ```
 
 Full reproduction steps are in [`REPRODUCE.md`](REPRODUCE.md).
@@ -57,162 +184,85 @@ Full reproduction steps are in [`REPRODUCE.md`](REPRODUCE.md).
 ## Layout
 
 ```
-src/                     # 30+ Python modules
-  baseline.py            # 4 floor baselines
-  features_weather.py    # METAR + crosswind
-  features_congestion.py # rolling airport-load counts
-  features_eurocontrol.py# daily ATFM per-airport features
-  features_operator.py   # operator historic taxi encoders
-  features_taxi_distance.py  # OSM stand->runway haversine
-  features_advanced.py   # physical proxies (queue, runway diversity, ades delay)
-  features_osm_path.py   # OSM taxiway graph shortest-path
-  features_opdi.py       # OPDI rolling event counts (leak-free)
-  features_opdi_live.py  # OPDI rolling live-taxi mean/median (OTHER flights)
-  features_vrs.py        # VRS aircraft-type metadata (unused in final)
-  features_ssl.py        # semi-supervised drift (unused in final)
-  features_opdi_extended.py  # more OPDI event types (unused in final)
-  build_eurocontrol_daily.py, build_osm_stands.py,
-  build_osm_taxi_paths.py, build_vrs_aircraft.py,
-  build_opdi_taxi.py, build_opdi_taxi_v2.py,
-  fetch_opdi_events.py    # external-data ingestion scripts
-  train_lgbm_v[1-17].py   # progressive model versions
-  train_lgbm_lirf.py      # LIRF-only specialist (unused)
-  train_lgbm_robust.py    # Huber / log-target comparison
-  train_tail_classifier.py, train_tail_oof.py, train_tail_oof_lite.py
-  train_dq_classifier.py  # BLOCK==SCHED detector (failed)
-  train_lgbm_quantile.py  # quantile regression models (unused)
-  tune_lgbm.py            # Optuna hyperparameter search
-  ensemble*.py, predict*.py
+src/
+  # v21 pipeline (current)
+  features_weather.py           # METAR + crosswind + Step 7 temperature block
+  features_congestion_v2.py     # arrivals keyed on ADES_mvt, same-runway ARR/DEP counts
+  features_congestion.py        # v1 keyed on ADEP_mvt (needed by v21_old booster)
+  features_eurocontrol.py       # daily ATFM per-airport features
+  features_operator.py          # operator historic taxi encoders
+  features_taxi_distance.py     # OSM stand->runway haversine
+  features_advanced.py          # physical proxies (queue, runway diversity, ades delay)
+  features_osm_path.py          # OSM taxiway graph shortest-path
+  features_opdi.py              # OPDI rolling event counts
+  features_opdi_live.py         # OPDI rolling live-taxi mean/median (600 s lag fix)
+  features_turnaround.py        # aircraft-on-stand link, uses BLOCK_TIME_UTC_mvt
+  features_disruption.py        # 60-min disruption meters
+  train_r_all_v21.py            # scoring regressor
+  build_lirf_band_table.py      # Step A LIRF band table
+  train_lirf_noflt_detector.py  # Section 6.3 classifier
+  predict_v21_final.py          # ranking submission
 
-external/                # open data caches (gitignored)
-  metar/       Iowa State METAR CSVs per ICAO
+  # older versions kept for the paper trail
+  train_lgbm_v{1..20}.py, train_r_all_v20.py, features_*_v2.py,
+  ensemble_*.py, predict_v*.py, mixture_*.py
+
+  # diagnostics used by MODEL_ANALYSIS.md
+  eval_full.py, eval_v21_stepA.py, eval_v21_stepAC.py, eval_v20_final.py,
+  eval_v19.py, eval_v20_combined.py, train_drift_meter.py,
+  train_fallback_detector.py, train_v18_detectors.py
+
+external/                       # open-data caches (gitignored)
+  metar/       Iowa State ASOS CSVs per ICAO
   eurocontrol/ 5 NM performance Excels + consolidated daily parquet
   osm/         OSM stand positions + taxiway graphs
   airports/    OurAirports runways.csv + airports.csv
   vrs/         VRS StandingData aircraft types
-  opdi/        OPDI event chunks + consolidated events_all.parquet
-training/    organiser-provided 2025 monthly parquets (12 files, gitignored)
-submission/  ranking.parquet, submitting.parquet, kind-mango_v*.parquet + result.json
-models/      trained model + feature list + encoders + weights (gitignored)
-docs/        PRC brief
+  opdi/        OPDI event chunks + consolidated events_all.parquet + taxi_out_v2.parquet
+training/                       # organiser-provided 2025 monthly parquets (gitignored)
+submission/                     # ranking.parquet, submitting.parquet, kind-mango_v*.parquet
+models/                         # trained boosters + encoders + JSON config
+docs/                           # PRC brief + MODEL_ANALYSIS.md (audit driving each step)
+RECAP.md                        # session log for every attempt, submissions and scores
 ```
-
-## Data sources (all open)
-
-| Source | Data | License |
-|---|---|---|
-| PRC / OpenSky Network | Movements at 10 EU airports (2025 train, 2026 ranking) | Challenge data licence |
-| Iowa State ASOS | METAR reports, hourly, per station | Public domain |
-| OurAirports | Runway coordinates, headings, lengths | Public domain |
-| OSM Overpass | `aeroway=parking_position`, `taxiway`, `runway` | ODbL |
-| Eurocontrol NM | Daily ATC pre-dep delay, ATFM slot adherence, airport traffic, arrival ATFM delay | Open (`www.eurocontrol.int/performance/data`) |
-| **OPDI** (PRC + OSN) | Flight events (entry-runway, entry-taxiway, exit-parking_position, ...) | Open (`opdi.aero`), CC-BY 4.0, confirmed open for challenge by organizer |
-| VRS StandingData | Aircraft-type → manufacturer/engines/model lookup | Open (`github.com/vradarserver/standing-data`) |
-
-## Model — best submission
-
-**Ensemble of 5 LightGBM models**, blended by grid-search on 2025 hold-out:
-
-```
-0.55 × lgbm_v15 + 0.15 × lgbm_v16 + 0.15 × lgbm_v7 + 0.10 × lgbm_v11 + 0.05 × lgbm_v10
-```
-
-All five models are gradient-boosted regressors with **MSE loss**, sharing the same
-Optuna-tuned hyperparameters. They differ in feature set:
-
-- **v15** (best solo): 124 features, adds OPDI live-taxi rolling mean/median from
-  OTHER flights
-- **v16**: 128 features (v15 + semi-supervised drift; solo worse, but blend-useful)
-- **v7**: 97 features, winter-weighted training on v5 base
-- **v11**: 115 features, v10 + OPDI rolling event counts
-- **v10**: 106 features, v9 + OSM real taxi path length
-
-## Feature families used in v15 (best single model)
-
-**Categorical (10)**: airport, destination, runway, stand, aircraft type, wake,
-market segment, operator, flight rule, flight type.
-
-**Numeric (114)**:
-- Time (4): hour, dow, month, sched_delay
-- METAR weather (13): wind cross/head, gust, vis, low_vis flags, ceiling, precip / snow / thunder / freezing
-- Rolling congestion (10): DEP/ARR counts in prev 15/30/60 min, same-runway counts, next-10-min queue proxy
-- `flt_null` flag
-- Eurocontrol daily (18): pre-dep delay, ATFM slot adherence, airport traffic — plus one-day lag
-- Operator historic encoders (16): median + std per (op × airport / runway / hour-bin / stand)
-- Physical: haversine + real OSM path stand→runway, turn count, path/haversine ratio
-- Advanced physics (5): scheduled pushback load, runway diversity, secs since last DEP on runway, rwy bank intensity, ADES arrival ATFM delay
-- OPDI raw event counts (9): entry-runway / entry-taxiway / exit-parking rolling counts
-- OPDI live-taxi (9): rolling mean / median / count of ACTUAL observed taxi from OTHER completed flights
-
-**Best hyperparameters (Optuna, trial 31 out of 60):**
-
-```
-learning_rate:      0.0228
-num_leaves:         440
-min_data_in_leaf:   76
-feature_fraction:   0.674
-bagging_fraction:   0.937
-lambda_l1:          0.089
-lambda_l2:          0.342
-min_gain_to_split:  1.83
-early stop / best_iter around 1000-1200
-```
-
-## Local hold-out progression (Jan + Jul 2025)
-
-| Model | RMSE (s) | Notes |
-|---|---|---|
-| Global median | 461.3 | reference floor |
-| Per-airport median | 420.8 | |
-| Grouped median + sched-delay slope | 365.1 | strongest non-ML |
-| HistGradientBoosting | 313.8 | first ML |
-| LightGBM v1 | 302.2 | base + weather + congestion |
-| LightGBM v2 (+ Eurocontrol) | 298.8 | |
-| LightGBM v3 (+ operator encoders) | 298.6 | |
-| LightGBM v4 (+ OSM haversine) | 297.8 | |
-| LightGBM v5 (Optuna-tuned) | 295.49 | |
-| LightGBM v6 (+ flt_null flag) | 295.56 | (same) |
-| LightGBM v7 (winter-weighted) | 295.46 | |
-| LightGBM v9 (+ advanced physical) | 294.58 | |
-| LightGBM v10 (+ OSM real path) | 294.40 | |
-| LightGBM v11 (+ OPDI raw counts) | 294.18 | |
-| **LightGBM v15 (+ OPDI live-taxi)** | **293.09** | best solo |
-| **Ensemble v9 (5-model)** | **292.77** | best overall |
-
-## Leaderboard submissions
-
-All submissions on the NEW-template scoring set (344,841 DEP rows across
-10 airports × Jan+Jul 2026).
-
-| Upload | Model | Local RMSE | Live RMSE |
-|---|---|---|---|
-| kind-mango_v1.parquet | v5+v6 (0.54/0.46) | 295.11 | 562.44 |
-| kind-mango_v2.parquet | v5+v6+v7 | 294.90 | 562.28 |
-| kind-mango_v3.parquet | v5+v7+v9+v10 | 293.82 | 561.52 |
-| kind-mango_v4.parquet | v7+v9+v10+v11 | 293.64 | 561.64 |
-| kind-mango_v5.parquet | (v3 rebroadcast) | — | 561.52 |
-| kind-mango_v6.parquet | v15 solo | 293.09 | 561.19 |
-| kind-mango_v7.parquet | v7+v10+v11+v15 | 292.81 | 561.06 |
-| kind-mango_v8.parquet | v16 solo | 293.70 | 561.81 |
-| **kind-mango_v9.parquet** | **v7+v10+v11+v15+v16** | **292.77** | **561.04** ← best |
 
 ## Approaches tried and RULED OUT
 
-For transparency, and to save future replicators from the same dead-ends:
+For transparency, and so the next replicator does not waste days on the same
+dead-ends:
 
-- **Huber loss + log-target regression**: much worse (408 s hold-out)
-- **Tighter target range [30, 21600] to model longer taxis**: hurt RMSE 6+ s
-- **LIRF specialist model**: converged in same range as general model
-- **Tail-mixture (P(y > 3600s) classifier + blend)**: signal exists (AUC 0.97)
-  but blending false positives hurts more than true positives help
-- **P_tail as regressor feature (naive)**: target leakage
-- **P_tail as regressor feature (5-fold OOF)**: feature distribution shift
-- **Data-quality classifier (BLOCK==SCHED detector)**: AUC 0.51 (random)
-- **Semi-supervised drift features from ranking rows**: worse on both local + live
-- **Quantile regression (q=0.5/0.55/0.60) ensemble**: near-zero effect
-- **Extended OPDI event counts (exit-taxiway, entry-threshold, etc.)**: mildly worse
-- **VRS aircraft-type derived features (manufacturer, engines)**: overfit, worse
-- **Post-hoc airport-level shift calibration**: near-zero effect (model already unbiased)
+- **Huber loss and log-target regression** — 408 s hold-out, much worse than MSE.
+- **Tighter target range `[30, 21600]`** — hurt RMSE 6+ s.
+- **LIRF specialist model** — converged in the same range as the general model.
+- **Old tail-mixture (P(y > 3600) classifier + hard swap)** — v22/v27; live went
+  from 372 to 625. Hard swaps have unbounded downside.
+- **`P_tail` as a regressor feature** — target leakage (in-fold) or distribution
+  shift (out-of-fold).
+- **Data-quality classifier (BLOCK==SCHED detector)** — AUC 0.51 on the wrong
+  target. The right target is `|y - sd| <= 1` per airport, deployed at LIRF only.
+- **Semi-supervised drift features from ranking rows** — hurt both hold-out and
+  live.
+- **Quantile regression (q = 0.5 / 0.55 / 0.60) ensemble** — near-zero effect.
+- **Extended OPDI event counts (exit-taxiway, entry-threshold)** — the counts
+  collapse between 2025 and 2026 at 5 airports (see MODEL_ANALYSIS 3.2); use
+  the raw counts at EDDF and LSZH only, with the OPDI-live 600 s lag fix.
+- **VRS aircraft-type derived features (manufacturer, engines)** — overfit,
+  duplicates the aircraft-type categorical.
+- **Post-hoc airport-level shift calibration** — near-zero effect.
+- **12-month refit + 3-seed seed/ff ensemble (v25)** — NNLS collapsed to one
+  member, live +1.5 s inside noise.
+- **Runway-configuration string categorical (v26)** — hundreds of levels,
+  overfit, +7.6 s full hold-out.
+- **Step A extended to `sd > 3,600`** — v21 already holds the conditional mean
+  in that band; the extended rule cost 9.8 s on the hold-out.
+- **Per-airport fallback detectors at EGLL, LEBL, LTFM (v18/v19 mix)** — with
+  the corrected fallback definition (`|y - sd| <= 1` at 9 airports and `< 60`
+  only at LIRF) these detectors model punctuality, not reporting failure. The
+  R_all regressor already holds that signal.
+- **Hourly / stand-occupancy / EOBT-copy detector families** — measured and
+  worth 48 to 229 MSE at stake per airport, not worth a component.
+- **Runway configuration or 3-lane submission variants that differ on a handful
+  of rows** — the brief forbids learning from the ranking process.
 
 ## Reproduction
 
@@ -220,9 +270,10 @@ See [`REPRODUCE.md`](REPRODUCE.md).
 
 ## Acknowledgements
 
-- Eurocontrol Performance Review Commission (PRC), OpenSky Network — challenge data + infrastructure
-- Iowa State University Environmental Mesonet — METAR archive
-- David Megginson — OurAirports open data
-- OpenStreetMap contributors — stand and runway geometry
-- OPDI project (PRC + OSN) — ADS-B derived flight events
-- Virtual Radar Server community — StandingData aircraft-type lookup
+- Eurocontrol Performance Review Commission (PRC), OpenSky Network — challenge
+  data and infrastructure.
+- Iowa State University Environmental Mesonet — METAR archive.
+- David Megginson — OurAirports open data.
+- OpenStreetMap contributors — stand and runway geometry.
+- OPDI project (PRC + OSN) — ADS-B derived flight events.
+- Virtual Radar Server community — StandingData aircraft-type lookup.

@@ -1,0 +1,45 @@
+{
+  "sd_min": 3600,
+  "cat_inputs": [
+    "AIRCRAFT_OPERATOR_flt",
+    "STAND_mvt",
+    "RUNWAY_mvt",
+    "MARKET_SEGMENT_flt",
+    "FLIGHT_TYPE_flt",
+    "AIRCRAFT_TYPE_mvt",
+    "WK_TBL_CAT_flt",
+    "ADES_mvt"
+  ],
+  "num_inputs": [
+    "sd",
+    "mvt_eobt1",
+    "eobt1_sched",
+    "eobt1_iobt",
+    "hour",
+    "dow",
+    "sched_sec",
+    "mvt_sec",
+    "sd_mod_86400",
+    "flt_id_null"
+  ],
+  "results": {
+    "EGLL": {
+      "n_train": 17877,
+      "n_test": 5507,
+      "fb_train": 42,
+      "fb_test": 11,
+      "auc": 0.9348534471351064,
+      "base_rate": 0.0019974577810059923,
+      "best_iter": 26
+    },
+    "LIRF": {
+      "n_train": 13136,
+      "n_test": 4166,
+      "fb_train": 1292,
+      "fb_test": 337,
+      "auc": 0.9371763048358885,
+      "base_rate": 0.08089294287085934,
+      "best_iter": 115
+    }
+  }
+}

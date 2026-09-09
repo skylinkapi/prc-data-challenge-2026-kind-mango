@@ -1,0 +1,21 @@
+{
+  "deploy": {
+    "EDDF": true,
+    "EDDM": true,
+    "EGLL": true,
+    "EHAM": false,
+    "LEBL": true,
+    "LEMD": true,
+    "LFPG": true,
+    "LIRF": false,
+    "LTFM": true,
+    "LSZH": true
+  },
+  "shrink_63": 0.6,
+  "qualified": [
+    "LIRF",
+    "LEBL",
+    "EGLL",
+    "LTFM"
+  ]
+}

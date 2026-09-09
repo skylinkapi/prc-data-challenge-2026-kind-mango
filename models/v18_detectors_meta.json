@@ -1,0 +1,104 @@
+{
+  "sd_min": 1800,
+  "cat_inputs": [
+    "AIRCRAFT_OPERATOR_flt",
+    "flt_prefix",
+    "stand_prefix",
+    "RUNWAY_mvt",
+    "MARKET_SEGMENT_flt",
+    "FLIGHT_TYPE_flt",
+    "AIRCRAFT_TYPE_mvt",
+    "WK_TBL_CAT_flt",
+    "ades_region"
+  ],
+  "num_inputs": [
+    "sd",
+    "mvt_eobt1",
+    "eobt1_sched",
+    "eobt1_iobt",
+    "hour",
+    "dow",
+    "sd_mod_86400",
+    "flt_id_null"
+  ],
+  "params": {
+    "objective": "binary",
+    "metric": "auc",
+    "learning_rate": 0.05,
+    "num_leaves": 63,
+    "min_data_in_leaf": 50,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.9,
+    "bagging_freq": 5,
+    "verbosity": -1,
+    "num_threads": -1
+  },
+  "results": {
+    "EDDF": {
+      "qualifies": false,
+      "n_train": 54525,
+      "n_train_pos": 66
+    },
+    "EDDM": {
+      "qualifies": false,
+      "n_train": 27737,
+      "n_train_pos": 38
+    },
+    "EGLL": {
+      "qualifies": true,
+      "test_auc": 0.8619938776999269,
+      "stop_auc": 0.844855940349692,
+      "best_iter": 41,
+      "n_train_pos": 1430,
+      "n_test_pos": 324,
+      "worst_decile_overshoot": 0.018
+    },
+    "EHAM": {
+      "qualifies": false,
+      "n_train": 57145,
+      "n_train_pos": 68
+    },
+    "LEBL": {
+      "qualifies": true,
+      "test_auc": 0.8799373040752351,
+      "stop_auc": 0.8589056393076494,
+      "best_iter": 25,
+      "n_train_pos": 324,
+      "n_test_pos": 165,
+      "worst_decile_overshoot": 0.003
+    },
+    "LEMD": {
+      "qualifies": false,
+      "n_train": 51119,
+      "n_train_pos": 207
+    },
+    "LFPG": {
+      "qualifies": false,
+      "n_train": 66672,
+      "n_train_pos": 296
+    },
+    "LIRF": {
+      "qualifies": true,
+      "test_auc": 0.887109281412751,
+      "stop_auc": 0.8880680722061458,
+      "best_iter": 94,
+      "n_train_pos": 3785,
+      "n_test_pos": 969,
+      "worst_decile_overshoot": 0.051
+    },
+    "LTFM": {
+      "qualifies": true,
+      "test_auc": 0.8532041430392528,
+      "stop_auc": 0.897536993098434,
+      "best_iter": 129,
+      "n_train_pos": 652,
+      "n_test_pos": 193,
+      "worst_decile_overshoot": 0.027
+    },
+    "LSZH": {
+      "qualifies": false,
+      "n_train": 29804,
+      "n_train_pos": 16
+    }
+  }
+}

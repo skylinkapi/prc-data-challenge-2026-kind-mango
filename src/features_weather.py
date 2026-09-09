@@ -23,13 +23,22 @@ def load_metar_all() -> pd.DataFrame:
         p = os.path.join(METAR_DIR, f"{icao}.csv")
         m = pd.read_csv(p, low_memory=False, na_values=["M"])
         m["valid"] = pd.to_datetime(m["valid"], utc=True, errors="coerce").astype("datetime64[us, UTC]")
-        # numeric
-        for c in ["drct", "sknt", "gust", "vsby", "skyl1", "p01i"]:
-            m[c] = pd.to_numeric(m[c], errors="coerce")
+        # numeric — Step 7 adds temperature and dewpoint
+        for c in ["drct", "sknt", "gust", "vsby", "skyl1", "p01i",
+                  "tmpf", "dwpf", "ice_accretion_1hr"]:
+            if c in m.columns:
+                m[c] = pd.to_numeric(m[c], errors="coerce")
+            else:
+                m[c] = np.nan
+        # Fahrenheit -> Celsius
+        m["tmpc"] = (m["tmpf"] - 32) * 5.0 / 9.0
+        m["dwpc"] = (m["dwpf"] - 32) * 5.0 / 9.0
+        m["dewpt_spread"] = m["tmpc"] - m["dwpc"]
         m = m.dropna(subset=["valid"]).sort_values("valid")
         m["ADEP_mvt"] = icao
         frames.append(m[["ADEP_mvt", "valid", "drct", "sknt", "gust",
-                         "vsby", "skyc1", "skyl1", "wxcodes", "p01i"]])
+                         "vsby", "skyc1", "skyl1", "wxcodes", "p01i",
+                         "tmpc", "dwpc", "dewpt_spread", "ice_accretion_1hr"]])
     return pd.concat(frames, ignore_index=True)
 
 
@@ -125,6 +134,8 @@ def add_weather(dep: pd.DataFrame) -> pd.DataFrame:
     df["low_ceiling"] = (df["ceiling_ft"] < 500).astype(np.int8)
 
     df = pd.concat([df, parse_wx_flags(df["wxcodes"])], axis=1)
+    # Step 7: de-icing feature — precipitation with low temperature
+    df["deicing_gate"] = ((df["wx_precip"] == 1) & (df["tmpc"].fillna(99) < 3)).astype(np.int8)
     return df.drop(columns=["_rwy_norm", "valid"])
 
 

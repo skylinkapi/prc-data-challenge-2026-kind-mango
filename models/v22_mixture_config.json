@@ -1,0 +1,1 @@
+{"threshold": 0.99, "sd_gate": 7200, "holdout_full_rmse": 415.51, "holdout_clean_rmse": 335.11, "holdout_tail_rmse": 11805.5, "oracle_full_rmse": 363.2, "v21_full_rmse": 455.24, "v21_clean_rmse": 283.85, "notes": "step 3 mixture. combine with v21 via p_swap = (p_fb>0.99 | p_24h>0.99) & sd>7200. On swap: use sched_delay, else v21 taxi_hat."}

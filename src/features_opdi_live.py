@@ -45,7 +45,11 @@ def _rolling_stats(query_ts: np.ndarray, ref_ts: np.ndarray,
 
 
 def add_opdi_live(dep: pd.DataFrame) -> pd.DataFrame:
-    """dep needs: ADEP_mvt, mvt_ts. Adds live-tempo features from OPDI taxi records."""
+    """dep needs: ADEP_mvt, mvt_ts. Adds live-tempo features from OPDI taxi records.
+
+    Fix 3.1 (MODEL_ANALYSIS.md 2026-09-09): subtract a 600 s lag from the window
+    end so the row's own runway-entry does not sit inside its own window.
+    """
     if not os.path.exists(OPDI_TAXI):
         out = dep.copy()
         for c in OPDI_LIVE_NUM_COLS:
@@ -59,13 +63,15 @@ def add_opdi_live(dep: pd.DataFrame) -> pd.DataFrame:
 
     apt_arr = dep["ADEP_mvt"].values
     ts_arr = dep["mvt_ts"].values.astype("datetime64[us]")
+    # 600 s lag applied to the query end to exclude the row's own runway-entry
+    lag = np.timedelta64(600, "s")
+    ts_arr_lag = ts_arr - lag
 
     for icao, apt_tx in tx.groupby("osm_airport", sort=False):
         pos = np.where(apt_arr == icao)[0]
         if pos.size == 0:
             continue
-        q_ts = ts_arr[pos]
-        # Sort ref by runway_entry_ts (that's when the taxi COMPLETED and became observable)
+        q_ts = ts_arr_lag[pos]
         apt_tx_sorted = apt_tx.sort_values("runway_entry_ts")
         ref_ts = apt_tx_sorted["runway_entry_ts"].values.astype("datetime64[us]")
         ref_taxi = apt_tx_sorted["actual_taxi_sec"].values.astype(np.float32)
