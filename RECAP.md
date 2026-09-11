@@ -1,7 +1,10 @@
 # kind-mango recap
 
-Status as of 2026-09-09 00:15 UTC. Rank **44/86**. Team best **330.12 s** (v21).
-86 teams now on leaderboard.
+Status as of 2026-09-11 evening. Rank **44/111**. Team best **301.98 s** (v30).
+111 teams now on leaderboard. **1.98 s from breaking 300.**
+v32 (7-seed base + 5-member R_norm_LIRF) scored 302.11 — lottery draw lost;
+v30 stays as team best. v33 (5-member R_norm_LIRF only, 3-seed base kept)
+uploaded but blocked by daily 5/5 slot limit; scores after 00:00 UTC reset.
 
 ## Breakthrough
 
@@ -19,7 +22,19 @@ Fixing those (Step 2, v21) took live from **560.91 to 430.45** — a **130 s dro
 
 | tag | RMSE   | notes                                                |
 |-----|--------|------------------------------------------------------|
-| v21 | **330.12** | **best**. R_all v21: linear_tree + signed-log copies + OPDI-live leak fix + turnaround BLOCK_TIME fix + temperature (tmpc, dewpt_spread, deicing_gate) (-15.6 s vs v20) |
+| v30 | **301.98** | **best**. v29 + LIRF-only encoders for LIRF models + new Step A band table (mutually exclusive classes, NOSOS431 fix) (-1.28 s vs v29) |
+| v33 | pending | v30 pipeline + 5-member R_norm_LIRF mean (seeds 42-46). 3-seed base unchanged. Isolates the priced-cheap change from v32 (A_5 post-mixture 74 MSE landed as expected on the shared LIRF rows). Expected 301.86 s. Uploaded 2026-09-11 16:41 UTC; daily 5/5 limit hit, reprocess after 00:00 UTC reset. |
+| v32 | 302.11 | v30 pipeline + 5-member R_norm_LIRF mean (seeds 42-46) + 7-member base mean (seeds 42-48). Doc sixth-audit blueprint. A_5 post-mixture 74.2 MSE (matches audit prediction), A_7 5,417 MSE (8× hold-out estimate). Expected 299.86 s; live +0.13 s regression — implied base-change loss +152 MSE against predicted -1,204 MSE, so the R_norm gain likely landed and the base change alone drove the regression (seventh audit 10.2). |
+| v31 | 302.41 | Cleaned invalid ARR taxi-in labels before congestion aggregation; local full 397.84 s. Regressed live by +0.43 s, so v30 remains the submission. |
+| v29 | 303.26 | v26 3-seed base + R_norm_LIRF clip at 4,431 s + ITY340 constant formula (Step A unclipped after audit showed clip regressed +124 MSE) (-0.45 s vs v26) |
+| v26 | 303.71 | v24 pipeline with R_all_v26 (drop 38 ec_* + 18 opdi_* per doc Step 5) (-13.1 s vs v24) |
+| v27 | 304.03 | v26 + 7-seed R_all_v27 + drop 3 dead features + Step 2 fixes (R_norm clip, ITY340 formula). +0.32 s regression. |
+| v28 | 304.48 | v26 pipeline + 7-seed R_all_v27 (isolate ensemble). +0.77 s regression, likely from `ades_arr_atfm_delay_today` drop. |
+| v25 | 375.33 | v24 + imputed ec_* with 2025 medians (perturbed learned NaN routing; retracted) |
+| v24 | 316.85 | v23 pipeline + 3-seed R_all_v24 mean with honest 12% random stop split (-0.65 s vs v23) |
+| v23 | 317.50 | v22 pipeline + Step 2 fallback-rate encodings on p_fb (fbrate_flt_prefix rank 1) (-2.8 s vs v22) |
+| v22 | 320.31 | v21 base + LIRF regime head (R_norm_LIRF + calibrated p_fb) + refined Step A band table (11 bins) (-9.8 s vs v21) |
+| v21 | 330.12 | R_all v21: linear_tree + signed-log copies + OPDI-live leak fix + turnaround BLOCK_TIME fix + temperature (-15.6 s vs v20) |
 | v20 | 345.70 | R_all v20 (v21 stack + turnaround + disruption) base + v18 LIRF (Step A + 6.3) + ITY340 rule (-25 s vs v18) |
 | v19 | 359.46 | v20 combined per-airport: v18 for LIRF/EHAM, R_norm+detector for EGLL/LEBL/LTFM, R_norm alone elsewhere (-11 s vs v18) |
 | v18 | 370.63 | v16 + Section 6.3 rule for LIRF null-flight sd 3600-14400 (shrink 0.6) |
@@ -52,7 +67,7 @@ Fixing those (Step 2, v21) took live from **560.91 to 430.45** — a **130 s dro
 48. tidy-nugget                    404.86
 ```
 
-Next competitor to beat: **diligent-fireplace 329.76 (-0.4s)**. Cluster above at 312-316 (−15s).
+Next competitor to beat: **versatile-violin 299.74 (-2.24s)**. 7 teams below 300 barrier now.
 
 ## Model progression on hold-out
 
@@ -113,6 +128,32 @@ Next competitor to beat: **diligent-fireplace 329.76 (-0.4s)**. Cluster above at
 - [x] Step C - Fallback detector LIRF+EGLL. Hold-out 371.67 -> 363.52. Live v17 377.47 (+5 s worse than v16). Detector overfits again; rejected.
 - [x] Section 6.3 - LIRF no-flight-record group (3600 < sd <= 14400). Detector on flight-number prefix, stand prefix, aircraft, runway, hour, sd. Mix p*sd + (1-p)*1150. Shrink 0.6. Hold-out 371.67 -> 369.33. **Live v18 370.63 (-1.77 s vs v16).**
 - [x] Section 6.4 - Taxi-in drift meter. 2025 hold-out 202.40 -> 2026 214.96 (+6.21 %). Drift confirmed. Per airport: EHAM +128.9, LIRF +28.9, LFPG +24.1; EGLL -40.9, EDDF -13.3, LEBL -27.6.
+- [ ] v33 blueprint (seventh audit) - `predict_v33.py` calls `predict_v30.main` with the same 5-member R_norm files as v32 but keeps the 3-seed base default. No new training. Isolates the priced-cheap R_norm gain (post-mixture A_5 = 74 MSE, scaled to all rows) from the priced-risky base expansion (A_7 = 5,417 MSE on 2026, 8× its hold-out estimate; live behaviour showed base-change bias dominates). Diff v33 vs v30: LIRF only (26,899 rows, mean |diff| 18.8 s, max 3,235 s); non-LIRF identical. Diff v33 vs v32: non-LIRF only. Expected 301.86 s. Uploaded 2026-09-11 16:41 UTC; daily 5/5 limit refused; will re-upload after 00:00 UTC reset for the score.
+- [x] v32 blueprint (sixth audit) - 5-member `R_norm_LIRF` (seeds 42-46, deployed recipe reproduced exactly: best iters 251, 417, 294, 294, 297) + 7-member base R_all_v26 (seeds 42-48, seed 47 needed one retry because multi-threaded linear_tree LGBM was non-deterministic; final iter 1249). Repo repair: restored `models/v26_pre_v31/` boosters to `models/`, moved v31 arrival-cleaning retrain to `models/v31_arrclean/`, reverted `features_congestion_v2.py` leftover line, removed env-var/record rule from `predict_v30.py`, deleted `predict_v31.py`. Acceptance A: `predict_v30.py` default reproduces v30 to 0.0000 s on all 344,841 rows. Ambiguity on 2026 ranking: raw A_5 = 3,475 MSE (LIRF only), post-mixture-and-scaled-to-all-rows A_5 = 74.22 MSE (matches audit's 74 prediction), A_7 = 5,417 MSE (much higher than the audit's hold-out estimate of ~690). Predicted v32 RMSE 299.86 s; **live 302.11 (+0.13 s regression)**. Lottery draw lost — audit priced the spread at ~268 MSE (~0.44 s), so this outcome sits comfortably inside the noise band. v30 remains team best.
+- [x] v30 blueprint - LIRF-only encoders for LIRF models (fixes defect where all-airport encoders were served to LIRF-trained models) + new Step A band table `lirf_band_table_v30.json` with mutually exclusive classes (NOSOS431 row moves from 121,410 s to sd). Live **301.98 (-1.28 s vs v29)**.
+- [x] v29 blueprint (doc 4th audit + correction) - v26 3-seed base + R_norm_LIRF clip at 4,431 s + ITY340 constant formula. Step A base-term clip REMOVED (audit showed it regressed +124 MSE because deployed code feeds the LIRF mixture into the normal term, not the raw base — the doc's Section 3 measured on the wrong quantity). Live **303.26 (-0.45 s vs v26)**, matches predicted 303.3.
+- [x] v27 blueprint - Step 3 (7-seed ensemble with feature_fraction_seed varied) + Step 2 four free fixes (ITY340 formula, R_norm_LIRF clip, drop 3 dead features). Hold-out CLEAN -1.52s vs v26. Live 304.03 (+0.32 s). Regressed.
+- [x] v28 blueprint - v26 pipeline + 7-seed R_all_v27 (isolates ensemble effect). Live 304.48 (+0.77 s). Ensemble expansion didn't help live; likely `ades_arr_atfm_delay_today` drop hurt.
+- [x] v26 blueprint - Step 5: drop 38 ec_* + 18 opdi_* features and retrain R_all (3 seeds, honest stop). Live **303.71 (-13.14 s vs v24)**.
+    - Hold-out full 392.33 (v24 was 396.75, -4s). Doc predicted only -1.9s from ec_* fix but LIVE gain was -13s!
+    - Root cause confirmed: ec_* features have 0% coverage in July 2026 (55% of scoring set); model routed all July rows to NaN branch, poisoning predictions.
+    - v25 (impute with 2025 medians) failed catastrophically at 375.33 (+58s worse); proves ec_* are actively harmful, not just missing.
+    - opdi_* dropped too: dead weight (+0.09 CLEAN removal cost), and coverage collapses at 5 airports in 2026.
+- [x] v24 blueprint - Step 4: 3-seed R_all with honest 12% random stop split. Live **316.85 (-0.65 s vs v23)**.
+    - Hold-out full 396.75 / clean 266.23 (v21 was 425.92 / 274.08). Cumulative -29 full, -7.85 clean vs v21.
+    - Per-seed hold-out clean: 271.58, 268.48, 276.56 (mean 266.23). Doc predicted -3.3s CLEAN; measured -7.85s.
+    - Each seed runs to 1200-1600 iterations vs 372 for Nov+Dec stop (4x longer as doc predicted).
+- [x] v23 blueprint - Step 2 fallback-rate encodings on p_fb (7 keys × 2 = 14 features, OOF leave-one-month-out, K=30 smoothing). Live **317.50 (-2.8 s vs v22)**.
+    - fbrate_flt_prefix rank 1/167 (top feature), fbrate_op rank 7, fbrate_destination rank 16.
+    - Stop AUC 0.858 (v22: 0.857), logloss 0.369 (v22: 0.371).
+    - LIRF CLEAN hold-out 465.88 vs v22 485.52 = -20s on clean subset.
+- [x] v22 blueprint - LIRF regime head + refined Step A + retire 6.3 rule. Live **320.31 (-9.8 s vs v21)**.
+    - `R_norm_LIRF`: LightGBM linear_tree on LIRF genuine rows (|y-sd|>=60 & y<80000), 127 leaves, best iter 353.
+    - `p_fb_LIRF`: LightGBM binary classifier for |y-sd|<60 on all LIRF rows, selected on binary_logloss (AUC 0.857).
+    - Isotonic calibration fitted on Nov+Dec stop set.
+    - Mixture: `p_fb_cal * sd + (1 - p_fb_cal) * R_norm_LIRF` at LIRF (26,899 rows).
+    - Step A refined band table (11 bins per doc appendix); ITY340 rule now uses R_norm_LIRF instead of R_all (bounded pred 94k vs v21's 112k).
+    - Section 6.3 rule and 0.6 shrink RETIRED.
 - [x] v21 blueprint - linear_tree + signed-log copies + Step 1 defect fixes + Step 7 temperature. Live **330.12 (-15.6 s vs v20)**.
     - R_all v21 hold-out full 425.92 (v20 was 456.40, -30 s). Clean 274.08 (v20 280.17, -6 s).
     - Fix 3.1: OPDI live-taxi lag of 600 s removes label leak.

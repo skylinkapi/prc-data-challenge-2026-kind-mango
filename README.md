@@ -6,8 +6,9 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **330.12 s RMSE** (`kind-mango_v21.parquet`),
-  rank 44 of 86 teams
+- **Current leaderboard best:** **301.98 s RMSE** (`kind-mango_v30.parquet`),
+  rank 44 of 111 teams. v33 (5-member `R_norm_LIRF` mean, priced 301.86 s)
+  is uploaded and awaits the next 00:00 UTC slot reset for a score.
 
 ## License
 
@@ -32,21 +33,27 @@ analysis in `docs/MODEL_ANALYSIS.md`.
 
 ## What the model is
 
-The scoring stack is documented in `docs/MODEL_ANALYSIS.md`. In one line:
+The scoring stack (v30, current best) is documented in `docs/MODEL_ANALYSIS.md`.
+In one line:
 
-**One LightGBM regressor with `linear_tree` (`R_all_v21`), plus one LIRF band-lookup
-rule, plus one LIRF-null-flight classifier, plus a 1-in-a-year ITY340 offset rule.**
+**Three-seed LightGBM regressor with `linear_tree` (`R_all_v26`), plus a LIRF
+regime head (`R_norm_LIRF` + calibrated `p_fb` mixture), plus the Step A LIRF
+band lookup, plus the ITY340 offset rule.**
 
-Per-airport delegation (all Jan+Jul 2025 acceptance calls):
+Per-airport delegation, applied by `src/predict_v30.py`:
 
 | airport | scoring component |
 |---|---|
-| LIRF | v21_old base + Step A band table (`sd > 14,400`, null flight) + Section 6.3 classifier mixed with 1,220 s (`3,600 < sd <= 14,400`, null flight) + ITY340 rule (`sd > 70,000`, any flight record) |
-| every other airport | `R_all_v21` |
+| LIRF, `sd > 14,400`, null flight | Step A band table (`p_fb * sd + p_24h * (86,400 + 1,150) + p_norm * mixture`), exclusive classes since v30 |
+| LIRF, `sd > 70,000`, outside Step A | ITY340 constant `(5/6) * (86,400 + 1,150) + (1/6) * sd` |
+| LIRF, all other rows | `p_fb_cal * sd + (1 - p_fb_cal) * min(R_norm_LIRF, 4,431)` |
+| every other airport | 3-seed mean of `lgbm_r_all_v26_s{42,43,44}` |
 
-The single classifier ever deployed lives at LIRF with a null flight record. It
-was chosen because that group carries 55 % of the hold-out MSE. Every other
-regime rule the audit tested lost live points and was retired.
+Both LIRF-head boosters read the LIRF-only encoders in
+`models/lirf_regime.encoders.pkl`. Serving them the all-airport encoders was
+the v30 defect fix. The v33 build swaps `R_norm_LIRF` for a 5-member mean
+(seeds 42-46) — priced at 74 MSE of variance reduction, awaiting live
+confirmation.
 
 ## Live leaderboard progression
 
@@ -56,15 +63,24 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | upload | live RMSE | change | headline |
 |---|---|---|---|
 | kind-mango_v1 to v10 | 560-562 | — | Old metric era; label filter hid the tail |
-| kind-mango_v13 | **430.45** | **-130** | Unfiltered labels + unclipped `sd` + `EOBT_1_flt`, `IOBT_flt` deltas |
-| kind-mango_v16 | **372.40** | **-58** | + LIRF band-lookup rule for `sd > 14,400` null-flight rows |
+| kind-mango_v13 | 430.45 | -130 | Unfiltered labels + unclipped `sd` + `EOBT_1_flt`, `IOBT_flt` deltas |
+| kind-mango_v16 | 372.40 | -58 | + LIRF band-lookup rule for `sd > 14,400` null-flight rows |
 | kind-mango_v18 | 370.63 | -1.8 | + Section 6.3 LIRF null-flight `3,600 < sd <= 14,400` classifier |
 | kind-mango_v19 | 359.46 | -11.2 | + per-airport R_norm switch on the wins |
 | kind-mango_v20 | 345.70 | -13.8 | + turnaround family + disruption meters + ITY340 rule |
-| **kind-mango_v21** | **330.12** | **-15.6** | + linear_tree + signed-log copies + OPDI-live leak fix + temperature |
+| kind-mango_v21 | 330.12 | -15.6 | + linear_tree + signed-log copies + OPDI-live leak fix + temperature |
+| kind-mango_v22 | 320.31 | -9.8 | + LIRF regime head (`R_norm_LIRF` + calibrated `p_fb`) + refined Step A band table |
+| kind-mango_v23 | 317.50 | -2.8 | + fallback-rate encodings on `p_fb` (7 keys × 2 = 14 features) |
+| kind-mango_v24 | 316.85 | -0.65 | + 3-seed base with honest 12 % random stop split |
+| kind-mango_v26 | 303.71 | -13.1 | + drop 38 `ec_*` and 18 `opdi_*` features (0 % 2026 coverage) |
+| kind-mango_v29 | 303.26 | -0.45 | + `R_norm_LIRF` clip at 4,431 s + ITY340 constant formula |
+| **kind-mango_v30** | **301.98** | **-1.28** | + LIRF-only encoders for LIRF models + Step A band table with exclusive classes |
+| kind-mango_v32 | 302.11 | +0.13 | + 7-seed base + 5-member `R_norm_LIRF` — regressed (see MODEL_ANALYSIS 10) |
+| kind-mango_v33 | pending | — | v30 pipeline + 5-member `R_norm_LIRF` only (priced 301.86 s) |
 
 The `RECAP.md` file tracks every attempt, including the failures. The
-`docs/MODEL_ANALYSIS.md` file is the audit that drove each step.
+`docs/MODEL_ANALYSIS.md` file carries the seven audits, the v32 debrief and
+the v33 spec.
 
 ## Model card (v21)
 
@@ -107,7 +123,7 @@ The `RECAP.md` file tracks every attempt, including the failures. The
   - Best iteration on Nov+Dec early-stop: 372.
 
 - **Hold-out RMSE on Jan+Jul 2025** (single number is misleading — see
-  `docs/MODEL_ANALYSIS.md` section 5 on the bootstrap width):
+  `docs/MODEL_ANALYSIS.md` section 2 on the 1.5 s measurement noise floor):
 
   | metric | value |
   |---|---|
@@ -161,22 +177,23 @@ python src/fetch_opdi_events.py           # OPDI ADS-B events (~50 min, 560 MB)
 python src/build_opdi_taxi_v2.py          # OPDI taxi-out record aggregation
 # METAR: see scratchpad/fetch_metar.py or the bootstrap script
 
-# 2. Train the base regressor
-python src/train_r_all_v21.py             # R_all_v21 with linear_tree
+# 2. Train the base regressor (3 members, linear_tree)
+python src/train_r_all_v26.py
 
-# 3. Train the LIRF classifier and band table (Section 6.3)
-python src/build_lirf_band_table.py
-python src/train_lirf_noflt_detector.py
+# 3. Train the LIRF regime head, then build the Step A band table
+python src/train_lirf_regime.py           # R_norm_LIRF and its LIRF-only encoders
+python src/train_lirf_regime_v23.py       # p_fb gate, fallback-rate maps, calibrator
+python src/build_lirf_band_table_v30.py   # band table with exclusive classes
 
 # 4. Predict on the ranking set
-python src/predict_v21_final.py kind-mango_v21.parquet
+python src/predict_v30.py kind-mango_v30.parquet
 
 # 5. Submit
 python -c "\
 from minio import Minio; \
 c = {l.split('=')[0].strip(): l.split('=',1)[1].strip() for l in open('.osn_credentials.txt') if '=' in l}; \
 Minio('s3.opensky-network.org', access_key=c['access_key'], secret_key=c['secret_key'], secure=True) \
-    .fput_object(c['bucket'], 'kind-mango_v21.parquet', 'submission/kind-mango_v21.parquet')"
+    .fput_object(c['bucket'], 'kind-mango_v30.parquet', 'submission/kind-mango_v30.parquet')"
 ```
 
 Full reproduction steps are in [`REPRODUCE.md`](REPRODUCE.md).
@@ -198,10 +215,11 @@ src/
   features_opdi_live.py         # OPDI rolling live-taxi mean/median (600 s lag fix)
   features_turnaround.py        # aircraft-on-stand link, uses BLOCK_TIME_UTC_mvt
   features_disruption.py        # 60-min disruption meters
-  train_r_all_v21.py            # scoring regressor
-  build_lirf_band_table.py      # Step A LIRF band table
-  train_lirf_noflt_detector.py  # Section 6.3 classifier
-  predict_v21_final.py          # ranking submission
+  train_r_all_v26.py            # base regressor, 3 members
+  train_lirf_regime.py          # R_norm_LIRF and its LIRF-only encoders
+  train_lirf_regime_v23.py      # LIRF p_fb gate, fallback-rate maps, calibrator
+  build_lirf_band_table_v30.py  # Step A band table, exclusive classes
+  predict_v30.py                # ranking submission
 
   # older versions kept for the paper trail
   train_lgbm_v{1..20}.py, train_r_all_v20.py, features_*_v2.py,
@@ -222,7 +240,7 @@ external/                       # open-data caches (gitignored)
 training/                       # organiser-provided 2025 monthly parquets (gitignored)
 submission/                     # ranking.parquet, submitting.parquet, kind-mango_v*.parquet
 models/                         # trained boosters + encoders + JSON config
-docs/                           # PRC brief + MODEL_ANALYSIS.md (audit driving each step)
+docs/                           # PRC brief + MODEL_ANALYSIS.md (seven audits, v32 debrief, v33 spec)
 RECAP.md                        # session log for every attempt, submissions and scores
 ```
 
@@ -244,7 +262,7 @@ dead-ends:
   live.
 - **Quantile regression (q = 0.5 / 0.55 / 0.60) ensemble** — near-zero effect.
 - **Extended OPDI event counts (exit-taxiway, entry-threshold)** — the counts
-  collapse between 2025 and 2026 at 5 airports (see MODEL_ANALYSIS 3.2); use
+  collapse between 2025 and 2026 at 5 airports (see MODEL_ANALYSIS 7); use
   the raw counts at EDDF and LSZH only, with the OPDI-live 600 s lag fix.
 - **VRS aircraft-type derived features (manufacturer, engines)** — overfit,
   duplicates the aircraft-type categorical.

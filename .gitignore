@@ -24,8 +24,8 @@ external/opdi/**
 external/vrs/*.parquet
 
 # Model artifacts (regeneratable; too big for git)
-models/*.txt
-models/*.pkl
+models/**/*.txt
+models/**/*.pkl
 models/features_cache*
 
 # Submission outputs (produced by predict.py; keep result JSONs)
