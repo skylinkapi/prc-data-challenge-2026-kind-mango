@@ -202,12 +202,32 @@ Nothing tested yet gets under v13. What could help:
 - Add ranking-context features (e.g. rolling load using the ranking rows themselves).
 - More seeds in the ensemble with less aggressive ff.
 
-## Discord confirmations (2026-09-09)
+## Discord confirmations
 
-- **BLOCK==SCHED fallback rows ARE in the ranking truth set** (espinielli: ranking comes from whatever airports reported for Jan/Jul 2026). Validates Step A / 6.3 / 6.2 approaches.
-- **Open data allowed** if documented — METAR, OPDI, holidays all fine.
-- 630 "neither" rows at EGLL/LFPG/LIRF/EHAM where BLOCK_TIME precedes AOBT by ~1h are messy airport data; unknown recurring cause.
-- Sensitive/state/military flights removed uniformly (no bias in congestion counts).
+### 2026-09-08 (espinielli)
+
+- `_mvt` values are airport-reported (~validated by Eurocontrol). `_flt` values come from the Network Manager; no post-ops adjustments.
+- `BLOCK_TIME_UTC_mvt` should be the airport's actual off-block. `SCHED_TIME_UTC_mvt` carries the schedule.
+- Organiser is not providing any value as ground truth for submissions. Any provided value is fair to use as a proxy (or as itself) if it helps.
+
+### 2026-09-09 (espinielli, three-question thread with romano)
+
+- **BLOCK==SCHED fallback rows ARE in the ranking scoring set** — "the ranking comes from whatever we got from the relevant airports for Jan/Jul 2026". Validates Step A, Section 6.3, and R_norm regime head.
+- **Open data allowed if declared in the documentation** — METAR, OPDI, OurAirports, OSM, Eurocontrol NM, VRS all fine.
+- No known recurring operational cause for the 630 "neither" rows (BLOCK_TIME precedes AOBT by ~50 min at EGLL/LFPG/LIRF/EHAM). Some may be event-linked, others messy airport/NM data.
+- **The decision on how to deal with strange/noisy/messy data is a full part of the challenge and a modelling decision** (espinielli reply to Sam re LIRF null-block anomalies). Directly validates our regime-head + Step A approach over any attempt to reverse-engineer the labels.
+- Sensitive/state/military flight exclusions are NOT uniform across airports or hours; the fraction varies month-to-month; total volume is small. Congestion counts carry a small, uneven downward bias.
+- **IOBT / EOBT / LOBT semantics** (JohnMar1 question):
+  - `IOBT` — initial off-block calculated from the flight plan.
+  - `EOBT` — estimated off-block from later messages/updates.
+  - `LOBT` — latest calculated off-block value.
+  - All three are operational values, no post-ops adjustments. Ethics stance on `LOBT_flt` unchanged — it equals `AOBT_3_flt` on 4.3 % of rows.
+- **Feature engineering from earlier movement rows (`MVT_TIME < T`) is permitted** — "your model could take into account what is occupied, what is coming, ...". Validates congestion / disruption / OPDI-live features.
+
+### 2026-09-11 (espinielli)
+
+- **No phase 2 is planned**, though the organiser reserves the right to add one "if reverse engineering the ranking is too easy" — "which we despise". Strong external validation for our permanent exclusion of `AOBT_3_flt` and `LOBT_flt` and for the audit rule against setting row-level predictions from live scores.
+- **Trino data access is NOT allowed for the challenge** (Piyush Patil raised; espinielli confirmed). Any Trino-derived feature would disqualify.
 
 ## Prize window
 
