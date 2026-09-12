@@ -1,11 +1,16 @@
-"""v30 = v29 with two changes that do not depend on a hold-out difference.
+"""v34 = v33 with hold-out leakage removed from the LIRF head statistics.
 
-  1. The LIRF models read the LIRF-only encoders they were trained with.
-     v29 served them the all-airport encoders (MODEL_ANALYSIS.md section 2).
-  2. The Step A band table comes from build_lirf_band_table_v30.py, whose classes
-     are mutually exclusive. NOSOS431 moves from 121,410 s to its sd (section 3).
+Audit Item 2. What changed vs v33:
+  - Fallback-rate scoring maps built from fit months only (base_rate,
+    per-key smoothed rates and counts). Model file: lgbm_p_fb_lirf_v34.txt.
+  - LIRF band table rebuilt from fit months. File: lirf_band_table_v34.json.
+  - NORMAL_MEAN_LIRF and R_NORM_CLIP re-estimated on fit months.
+    File: models/v34_constants.json.
+
+Base R_all_v26 (3-seed) and R_norm_LIRF (5-seed) are unchanged: their
+training and their encoders already exclude {1, 7}.
 """
-import os, pickle, time, gc, glob, json, sys
+import os, pickle, time, gc, json, sys
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
@@ -22,63 +27,37 @@ from features_opdi import add_opdi
 from features_opdi_live import add_opdi_live
 from features_turnaround import add_turnaround
 from features_disruption import add_disruption
-from features_plan import add_plan_times, add_plan_residual
 from train_lgbm_v21 import add_obt_features, CAT_COLS
 from train_r_all_v21 import SIGNED_LOG_BASE, SIGNED_LOG_COLS, signed_log
-from train_lirf_regime_v23 import RATE_KEYS, RATE_FEATURES
 from predict_v23 import add_rate_features_scoring, apply_stepA_v22
+from predict_v30 import load_training_categories
 from train_r_all_v24_seeds import SEEDS
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RANK = os.path.join(ROOT, "submission", "ranking.parquet")
 SUB_TMPL = os.path.join(ROOT, "submission", "submitting.parquet")
 MODELS = os.path.join(ROOT, "models")
+
 P24_ITY = 5.0/6.0
 ITY_SD_THRESHOLD = 70000
-R_NORM_CLIP = 4431.0
-NORMAL_MEAN_LIRF = 1150.0
-
-
-def load_training_categories():
-    tdir = os.path.join(ROOT, "training")
-    seen = {c: set() for c in CAT_COLS}
-    for f in sorted(glob.glob(os.path.join(tdir, "*.parquet"))):
-        t = pd.read_parquet(f, columns=list({*CAT_COLS, "PHASE_mvt", "TAXITIME_SEC_mvt"}))
-        t = t[(t["PHASE_mvt"] == "DEP") & t["ADEP_mvt"].isin(TARGET_ICAOS)]
-        t = t[t["TAXITIME_SEC_mvt"].astype(float) > 0]
-        for c in CAT_COLS:
-            seen[c].update(t[c].dropna().unique())
-    return {c: pd.Index(list(v)) for c, v in seen.items()}
-
-
 DEFAULT_BASE_SEEDS = list(SEEDS)
-DEFAULT_R_NORM_FILES = ["lgbm_r_norm_lirf.txt"]
-DEFAULT_P_FB_MEMBERS = [("lgbm_p_fb_lirf_v23.txt", "lirf_regime_v23.isotonic.pkl")]
-DEFAULT_P_FB_FEATURES = "lirf_regime_v23.features.txt"
+DEFAULT_R_NORM_FILES = [f"lgbm_r_norm_lirf_s{s}.txt" for s in (42, 43, 44, 45, 46)]
 
 
-def predict_p_fb(frame, members, features_file):
-    """Mean of the calibrated fallback probabilities over (booster, isotonic) members."""
-    with open(os.path.join(MODELS, features_file)) as f:
-        feat = f.read().splitlines()
-    probs = []
-    for model_file, iso_file in members:
-        with open(os.path.join(MODELS, iso_file), "rb") as f:
-            iso = pickle.load(f)
-        probs.append(iso.transform(lgb.Booster(model_file=os.path.join(MODELS, model_file))
-                                   .predict(frame[feat])))
-    return np.mean(probs, axis=0)
+def load_v34_constants():
+    with open(os.path.join(MODELS, "v34_constants.json")) as f:
+        c = json.load(f)
+    return float(c["NORMAL_MEAN_LIRF"]), float(c["R_NORM_CLIP"])
 
 
-def main(out_name="kind-mango_v30.parquet",
-         base_seeds=None, r_norm_files=None,
-         p_fb_members=None, p_fb_features=None,
-         per_member_base_clip=True, fill_zero_rows_per_airport=False,
-         base_model="lgbm_r_all_v26", use_plan_features=False):
+def main(out_name="kind-mango_v34.parquet",
+         base_seeds=None, r_norm_files=None):
     base_seeds = base_seeds or DEFAULT_BASE_SEEDS
     r_norm_files = r_norm_files or DEFAULT_R_NORM_FILES
-    p_fb_members = p_fb_members or DEFAULT_P_FB_MEMBERS
-    p_fb_features = p_fb_features or DEFAULT_P_FB_FEATURES
+    NORMAL_MEAN_LIRF, R_NORM_CLIP = load_v34_constants()
+    print(f"v34 constants: NORMAL_MEAN_LIRF={NORMAL_MEAN_LIRF:.2f}  "
+          f"R_NORM_CLIP={R_NORM_CLIP:.2f}")
+
     t0 = time.time()
     print("Loading ranking...")
     rank = pd.read_parquet(RANK)
@@ -97,9 +76,6 @@ def main(out_name="kind-mango_v30.parquet",
     dep["flt_null"] = dep["AIRCRAFT_OPERATOR_flt"].isna().astype(np.int8)
     dep["flt_id_null"] = dep["FLIGHT_ID_mvt"].isna().astype(np.int8)
     dep = add_obt_features(dep)
-    if use_plan_features:
-        medians = pd.read_parquet(os.path.join(MODELS, f"{base_model}.route_medians.parquet"))["plan_block_median"]
-        dep = add_plan_residual(add_plan_times(dep), medians)
     dep["flt_prefix"] = dep["FLIGHT_mvt"].astype(str).str[:3].fillna("UNK")
     dep["stand_prefix"] = dep["STAND_mvt"].astype(str).str.slice(0, 1).fillna("UNK")
     for base, col in zip(SIGNED_LOG_BASE, SIGNED_LOG_COLS):
@@ -120,7 +96,7 @@ def main(out_name="kind-mango_v30.parquet",
     dep = add_congestion_v2(dep, ctx[["ADEP_mvt","ADES_mvt","PHASE_mvt","mvt_ts",
                                        "RUNWAY_mvt","TAXITIME_SEC_mvt"]])
     dep = add_eurocontrol(dep)
-    with open(os.path.join(MODELS, f"{base_model}.encoders.pkl"), "rb") as f:
+    with open(os.path.join(MODELS, "lgbm_r_all_v26.encoders.pkl"), "rb") as f:
         encoders = pickle.load(f)
     dep = apply_encoders(dep, encoders)
     dep = add_taxi_distance(dep)
@@ -134,7 +110,8 @@ def main(out_name="kind-mango_v30.parquet",
     dep = add_disruption(dep, ctx)
     del ctx; gc.collect()
 
-    with open(os.path.join(MODELS, "lirf_regime_v23.rate_maps.pkl"), "rb") as f:
+    # v34 rate maps (fit months only)
+    with open(os.path.join(MODELS, "lirf_regime_v34.rate_maps.pkl"), "rb") as f:
         rate_bundle = pickle.load(f)
     dep = add_rate_features_scoring(dep, rate_bundle["maps"], rate_bundle["base_rate"])
 
@@ -149,20 +126,18 @@ def main(out_name="kind-mango_v30.parquet",
         dep[c] = pd.Categorical(dep[c], categories=train_cats[c])
         dep_lirf[c] = pd.Categorical(dep_lirf[c], categories=train_cats[c])
 
-    print(f"{base_model} mean over {len(base_seeds)} seeds {base_seeds}...")
-    with open(os.path.join(MODELS, f"{base_model}.features.txt")) as f:
+    print(f"R_all_v26 mean over {len(base_seeds)} seeds {base_seeds}...")
+    with open(os.path.join(MODELS, "lgbm_r_all_v26.features.txt")) as f:
         feat_all = f.read().splitlines()
     preds = []
     for s in base_seeds:
-        b = lgb.Booster(model_file=os.path.join(MODELS, f"{base_model}_s{s}.txt"))
-        raw = b.predict(dep[feat_all])
-        preds.append(np.clip(raw, 0, None) if per_member_base_clip else raw)
+        b = lgb.Booster(model_file=os.path.join(MODELS, f"lgbm_r_all_v26_s{s}.txt"))
+        preds.append(np.clip(b.predict(dep[feat_all]), 0, None))
         del b; gc.collect()
     r_all = np.mean(preds, axis=0)
     del preds; gc.collect()
 
-    # LIRF regime head + R_norm clip
-    print(f"LIRF regime head, {len(r_norm_files)} R_norm member(s), clip at 4,431 s...")
+    print(f"LIRF regime head, {len(r_norm_files)} R_norm member(s), clip at {R_NORM_CLIP:.0f} s...")
     with open(os.path.join(MODELS, "lirf_regime.features.txt")) as f:
         feat_norm = f.read().splitlines()
     r_norm_members = []
@@ -173,11 +148,17 @@ def main(out_name="kind-mango_v30.parquet",
     r_norm_lirf_raw = np.mean(r_norm_members, axis=0)
     r_norm_lirf = np.minimum(r_norm_lirf_raw, R_NORM_CLIP)
     n_clipped = (r_norm_lirf_raw > R_NORM_CLIP).sum()
-    print(f"  R_norm_LIRF clipped {n_clipped} predictions at {R_NORM_CLIP:.0f}s")
+    print(f"  R_norm_LIRF clipped {n_clipped} predictions at {R_NORM_CLIP:.2f}s")
     del r_norm_members; gc.collect()
 
-    print(f"p_fb mean over {len(p_fb_members)} calibrated member(s)...")
-    p_fb_cal = predict_p_fb(dep_lirf, p_fb_members, p_fb_features)
+    b_fb = lgb.Booster(model_file=os.path.join(MODELS, "lgbm_p_fb_lirf_v34.txt"))
+    with open(os.path.join(MODELS, "lirf_regime_v34.features.txt")) as f:
+        feat_fb_v34 = f.read().splitlines()
+    with open(os.path.join(MODELS, "lirf_regime_v34.isotonic.pkl"), "rb") as f:
+        iso = pickle.load(f)
+    p_fb_raw = b_fb.predict(dep_lirf[feat_fb_v34])
+    p_fb_cal = iso.transform(p_fb_raw)
+    del b_fb; gc.collect()
 
     sd_r = dep["sched_delay"].values.astype(float)
     adep_r = dep["ADEP_mvt"].astype(str).values
@@ -191,28 +172,18 @@ def main(out_name="kind-mango_v30.parquet",
                        r_norm_lirf)
     p_final[lirf_mask] = mixture[lirf_mask]
 
-    with open(os.path.join(MODELS, "lirf_band_table_v30.json")) as f:
+    with open(os.path.join(MODELS, "lirf_band_table_v34.json")) as f:
         band = json.load(f)
     p_final, cell_A = apply_stepA_v22(p_final, sd_r, adep_r, fltid_r, band)
     print(f"Step A: {cell_A.sum()} rows")
 
-    # STEP 2 FIX: ITY340 uses constant terms
     ity_mask = lirf_mask & (sd_r > ITY_SD_THRESHOLD) & valid_sd & ~cell_A
-    print(f"ITY340 rule (fixed): {ity_mask.sum()} rows")
+    print(f"ITY340 rule: {ity_mask.sum()} rows")
     for i in np.where(ity_mask)[0]:
         p_final[i] = P24_ITY * (86400 + NORMAL_MEAN_LIRF) + (1 - P24_ITY) * sd_r[i]
         print(f"  row sd={sd_r[i]:.0f}  new_pred={p_final[i]:.0f}")
 
     p_final = np.clip(p_final, 0, None)
-    if fill_zero_rows_per_airport:
-        # F7 repair: exactly-0 rows lose the calibrated floor of the ensemble.
-        # Fill each with the median of positive predictions at its own airport.
-        zero = (p_final == 0)
-        for a in np.unique(adep_r[zero]):
-            positive_here = (adep_r == a) & (p_final > 0)
-            if positive_here.any():
-                p_final[zero & (adep_r == a)] = float(np.median(p_final[positive_here]))
-        print(f"F7 fill: {int(zero.sum())} zero rows replaced with per-airport medians")
     dep["TAXITIME_SEC_mvt"] = p_final
 
     out = tmpl[["MVT_ID_mvt"]].merge(dep[["MVT_ID_mvt", "TAXITIME_SEC_mvt"]],
@@ -230,5 +201,5 @@ def main(out_name="kind-mango_v30.parquet",
 
 
 if __name__ == "__main__":
-    name = sys.argv[1] if len(sys.argv) > 1 else "kind-mango_v30.parquet"
+    name = sys.argv[1] if len(sys.argv) > 1 else "kind-mango_v34.parquet"
     main(name)

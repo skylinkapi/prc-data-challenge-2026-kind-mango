@@ -1,0 +1,13 @@
+{
+ "n_lirf": 26899,
+ "A_lirf": 1934.0706405551618,
+ "gain_mse": 150.865373201833,
+ "predicted_rmse": 301.62001181420004,
+ "d_shipped_lirf": 2813.294385460738,
+ "draw_ratio": 0.9697316897219435,
+ "mean_abs_diff_vs_v33": 16.671222268675177,
+ "max_abs_diff_vs_v33": 1603.729132753513,
+ "rows_moved_over_100s": 805,
+ "passes_price": false,
+ "passes_draw": true
+}

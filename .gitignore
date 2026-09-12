@@ -67,3 +67,6 @@ Thumbs.db
 scratchpad/
 tmp/
 *.log
+
+# Tuner feature caches (over the 100 MB GitHub limit)
+models/*tune_cache*.parquet

@@ -77,6 +77,8 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v30 | 301.98 | -1.28 | + LIRF-only encoders for LIRF models + Step A band table with exclusive classes |
 | kind-mango_v32 | 302.11 | +0.13 | + 7-seed base + 5-member `R_norm_LIRF` — base expansion regressed (see MODEL_ANALYSIS 10) |
 | **kind-mango_v33** | **301.87** | **-0.11** | + 5-member `R_norm_LIRF` only, 3-seed base kept; priced 301.86, live 301.87 |
+| kind-mango_v34 to v36 | 302.05-302.09 | +0.18 to +0.22 | hold-out-leak refits and the zero-clip repair; rejected (see RECAP) |
+| kind-mango_v37 | 302.52 | +0.65 | + 5-seed `p_fb` mean; priced 301.62, regressed; rejected (see MODEL_ANALYSIS 4.1) |
 
 The `RECAP.md` file tracks every attempt, including the failures. The
 `docs/MODEL_ANALYSIS.md` file carries the seven audits, the v32 debrief and
