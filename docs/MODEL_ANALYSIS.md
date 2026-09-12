@@ -1,509 +1,344 @@
-# Model analysis and the v32 handoff
-
-Updated 2026-09-11, sixth audit. Replaces the v30 plan. Written for the agent that
-builds v32. Status: live best **301.98 s (v30)**, rank 44/111. v31 scored 302.41 s
-and is rejected. The gap to 300 s is **1,192 MSE**.
-
-Section 1 is the brief for the build agent. Its step 1 repairs the repository,
-which no longer reproduces v30 (section 2). Sections 3 to 5 are the evidence.
-This document holds no model code.
-
-## 0. Scoreboard since the fifth audit
-
-| version | live RMSE | live MSE | change | content |
-|---|---|---|---|---|
-| v29 | 303.26 | 91,967 | — | v26 base, `R_norm_LIRF` clip, ITY340 constant formula |
-| **v30** | **301.98** | **91,192** | **-775** | + LIRF-only encoders for the LIRF models + band table v30 |
-| v31 | 302.41 | 91,452 | +260 against v30 | + "record normal-only" rule at LIRF |
-
-The v30 plan gave a range of 302.31 to 299.25 s. v30 landed at 301.98 s, inside
-the range and close to its fallback scenario (301.65 s).
-
-## 1. Instructions for the build agent
-
-You build v32. v32 is v30 with two variance cuts: a 5-member `R_norm_LIRF` and a
-7-member base. You do not upload. You give the user a file and a report. The
-user decides.
-
-### 1.1 Read before the first edit
-
-1. `AGENTS.md`, all of it.
-2. Sections 2, 3.3, 5 and 6 of this file.
-3. `src/predict_v30.py`, `src/train_lirf_regime.py` (lines 93 to 144) and
-   `src/train_r_all_v26.py`.
-
-### 1.2 Hard rules
-
-1. Never overwrite a file that a shipped submission reads. Write every new model
-   to a new name.
-2. Before step 1, record the SHA-256 of every file in `models/` and
-   `submission/`. At the end, show that only the files you expected changed.
-3. Keep `AOBT_3_flt` and `LOBT_flt` out of every feature list.
-4. Never set a row-level prediction from a leaderboard score (section 9).
-5. Never replace a calibrated probability with 0 or 1 (section 3.3).
-6. Keep the feature lists, the parameters, the stop sets and the seed recipes
-   exactly as they are. The v27, v28 and v31 losses all came from a changed
-   recipe.
-7. A hold-out difference under 2 s of CLEAN RMSE is not evidence. Use only an
-   exact reproduction or the ambiguity price of section 5.
-8. Do not commit until the user asks. Update `README.md` in the same change.
-
-### 1.3 Steps
-
-Do the steps in order. If an acceptance test fails, stop and go to 1.4.
-
-**Step 1. Repair the repository.** Do the four actions of section 2.2.
-
-- Acceptance: `python src/predict_v30.py check_v30.parquet` matches
-  `submission/kind-mango_v30.parquet` to 0.0000 s on all 344,841 rows.
-
-**Step 2. Train 5 new `R_norm_LIRF` members.** Write
-`src/train_r_norm_lirf_seeds.py`. Import the feature build from
-`src/train_lirf_regime.py`. Do not copy it; section 6 item 2 explains why.
-
-- Rows: LIRF departures, genuine only (`abs(y - sd) >= 60` and `y < 80,000`).
-- Encoders: `models/lirf_regime.encoders.pkl`, the LIRF-only set.
-- Features: `models/lirf_regime.features.txt`.
-- Train months 2 to 6 and 8 to 10. Stop months 11 and 12.
-- Parameters: `params_reg` of `train_lirf_regime.py`, 3,000 rounds, early stop
-  100.
-- Seeds 42, 43, 44, 45 and 46. Set `seed`, `bagging_seed` and
-  `feature_fraction_seed` to the seed value. The audit priced exactly this
-  recipe.
-- Save each member as `models/lgbm_r_norm_lirf_s{seed}.txt`.
-- Do not train a fallback gate in this script. Do not touch
-  `models/lgbm_r_norm_lirf.txt`. v30 still reads it; v32 does not.
-- Acceptance: each best iteration is above half the median of the five. The
-  audit run gave 251, 417, 294, 294 and 297.
-
-**Step 3. Train 4 more base members.** Move `SEEDS` in
-`src/train_r_all_v26.py` to a command-line argument. Keep `[42, 43, 44]` as the
-default. Run it with seeds 45, 46, 47 and 48 only.
-
-- Do not retrain seeds 42 to 44. A multi-thread retrain does not give the same
-  bits, and the shipped files need those exact models.
-- Keep `feature_fraction_seed` unset, as the script does now.
-- The stop set comes from `default_rng(1234)`. Do not change it.
-- The files are `models/lgbm_r_all_v26_s45.txt` to `_s48.txt`.
-- Acceptance: the hold-out CLEAN RMSE of each new member is within 1.5 s of the
-  mean of seeds 42 to 44.
-
-**Step 4. Build the v32 predictor.** Give `predict_v30.main` two arguments: the
-list of base seeds and the list of `R_norm_LIRF` model files. Their defaults are
-the v30 values. `src/predict_v32.py` calls `main` with seeds 42 to 48 and the
-five `R_norm_LIRF` files.
-
-Keep this order on LIRF rows:
-
-1. Clip each member prediction at 0.
-2. Average the five members.
-3. Clip the mean at 4,431 s.
-4. Apply the mixture, Step A and the ITY340 rule without change.
-
-- Acceptance A: after the change, the default call still reproduces v30 to
-  0.0000 s.
-- Acceptance B: the v32 file has 344,841 rows, no missing value and no negative
-  value.
-- Acceptance C: the rows in Step A and in the ITY340 rule keep their v30 values.
-
-**Step 5. Price v32 on the 2026 ranking set.** Write
-`src/price_ensemble.py`. It needs no labels. Compute the ambiguity `A` of
-section 5.1 on the final stacked predictions, one stack per member.
-
-| ensemble | members `k` | shipped members `m` | expected gain | audit value |
-|---|---|---|---|---|
-| `R_norm_LIRF` | 5 | 1 | `A_5` | 74 MSE |
-| base | 7 | 3 | `A_7 * 4 / 18` | about 154 MSE, from hold-out |
-
-- Acceptance: `A_5` is between 50 and 100 MSE. The five members must reproduce
-  the audit recipe; a value outside this range means the recipe changed.
-- The base has no 2026 reference value. Report `A_7` as measured.
-
-**Step 6. Measure the two debts of section 6.** Do not ship either one in v32.
-
-1. Rebuild the fallback-rate maps from the fit months only. Report the corrected
-   hold-out RMSE of the LIRF head next to the current one.
-2. Merge the 12 feature pipeline copies only after the user accepts v32. The
-   merged code must reproduce both v30 and v32 to 0.0000 s.
-
-### 1.4 Stop and report
-
-Stop, and report to the user, if one of these occurs:
-
-- An acceptance test fails. Give the maximum difference and the count of rows
-  that differ.
-- A step needs a change to a feature list, a parameter or a stop set.
-- A file that a shipped submission reads changes.
-
-Do not work around a failed test. Do not try a new idea in its place.
-
-### 1.5 Report to the user
-
-Give these items:
-
-1. The new and changed files, and the SHA-256 check of rule 2.
-2. The best iterations of all new members.
-3. `A_5`, `A_7` and the two expected gains in MSE.
-4. The v32 minus v30 difference: count of rows that change, mean absolute
-   change on LIRF rows and on the other 9 airports.
-5. The expected live RMSE: `sqrt(91,192 - total expected gain)`. With the audit
-   values this is about 301.60 s.
-6. The risk: the member-draw lottery of section 5.2 has a spread of about 268
-   MSE. One live score can come out worse than v30 even when the expectation is
-   better.
-
-Steps 1 to 5 together will not reach 300 s. Section 7 says why, and what that
-means for further work.
-
-## 2. The repository no longer reproduces v30
-
-### 2.1 What is wrong
-
-1. **The v30 base models were overwritten.** `models/lgbm_r_all_v26_s42.txt`,
-   `_s43.txt` and `_s44.txt` now hold models retrained for v31. Their sizes are
-   90.4 MB, 51.1 MB and 102.0 MB against 87.7 MB, 62.6 MB and 85.7 MB for the
-   originals. The originals survive only in `models/v26_pre_v31/`. The encoder
-   file and the feature list are unchanged.
-2. **No script produces the retrained models.** They were trained on cleaned
-   arrival taxi-in values. That cleaning is no longer in `src/`.
-3. **`src/features_congestion_v2.py` carries a leftover line.** Line 86 repeats
-   the assignment of `arr_ts`. It does nothing, but the file differs from git.
-4. **`src/predict_v30.py` now reads four environment variables.** With their
-   defaults it loads the base from `models/`, so it now loads the retrained
-   models. Those models then receive uncleaned features: a train/serve mismatch.
-   **Running `python src/predict_v30.py` today does not rebuild v30.**
-
-### 2.2 The repair
-
-1. Move the three retrained boosters from `models/` to `models/v31_arrclean/`.
-2. Copy the three boosters from `models/v26_pre_v31/` back to `models/`.
-3. Run `git checkout -- src/features_congestion_v2.py`.
-4. Remove the environment variables and the record rule from
-   `src/predict_v30.py`. Delete `src/predict_v31.py`.
-
-Acceptance: `python src/predict_v30.py check.parquet` produces a file that
-matches `submission/kind-mango_v30.parquet` to 0.0000 s on every row. The audit
-harness already reproduces both shipped files to 0.0000 s from the
-`v26_pre_v31` boosters, so the target is known to be reachable.
-
-## 3. v31 post-mortem
-
-### 3.1 What v31 changed
-
-`src/predict_v31.py` loads the original base from `models/v26_pre_v31/` and turns
-on one rule: at LIRF, rows **with a flight record and `sd` above 14,400 s** take
-`R_norm_LIRF` alone instead of the mixture. The arrival-cleaning retrain named in
-`RECAP.md` did not ship; section 3.4 covers it.
-
-The rule touches 94 ranking rows. On 74 of them the gate already gives a
-fallback probability near 0, so nothing moves. **20 rows move, all downward, by
-20 to 508 s, mean -113 s.** Those 20 rows are the only difference between the
-v30 and v31 files.
-
-### 3.2 The hold-out saw nothing; live lost 260 MSE
-
-| measurement | result |
-|---|---|
-| hold-out, 111 rows touched | -34 MSE, inside the noise |
-| live | **+260 MSE** |
-
-Because the 20 rows are the only difference, all 260 MSE come from them. The
-change in summed squared error is `(p30 - p31) * (2y - p30 - p31)` per row. For
-the sum to reach +89.6 million, some of the 20 truths must be far above the
-predictions:
-
-| hypothesis about the 20 rows | implied live change |
-|---|---|
-| all normal taxis near 1,300 s | -5.9 MSE |
-| all fallbacks, y = sd | +279.4 MSE |
-| one row (VLG202P, sd 32,456) is a 24-hour offset, the rest normal | about +250 MSE |
-
-The leaderboard cannot separate the last two lines. Nor can label-free 2026 data:
-
-| label-free check, 2025 against 2026 | result |
-|---|---|
-| LIRF arrivals with a flight record and delay above 14,400 s, share with BLOCK = SCHED | 0 % in both years |
-| all LIRF arrivals with BLOCK = SCHED | 10.7 % against 11.7 % |
-| LIRF record departures with `sd` 14,400 to 70,000 | 111 against 94 |
-
-**Do not act on these 20 rows.** Setting them to `sd`, or to a 24-hour value,
-would use labels learned from the leaderboard. That is learning from the ranking
-process, which the brief forbids and the team has refused at every step.
-
-### 3.3 The root cause needs no leaderboard data
-
-In 2025, 382 LIRF record departures had `sd` between 14,400 and 70,000 s, and
-none was a fallback. The rule read that as "impossible". **0 events in 382 is
-not a probability of 0.** The rule-of-three upper bound is 3/382 = 0.79 %; the
-Laplace estimate is 0.26 %.
-
-Under MSE a small hedge toward a rare large-truth regime is cheap:
-
-- A hedge of `d` seconds costs `d^2` on a normal row.
-- It gains about `2 * d * G` on a row whose truth sits `G` above the prediction.
-- For `d` = 100 s it pays whenever the rare regime is more likely than
-  `d / 2G`: 0.28 % for `G` = 18,000 s, 0.058 % for `G` = 86,000 s.
-
-The v30 gate gives these rows a fallback probability of 0.1 % to 2.4 %, inside
-the range the 2025 data supports. The rule set it to 0.
-
-**Rule for the next agent: never replace a calibrated probability with 0 or 1
-because a finite count held no events.**
-
-### 3.4 The arrival-cleaning retrain was noise
-
-| fact | value |
-|---|---|
-| arrival labels below 30 s or above 7,200 s | 0.03 % in 2025, 0.04 % in 2026 |
-| arrival labels missing | 0 % in both years |
-| median difference between `arr_taxi_in_mean_60m` and the already-clean `arr_txi_mean_60m` | 0.1 s |
-
-The model already holds the clean version of the feature. Cleaning the raw one
-changes almost nothing, so the retrain differs from v26 by its seed and subspace
-draw alone. The fourth audit put that noise at 1.5 s of CLEAN RMSE. The local
-FULL of 397.84 s against 392.33 s is a FULL comparison, which a handful of rows
-decide. **Discard the retrained models.**
-
-## 4. The same certainty in the band table, priced and not recommended
-
-The Step A band table holds an exact 0 or 1 in every band, from counts of 1 to 27
-rows. Section 3.3 suggests smoothing it. The price on the 2026 Step A rows says
-no.
-
-Pooled smoothing (1 or 2 pseudo-rows spread by the pooled class shares of fb
-0.795, 24h 0.087, normal 0.118) pulls the 60,000 to 70,000 s band away from its
-24-hour majority. Worst case +177 MSE with 1 pseudo-row, +375 MSE with 2.
-
-Targeted smoothing, 1 pseudo-row in the bands between 14,400 and 50,000 s only,
-moves 37 rows up by 8 to 645 s:
-
-| if every one of those rows is | change |
-|---|---|
-| a fallback, y = sd | -27 MSE |
-| a 24-hour offset | -3,792 MSE |
-| a normal taxi, y = band `mean_norm` | **+1,274 MSE** |
-
-At the 2025 class frequencies in those bands (20.5 % normal between 14,400 and
-25,000 s, 0 of 107 rows 24-hour), the expected change is about **+95 MSE, worse**.
-Do not smooth the table.
-
-The rule of section 3.3 forbids *removing* a hedge. It does not require adding
-one when the hedge costs more on the common regime than it gains on the rare one.
-
-## 5. A label-free price for ensemble changes
-
-### 5.1 The tool
-
-For a mean `f` of `k` member predictions `f_i`, on any set of rows and for any
-labels:
-
-`MSE(f) = mean over i of MSE(f_i) - A`, where `A = mean over rows and members of (f_i - f)^2`.
-
-`A`, the ambiguity, needs no labels. It can be computed on the 2026 ranking set.
-For a random subset of `m` members drawn from the `k`:
-
-`E[MSE(subset mean)] - MSE(k-member mean) = A * (k - m) / (m * (k - 1))`
-
-This is the only offline number in this project that is exact on the scoring
-set. Every earlier comparison of ensemble sizes used the hold-out, which the
-fourth audit showed cannot resolve them.
-
-### 5.2 Worked example: `R_norm_LIRF` is one model
-
-`R_norm_LIRF` is a single booster. Five members trained with the deployed recipe
-(same features, same LIRF-only encoders, same train months, same November and
-December stop set, only the seed varying):
-
-| measurement | value |
-|---|---|
-| member best iterations | 251, 417, 294, 294, 297 |
-| hold-out MSE of each member | 103,865, 103,556, 103,492, 103,575, 103,715 |
-| hold-out: average member minus ambiguity (133.3) | 103,507, equal to the mean-of-5 MSE |
-| deployed single model, hold-out | 103,500 |
-| **ambiguity on the 2026 ranking set** | **74.0 MSE** |
-
-The deployed model scores better on the hold-out than 4 of the 5 new members.
-That is luck on 2025 rows; nothing carries it to 2026. The expected 2026 gain of
-the 5-member mean over a single member trained the same way is **74 MSE,
-about 0.12 s**. The mean moves LIRF predictions by 18.9 s on average, and 421
-rows by more than 100 s.
-
-Build it. It removes a known source of variance and cannot be priced as a loss.
-Do not submit it on its own: 74 MSE sits inside the lottery of 268 MSE that the
-fourth audit measured.
-
-Acceptance: 5 members, each best iteration above half the median, predictions
-averaged before the mixture, and the 2026 ambiguity printed in the build log.
-
-### 5.3 Use the tool before touching the base ensemble
-
-The base has 3 members. Growing it to 7 with the same recipe and the same
-97-feature list gains `A_7 * 4 / 18` in expectation. On the hold-out the median
-3-member draw sits 154 MSE above the 7-member mean, which implies `A_7` of about
-690 MSE there, so about 154 MSE of expected gain. The 2026 value can differ.
-Train the 4 extra members, compute `A_7` on the 2026 ranking set, and decide from
-that number.
-
-Keep the recipe of `src/train_r_all_v26.py` exactly: `seed` and `bagging_seed`
-per member, `feature_fraction_seed` unset. The v27 and v28 regressions came from a
-changed feature list and a changed recipe, not from the member count.
-
-## 6. Measurement debts
-
-1. `add_fallback_rate_features` in `src/train_lirf_regime_v23.py` reads all 12
-   months, including the hold-out. Every LIRF figure since v23 is optimistic.
-   Restrict the base rate and every leave-one-month-out map to the fit months.
-2. The feature pipeline exists in 12 copies. The v29 encoder defect and the v31
-   repository damage both came from copies drifting apart. Merge them into one
-   `build_features` that returns the frame and its encoder set together.
-
-## 7. Expected score and the ceiling
-
-| build | expected live RMSE |
-|---|---|
-| v30 | 301.98 |
-| v30 + the 5-member `R_norm_LIRF` | about 301.86 |
-| + a 7-member base, if `A_7` matches the hold-out value of about 690 MSE | about 301.6 |
-
-**No lever measured in six audits closes the remaining 1,192 MSE.** The error
-that remains sits in three places:
-
-| place | share | why it resists |
-|---|---|---|
-| a handful of extreme rows no observable predicts | about 28 % | third audit, section 6.1: no hedge pays |
-| LIRF genuine rows, ratio about 0.92 against 0.55 to 0.65 elsewhere | about 13,700 MSE | the LIRF oracle gap; every attack on it failed |
-| the other 9 airports | the rest | the model sits at a local optimum; the grid, the member count and a second model class all fall inside the noise |
-
-A score below 300 s needs information the model does not have. Any research
-towards it must meet the bar of the fifth audit: dominance, a train/serve fix, or
-a label-free price such as section 5. A hold-out difference under 2 s is not
-evidence.
-
-## 8. Closed doors
-
-New in this audit:
-
-| candidate | measurement |
-|---|---|
-| v31 record normal-only rule | hold-out -34 MSE, live +260 MSE; root cause in section 3.3 |
-| arrival taxi-in cleaning with a base retrain | 0.03 % of labels; a clean duplicate already exists |
-| pooled smoothing of the band table | worst case +177 to +375 MSE |
-| targeted smoothing, bands 14,400 to 50,000 s | expected +95 MSE |
-| seed averaging `R_norm_LIRF` judged on the hold-out | +13 to +25 MSE, inside the noise; section 5.2 prices it correctly |
-
-Still closed: the LIRF head rebuilt with the v24 recipe; the joint LIRF regressor;
-XGBoost or CatBoost in the base; per-airport caps; a lower floor on `R_norm_LIRF`;
-dropping features by gain share; the Step A clip; the 12-month refit; seasonal
-weights; importance weighting; recalibrating the base; removing `ec_*` from the
-LIRF head; the alpha shrink; `R_norm` alone; a gate on all 10 airports; local
-time; route target encoding; out-of-fold operator encoders; queue and bank
-features; arrival-side reporting state; a fallback gate outside LIRF; the target
-`w = sd - y`; taxi-in drift correction.
-
-## 9. Ethics
-
-`AOBT_3_flt` and `LOBT_flt` stay out. The top score of 263.46 s sits below the
-286.4 s conditional floor of the route, so a model that scores there reads the
-actual off-block time.
-
-Section 3.2 adds a second line. The live score of any submission that differs
-from another on a handful of rows reveals something about those rows. Use live
-scores to choose between whole submissions. Never use them to set row-level
-predictions.
-
-## 10. Seventh audit (2026-09-11 evening) — v32 debrief and v33
-
-v32 stacked two priced changes on top of v30. v33 splits them.
-
-### 10.1 v32 debrief
-
-| change | pricing on 2026 ranking | expected MSE gain | actually landed |
+# Model audit — tenth pass. Source of truth for the next build
+
+Updated 2026-09-12 for the v34/v35 debrief and a full re-read of the shipped
+pipeline. Status: live best **301.87 s (v33)**, rank 44 of 111 teams,
+**1.87 s from breaking the 300 s barrier**. v34 scored 302.072 (+0.202 s)
+and v35 scored 302.0897 (+0.017 s vs v34, +0.219 s vs v33). Both rejected.
+
+This audit rereads the shipped pipeline end to end: training scripts, the
+feature modules, the prediction scripts, the models on disk, and the v33
+submission row by row. It corrects the ninth-audit findings where the new
+evidence requires it, and it prices two new defects measured on the 2026
+ranking set. Section 3 is the ordered bullet list of measures for the next
+model. No code lives here.
+
+## 1. What ships today (v33), exactly
+
+The submission applies four components row-wise. `src/predict_v30.py` owns
+the pipeline. `src/predict_v33.py` swaps one component of it.
+
+1. **Base regressor.** A 3-member mean of LightGBM (`linear_tree=True`)
+   `lgbm_r_all_v26_s{42,43,44}`. About 97 features. Trained by
+   `src/train_r_all_v26.py` on the 10 target airports. Target filter `y > 0`.
+   Stop set: fixed 12 % random mask (`default_rng(1234)`). Hold-out
+   months {1, 7} excluded from training.
+2. **LIRF regime head.** On every LIRF row:
+   `p_fb_cal * sd + (1 - p_fb_cal) * min(R_norm, 4431)`. `R_norm_LIRF` is a
+   5-member mean (seeds 42-46). `p_fb` is a binary classifier for
+   `|y - sd| < 60` with 14 fallback-rate features, isotonic-calibrated
+   (`src/train_lirf_regime_v23.py`).
+3. **Step A band table** (`models/lirf_band_table_v30.json`). LIRF rows with
+   null flight record and `sd > 14,400` take a deterministic
+   `p_fb * sd + p_24h * (86400 + extra) + p_norm * base` lookup. 43 ranking
+   rows covered.
+4. **ITY340 rule.** LIRF, `sd > 70,000`, outside the Step A cell:
+   `(5/6) * (86400 + 1150) + (1/6) * sd`. Fires on about 1 ranking row.
+   Final clip at 0. NaN filled with the prediction median.
+
+Feature families from open data: METAR weather, congestion windows,
+Eurocontrol daily ATFM, operator target encodings, OSM stand-runway
+geometry, OSM taxiway paths, OPDI event counts, OPDI live taxi tempo,
+turnaround links, 60-minute disruption meters.
+
+## 2. Findings — flaws that explain the remaining RMSE
+
+Each finding carries the evidence, the mechanism, and an uncertainty note
+where the audit cannot price the damage offline.
+
+### 2.1 Data integrity
+
+**F1. Fake fallback labels contaminate base training at 9 airports.**
+The `y == sd` rows enter the base as genuine labels at every airport except
+LIRF. Measured on the 2025 hold-out months {1, 7}: `|y - sd| < 1 s` at
+0.08-0.49 % at the 9 non-LIRF airports, and `|y - sd| < 60 s` at 5.5-10.2 %
+there. LIRF measures 1.06 % / 15.32 % in the same months. Only LIRF has a
+regime gate. The base learns a conditional mean pulled toward `sd` for the
+class it should separate. Uncertainty note: the exact-imputed class (`< 1 s`)
+is small; the near-punctual class (`< 60 s`) is mostly genuine. The priced
+ceiling of a perfect `< 1 s` gate is 0.35 s (ninth audit). The `< 60 s`
+definition at 9 airports is unpriced.
+
+**F2. Hold-out leakage is now a policy, not a defect.**
+Ninth-audit section 7 settled the class of the leak: the classifier training
+pool excludes {1, 7}; the scoring maps, the band table, and the numeric
+constants keep all 12 months. Verify every artefact against this policy at
+manifest time. Closed.
+
+**F3. NaN-to-zero injection biases two feature families.**
+- `src/features_congestion_v2.py` line 86: `arr_taxi.fillna(0)`. The
+  60-minute taxi-in mean includes synthetic zeros. Systematic downward bias.
+- `src/features_disruption.py` line 74:
+  `(mvt_ts - sched_ts).clip(-1800, 14400).fillna(0)`. Missing schedule times
+  read as on-schedule.
+
+**F4. Two parallel frames with a positional alignment assert.**
+`predict_v30.py` applies the base encoders on `dep` and the LIRF encoders on
+`dep_lirf` (lines 125-133), joined by an assert on `MVT_ID` order. The v29
+defect shipped live through this pattern. Duplicate congestion v1 and v2 run
+in the same pipeline (lines 95-104). Structural defect class.
+
+**F5. The label filter is nearly empty, by design.**
+`y > 0` drops 0.023 % of rows. Zero labels are 0.001 %. The third-audit
+verdict stands: the residual floor of about 1,192 MSE is a modelling gap,
+not a data-cleaning gap. Closed.
+
+**F6. No coverage monitor between train and ranking.**
+`ec_*` had 0 % coverage in July 2026 (55 % of the scoring set). `opdi_*`
+collapsed at 5 airports. Both shipped for months until v26 removed them. The
+v25 imputation attempt perturbed the learned NaN routing and failed by
++58 s. The predict script still prints no coverage report.
+
+**F7. The clip at 0 ships 23 ranking rows predicted as exactly 0 s.
+[NEW, tenth pass]** `predict_v30.py` clips each base member at 0 before
+averaging (line 141). On the v33 submission, 23 rows are exactly 0 s:
+18 at LSZH, 3 at LTFM, 2 at LEBL. All three members produced 0 or negative
+raw values on those rows. If the true values sit near 1,000 s, this class
+carries about 252 MSE of the live 91,192. The clip destroys the calibrated
+floor of the ensemble. Fix path: clip after averaging, or floor by a
+positive quantile, or shift the ensemble rather than truncate it.
+
+**v36 outcome:** paired fix (remove per-member clip + per-airport fill of
+residual zeros) shipped. Removing the per-member clip pulled 66 extra
+non-zero rows away from v33 (max |d| 3,802 s at EHAM); the zero-fill caught
+44 rows (23 original v33 zeros plus 21 new zeros produced by the raw
+averaging). Live 302.05 (+0.18 s vs v33, -0.02 s vs v34): priced 252 MSE
+gain did not materialise. Lesson: the two fixes must be split. Option 3
+alone (fill only the 23 v33 zero rows, keep per-member clip) is the
+narrowest test and remains untried.
+
+**F8. Extreme-sd rows at non-LIRF airports have no specialist guard.
+[NEW, tenth pass]** The ranking set carries 54 rows with `sd > 70,000`;
+51 of them are outside LIRF (EHAM 24, EDDF 20, LFPG 4, EDDM 3). The 2025
+corpus holds 251 such rows at the 9 non-LIRF airports. 100 % of them are
+genuine: no fallback, no 24h offset. Mean `y = 1,130 s`. The `sd` baseline
+costs 100,516 s RMSE on them. ITY340 guards only the 3 LIRF rows. The base
+alone must compress a 70,000-170,000 s schedule-delay feature to about
+1,130 s. Candidate classes below. Uncertainty note: unpriced offline, high
+class risk per the closed-door list.
+
+### 2.2 Machine-learning methods
+
+**M1. Hyperparameters descend from the censored pipeline, selected on the
+hold-out.** `src/tune_lgbm.py` filters `y` to `[30, 7200]`, clips
+`sched_delay` to `[-1800, 3600]`, and uses months {1, 7} for early stopping
+and trial selection (lines 67-68, 78-79, 119-131). `BEST_PARAMS` inherits
+that pipeline everywhere. `num_leaves` was halved from 440 to 220 by hand.
+`linear_lambda = 1.0` was never searched. Optuna selected on the same months
+that later evaluated the model, which is selection leakage. Biggest open
+method lever.
+
+**M2. Family members early-stop on the hold-out.** `src/train_lgbm_v21.py`
+sets `dvalid` to months {1, 7} (lines 126-152). The v21 family numbers are
+optimistic. v24 fixed the base with the random 12 % mask. The LIRF
+auxiliaries and the tuner keep the old pattern.
+
+**M3. The isotonic calibrator is fitted on the early-stop set.**
+`train_lirf_regime.py` line 169 and `train_lirf_regime_v23.py` line 198 fit
+the calibrator on the same Nov-Dec rows that early-stopped the classifier.
+Calibration error is measured on the fit rows.
+
+**M4. The Step A table ships hard 0/1 probabilities from tiny counts.**
+`models/lirf_band_table_v30.json` carries 11 bands from 1 to 27 rows,
+hand-chosen edges and a hand-chosen gate at `sd > 14,400`. Bands with n = 1
+declare `p_fb = 1` or `p_24h = 1`. At its variance limit.
+
+**M5. A post-hoc cap re-introduced the worst defect class.**
+`R_NORM_CLIP = 4431` clips the `R_norm` mean after averaging
+(`predict_v30.py` line 156). The v21 audit priced a cap as the single
+largest defect (130 s of live score). The 4,431 s cap was priced at v29. It
+is still the same mechanism.
+
+**M6. Single-observation constants carry unbounded row leverage.**
+ITY340 constants `P24_ITY = 5/6`, threshold `70,000`, `86400 + 1150` come
+from one training row. One ranking row equals about 18 s of full RMSE in
+expectation.
+
+**M7. Ensemble variance is 8x the hold-out estimate, and the pricing
+formula is inexact.** Seventh audit measured `A_7 = 5,417` MSE on the
+2026 ranking vs ~690 hold-out. Multi-threaded `linear_tree` training is not
+bit-deterministic (v32 seed 47 needed a retry). `price_ensemble.py` uses
+`gain = A * 4/18`; the variance-of-mean factor from 3 to 7 members is
+`4/21`. The v32 base gain was overpriced by about 172 MSE on that formula
+alone. Uniform member weighting; earlier NNLS collapsed to one member.
+
+**M8. The largest structured residual is the LIRF genuine-row gap.**
+Clean rows: model vs `sd`-baseline ratio 0.92 at LIRF, 0.55-0.65 at the
+other 9. Gap about 13,700 MSE (sixth audit). The LIRF head reads the base
+feature stack; only the fallback-rate encodings are LIRF-specific.
+
+**M9. Feature drift between 2025 and 2026 is unmeasured.**
+The sixth-audit taxi-in drift meter found 2026 gaps per airport: EHAM
++128.9, LIRF +28.9, LFPG +24.1, EGLL -40.9, EDDF -13.3, LEBL -27.6. The
+model has no shift monitor. v14 12-month refits failed live (+1.5 s).
+
+**M10. The mixture head exists only at LIRF.** Nine airports carry no
+regime gate (see F1). Detectors at EGLL/LEBL/LTFM overfit and were dropped
+(RECAP, Step C, +5 s live). The concept is right; the `< 1 s` definition
+failed at 9 airports; the `< 60 s` definition worked only at LIRF.
+
+**M11. Pool-shrink "honesty" costs real signal. [NEW, tenth pass]**
+v34 excluded months {1, 7} from the classifier OOF pool. Months {1, 7} hold
+the only Jan/Jul seasonal regime that matches the ranking window. The
+honestly trained classifier lost +0.2 s live against v33. The same
+regression carried v35 to a rejection. New rule: shrink only the pool that
+trains or measures a supervised model; keep inference-time lookups on all
+months.
+
+### 2.3 Mathematical constants and multiplicators
+
+Model decisions as constants. Verdicts: OK (priced), suspect (never priced),
+fix (move to config or repair).
+
+| constant | file | value | verdict |
 |---|---|---|---|
-| 5-member `R_norm_LIRF` (post-mixture, scaled to all rows) | `A_5 = 74.22` MSE | 74 MSE | inferred yes (see 10.2) |
-| 7-member base mean vs 3-seed subset | `A_7 = 5,417` MSE | `A_7 * 4/18 = 1,204` MSE | did not; the whole +78 MSE live loss sits here |
+| `FB_TOL` (fallback gate) | `train_lirf_regime*.py` | 60 s | suspect; `< 1 s` at other airports |
+| `P24_ITY` | `predict_v30.py` | 5/6 | suspect; one row |
+| `ITY_SD_THRESHOLD` | `predict_v30.py` | 70,000 s | suspect |
+| `R_NORM_CLIP` | `predict_v30.py` | 4,431 s | fix; see M5 |
+| `NORMAL_MEAN_LIRF` | `predict_v30.py` | 1,150 s | fix; M3-style leak |
+| `86400 + mean_24h_extra` | band table builder | per band | OK-ish; full year |
+| `GATE_SD` | `build_lirf_band_table_v30.py` | 14,400 s | suspect; hand-chosen |
+| `signed_log(x) = sign(x)*log1p(|x|)` | `train_r_all_v21.py` | — | OK |
+| `linear_tree` linear-feature subset | `train_r_all_v21.py` | 10 hand-picked | suspect; never searched |
+| `linear_lambda` | all R_all | 1.0 | suspect; never searched |
+| `K_SMOOTH` | `train_lirf_regime_v23.py` | 30 | OK-ish |
+| `MIN_COUNT` | `features_operator.py` | 20 | suspect; finest key cutoff |
+| 12 % stop mask, `default_rng(1234)` | `train_r_all_v26.py` | fixed | OK |
+| uniform `np.mean` over 3/5 seeds | `predict_v30.py` | — | suspect |
+| clip at 0, NaN to median | `predict_v30.py` | — | broken; see F7 |
+| `sd_mod_86400` | base feature | — | OK |
+| mean_24h_extra default | `predict_v23.apply_stepA_v22` | 1,150 | fix; duplicates a constant |
+| gain multiplier `A * 4/18` | `price_ensemble.py` | 0.222 | fix; exact factor is `4/21` |
 
-Live: v32 = 302.11, v30 = 301.98. `91,192 → 91,270`, a swing of +78 MSE.
-The stacked expectation was −1,278 MSE. The gap between expectation and
-outcome is 1,356 MSE.
+The two transform multiplicators are structurally sound: the
+`p * sd + (1 - p) * model` mixture, and the signed-log copy. The risk sits
+in the hard numerics.
 
-### 10.2 Where the 74 MSE R_norm gain went
+### 2.4 Codebase and pipeline integrity
 
-The v32 file's LIRF rows are identical between v32 and any other build that
-uses the same 5-member R_norm mean. On non-LIRF rows v32 differs from v30 only
-through the 7-seed base. So the +78 MSE live loss is a lower bound on the
-base-change loss: whatever the R_norm change contributed (positive or
-negative), the base change contributed +78 MSE plus that. The pricing model
-predicts −74 MSE for the R_norm change, so the implied base-change live cost
-is about **+152 MSE**, against its predicted **−1,204 MSE**. `A_7` overshoots
-its measurement by about 1,356 MSE.
+**P1. Twelve feature-pipeline copies.** Every training script duplicates
+the feature build and its import list. The v29 encoder defect and the v31
+repository damage came from drift between copies.
 
-### 10.3 Why the base expansion did not carry
+**P2. Duplicate congestion computed twice.** `predict_v30.py` calls both V1
+and V2 congestion (lines 102-104). Only the V2 list survives into `feat_all`.
 
-Section 5.3 already flagged this: `A_7` estimated from the hold-out was about
-690 MSE. The 2026 value came in at **5,417 MSE — eight times higher**. The
-seeds 42, 43, 44 have been the shipped mean since v24. Every one of that
-mean's live scores has been an implicit selection event. Seeds 45 to 48 have
-no such history. On a truthing set where `A_7` is that large, a fresh
-member's directional bias against the truth easily dominates the
-`A * (k-m) / (m * (k-1))` mean-of-members gain.
+**P3. No manifest.** `models/` holds about 150 boosters and tune-era caches
+with no shipped-file manifest. The v31 event overwrote boosters and was
+repaired from `v26_pre_v31/`.
 
-**Rule for the next agent: when two priced changes are stacked and one of them
-has `A` an order of magnitude larger than its hold-out estimate, ship them
-one at a time.** The audit's own Section 5.3 said "decide from that number";
-in v32 we shipped without waiting for the number to land.
+**P4. Stale reproduction guide.** `REPRODUCE.md` describes the v15/v16
+ensemble era. The v30/v33 steps are missing.
 
-### 10.4 v33 spec — R_norm-only
+**P5. One mutable entry point.** `predict_v32.py`, `predict_v33.py`,
+`predict_v35.py` mutate kwargs into `predict_v30.py`. Every submission since
+v30 depends on the same mutable entry.
 
-`src/predict_v33.py` calls `predict_v30.main` with `r_norm_files` set to the 5
-already-trained seeds and `base_seeds` at its default `[42, 43, 44]`. No
-retraining. No touched files under `models/`.
+## 3. Ordered bullet measures for the next model
 
-Expected live: `sqrt(91,192 - 74) = 301.86 s`. The lottery around 74 MSE is
-small enough that a regression larger than about 0.4 s would falsify the
-ambiguity model, not the change.
+Adopt the measures in this order. Ship one change per upload.
 
-Diff checks confirmed:
+1. **Repair the zero-clip defect (F7).** Move the per-member clip after the
+   ensemble mean, or floor predictions at a small positive quantile of the
+   training label, or fill the exactly-0 rows with the ensemble median of
+   the member spread. Verify by ranking-set diff against v33: zero rows must
+   disappear.
+2. **Build one canonical feature pipeline (P1, P2, F4).** One
+   `build_features(dep, ctx)` function imported by every training and
+   prediction script. One encoder set per consumer. Assert names, not
+   positions. First task: parity reproduction of v33 to 0.0000 s.
+3. **Re-tune the hyperparameters on the purified protocol (M1).** Fresh
+   Optuna run on the current feature set: `y > 0`, no `sd` clip, blocked
+   early-stop months {11, 12}, hold-out months {1, 7} excluded from every
+   training decision, `linear_tree` flags inside the search (`num_leaves`,
+   `linear_lambda`, linear-feature subset). Freeze the result. Ship only if
+   the ranking-set ambiguity price clears the 2-s CLEAN evidence bar.
+4. **Remove NaN-to-zero injections (F3).** Compute masked means in
+   `features_congestion_v2` and `features_disruption`. Add one coverage flag
+   per family. Report the per-feature NaN share at prediction time.
+5. **Refit the numeric constants and move them to config (M5, M6, M3).**
+   `R_NORM_CLIP`, `ITY_*`, `P24_ITY`, band edges, `GATE_SD`,
+   `NORMAL_MEAN_LIRF` move to one JSON. Each value carries the fit months
+   and the last priced delta. Re-estimate or drop the 4,431 s cap under a
+   priced test.
+6. **Route the non-LIRF extreme-sd rows (F8).** 51 ranking rows at
+   `sd > 70,000`. 2025 evidence: all genuine, mean `y = 1,130 s`. Prefer a
+   learned gate over a hand rule. Ship only with calibrated probabilities
+   and a priced dominance check.
+7. **Attack the LIRF oracle gap (M8).** 13,700 MSE target. Candidates:
+   per-airport regressors, a residual model `y - sd` restricted to genuine
+   rows, a gated two-head LIRF model. Gate every ship by label-free
+   ambiguity pricing.
+8. **Fit the isotonic calibrator on a dedicated split (M3).** Example
+   binds: train on months 2-10, early-stop on 11-12, calibrate on a month
+   block the classifier did not stop on. Report calibration error on the
+   split the calibrator did not see.
+9. **Add a shipped-file manifest (P3, F4).** A JSON in `models/` lists the
+   files a submission reads with SHA-256. The predict script refuses to run
+   on a mismatch. Move tune-era caches out of `models/`.
+10. **Monitor feature coverage at prediction time (F6, M9).** Print the
+    non-null share of each family on the ranking frame. Compare it to the
+    training share. A drop of more than 20 points falls back to a train
+    median or drops the feature. Never perturb the learned NaN routing
+    without a priced test (the v25 rule).
+11. **Correct the ambiguity pricing formula (M7).** Use `gain = A * (1/k_old
+    - 1/k_new)` with the exact member counts. Record the iteration count and
+    worker seeds so any recipe is bit-reproducible. Ship member changes one
+    at a time.
+12. **Keep the pooling policy (M11).** Exclude {1, 7} from supervised
+    training and measurement pools only. Keep scoring maps, band tables and
+    constants on all 12 months. Mark the fit months inside every artefact.
+13. **Sync the documentation (P4, P5).** Update `REPRODUCE.md` and
+    `README.md` in the same change as the model. One predict entry point per
+    version; no mutation of a shared default.
 
-- v33 vs v30: LIRF rows only change (26,899 rows, mean |diff| 18.8 s, max
-  3,235 s). Non-LIRF: 0.0000 s on 317,942 rows.
-- v33 vs v32: non-LIRF rows only change (317,942 rows, mean |diff| 7.0 s,
-  max 3,298 s). LIRF: 0.0000 s.
+Do not reopen these doors without a priced test: the 9-airport fallback gate
+(ceiling 0.35 s, perfect `< 1 s` detector), the Step A clip, the 12-month
+refit, seasonal weights, per-airport caps, XGBoost or CatBoost in the base,
+`AOBT_3_flt`, `LOBT_flt`, leaderboard-derived row values.
 
-Live score: **301.87 s**, vs the priced 301.86 s. The gap is 0.01 s. The
-2026 ambiguity framework — priced with no labels, on the ranking rows only —
-called the live outcome to a hundredth of a second. Section 5's formula
-`MSE(f) = mean_i MSE(f_i) - A` is now the trusted tool for member changes on
-this project.
+## 4. Verification protocol for the next build
 
-### 10.5 Ladder update to Section 7
+1. Reproduce v33 to 0.0000 s before any pricing.
+2. Price every change label-free through the ambiguity formula before any
+   upload.
+3. Ship one change per upload. Stacked changes regress (v32).
+4. The noise band for the hold-out is 2 s of CLEAN RMSE.
+5. A hold-out difference under that band is not evidence.
+6. The guardrails hold: no `AOBT_3_flt`, no `LOBT_flt`, no leaderboard
+   values, no 0/1 probabilities from finite counts.
+7. Checkpoint every artefact against the pooling policy of measure 12.
 
-Delete the "+ a 7-member base" row. Its measured expected gain went the wrong
-way live under a `A_7` eight times its hold-out estimate. Replace with:
+## 5. What the floor is made of
 
-| build | expected live RMSE, revised |
-|---|---|
-| v30 | 301.98 (measured) |
-| v33 = v30 + the 5-member `R_norm_LIRF` | 301.86 (priced) |
-| any base-ensemble change | do not price on hold-out; only 2026 `A_k` counts, and it must be at least an order of magnitude below the shipped baseline's live MSE before shipping |
+About 28 % of the residual MSE sits in extreme rows with no observable
+predictor. About 13,700 MSE is the LIRF genuine-row oracle gap. The rest is
+the 9-airport local optimum plus the small, biased classes above. Measures
+6 and 7 attack the two biggest buckets. The rest is hygiene for decision
+quality, not for the score itself.
 
-Section 7's closing sentence stands: no lever measured in seven audits closes
-the remaining ~1,192 MSE.
+## 6. The v34/v35 debrief — the falsified decomposition
 
-## Appendix — the band table, unchanged since v30
+v34 refit two pools together: the classifier OOF pool (correctly dropped
+months {1, 7}) and the scoring artefacts (wrongly dropped {1, 7}). v35
+reverted the scoring artefacts and kept the honest classifier. Live results:
+v34 302.072 (+0.202 vs v33); v35 302.0897 (+0.017 vs v34; +0.219 vs v33).
+The scoring-artefact revert recovered 0.017 s. The regression sits in the
+classifier alone. The ranking months Jan and Jul carry the only seasonal
+window that resembles the ranking set. Dropping them from the training pool
+deleted the signal the classifier needed at inference. Rule carried forward
+as measure 12.
 
-LIRF, no flight record, `sd > 14,400`, full year 2025. `fb` means
-`abs(y - sd) < 60`. `24h` means `y > 80,000` and not `fb`.
+## 7. Decision status of open levers
 
-| sd band (s) | rows | P(fb) | P(24h) | mean y |
-|---|---|---|---|---|
-| 14,400 to 16,000 | 27 | 0.704 | 0.000 | 10,910 |
-| 16,000 to 18,000 | 14 | 0.786 | 0.000 | 13,846 |
-| 18,000 to 20,000 | 16 | 0.875 | 0.000 | 16,718 |
-| 20,000 to 22,000 | 8 | 0.875 | 0.000 | 18,382 |
-| 22,000 to 25,000 | 8 | 0.875 | 0.000 | 20,849 |
-| 25,000 to 40,000 | 18 | 1.000 | 0.000 | 33,955 |
-| 40,000 to 50,000 | 16 | 1.000 | 0.000 | 43,992 |
-| 50,000 to 60,000 | 9 | 0.667 | 0.333 | 65,715 |
-| 60,000 to 70,000 | 6 | 0.333 | 0.667 | 79,950 |
-| 70,000 to 100,000 | 4 | 0.000 | 1.000 | 87,567 |
-| 100,000 and above | 1 | 1.000 | 0.000 | 131,167 |
+| lever | ceiling | verdict |
+|---|---|---|
+| Item 3, hyperparameter retune | untried | **biggest open method lever; first big ship** |
+| Item 7, 9-airport fallback gate | 0.35 s perfect `< 1 s` gate | deprioritized |
+| Item 6, LIRF oracle | ~13,700 MSE | **biggest score-attacking lever; after Item 3** |
+| F8, extreme-sd non-LIRF | unpriced | high ceiling, high class risk |
+| F7, zero-clip | ~252 MSE raw count | hygiene, repairs the floor |
+| Extreme rows, learned gate | 28 % of residual | attach only with calibrated probabilities |
+
+Sections 1-6 of this audit supersede the ninth pass where they differ. The
+closed-door list in section 3 stands.
