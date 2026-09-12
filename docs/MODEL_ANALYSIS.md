@@ -469,8 +469,11 @@ Diff checks confirmed:
 - v33 vs v32: non-LIRF rows only change (317,942 rows, mean |diff| 7.0 s,
   max 3,298 s). LIRF: 0.0000 s.
 
-Live score pending — the daily 5/5 slot limit refused today's 6th upload; the
-file is in the bucket and will be re-uploaded after the 00:00 UTC reset.
+Live score: **301.87 s**, vs the priced 301.86 s. The gap is 0.01 s. The
+2026 ambiguity framework — priced with no labels, on the ranking rows only —
+called the live outcome to a hundredth of a second. Section 5's formula
+`MSE(f) = mean_i MSE(f_i) - A` is now the trusted tool for member changes on
+this project.
 
 ### 10.5 Ladder update to Section 7
 

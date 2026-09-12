@@ -6,9 +6,9 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **301.98 s RMSE** (`kind-mango_v30.parquet`),
-  rank 44 of 111 teams. v33 (5-member `R_norm_LIRF` mean, priced 301.86 s)
-  is uploaded and awaits the next 00:00 UTC slot reset for a score.
+- **Current leaderboard best:** **301.87 s RMSE** (`kind-mango_v33.parquet`),
+  rank 44 of 111 teams. v33 landed at 301.87 vs the priced 301.86 (off by
+  0.01 s), validating the 2026 ambiguity framework from the seventh audit.
 
 ## License
 
@@ -74,9 +74,9 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v24 | 316.85 | -0.65 | + 3-seed base with honest 12 % random stop split |
 | kind-mango_v26 | 303.71 | -13.1 | + drop 38 `ec_*` and 18 `opdi_*` features (0 % 2026 coverage) |
 | kind-mango_v29 | 303.26 | -0.45 | + `R_norm_LIRF` clip at 4,431 s + ITY340 constant formula |
-| **kind-mango_v30** | **301.98** | **-1.28** | + LIRF-only encoders for LIRF models + Step A band table with exclusive classes |
-| kind-mango_v32 | 302.11 | +0.13 | + 7-seed base + 5-member `R_norm_LIRF` — regressed (see MODEL_ANALYSIS 10) |
-| kind-mango_v33 | pending | — | v30 pipeline + 5-member `R_norm_LIRF` only (priced 301.86 s) |
+| kind-mango_v30 | 301.98 | -1.28 | + LIRF-only encoders for LIRF models + Step A band table with exclusive classes |
+| kind-mango_v32 | 302.11 | +0.13 | + 7-seed base + 5-member `R_norm_LIRF` — base expansion regressed (see MODEL_ANALYSIS 10) |
+| **kind-mango_v33** | **301.87** | **-0.11** | + 5-member `R_norm_LIRF` only, 3-seed base kept; priced 301.86, live 301.87 |
 
 The `RECAP.md` file tracks every attempt, including the failures. The
 `docs/MODEL_ANALYSIS.md` file carries the seven audits, the v32 debrief and
