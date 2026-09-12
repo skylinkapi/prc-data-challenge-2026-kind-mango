@@ -1,6 +1,6 @@
 # Reproduction guide
 
-End-to-end from a fresh clone to a valid submission file.
+End-to-end from a fresh clone to the v33 submission file (live 301.87 s, team best).
 
 Estimated time: **~2 hours** on a modern laptop CPU (16 GB RAM recommended).
 Bandwidth: **~1 GB** of external data downloads.
@@ -20,7 +20,7 @@ cd prc-data-challenge-2026-kind-mango
 python -m venv .venv
 source .venv/bin/activate       # Windows: .venv\Scripts\activate
 
-pip install pandas pyarrow numpy scikit-learn lightgbm optuna openpyxl networkx
+pip install pandas pyarrow numpy scikit-learn lightgbm optuna openpyxl networkx minio
 ```
 
 ## 2. Get organiser data
@@ -41,8 +41,7 @@ Each fetches to the corresponding `external/*` folder.
 
 ```bash
 # METAR — Iowa State ASOS archive, 11 airports × 2 years  (~32 MB, ~1 min)
-# See src/fetch_metar.py or the equivalent bootstrap; loops over ICAOs.
-python src/fetch_metar.py
+# No committed fetch script exists. Download one CSV per ICAO to external/metar/.
 
 # OurAirports airport + runway CSVs  (~15 MB, seconds)
 mkdir -p external/airports
@@ -82,50 +81,41 @@ python src/build_opdi_taxi_v2.py
 
 ## 4. Train the models
 
-Each script trains one LGBM and saves it to `models/`. Order matters only for
-Optuna (v5) since later versions reuse its best params.
+Each script writes its files to `models/`. Run the steps in this order.
+`train_lirf_regime.py` writes the LIRF feature list and encoders that the
+later LIRF scripts read.
 
 ```bash
-python src/tune_lgbm.py           # 60-trial Optuna, ~4 h (or skip and use v5's saved params)
-python src/train_lgbm_v6.py       # v5 + flt_null + BLOCK==SCHED cleaning     (~6 min)
-python src/train_lgbm_v7.py       # v5 params + winter-weighted training      (~5 min)
-python src/train_lgbm_v9.py       # v6 + advanced physical features           (~6 min)
-python src/train_lgbm_v10.py      # v9 + OSM real path                        (~5 min)
-python src/train_lgbm_v11.py      # v10 + OPDI raw event counts               (~6 min)
-python src/train_lgbm_v15.py      # v11 + OPDI live-taxi                      (~7 min)
-python src/train_lgbm_v16.py      # v15 + semi-supervised drift               (~6 min)
+python src/train_r_all_v26.py             # base R_all_v26, seeds 42-44, linear_tree
+python src/train_lirf_regime.py           # LIRF feature list + LIRF-only encoders
+python src/train_r_norm_lirf_seeds.py     # R_norm_LIRF members, seeds 42-46
+python src/train_lirf_regime_v23.py       # p_fb gate, fallback-rate maps, isotonic calibrator
+python src/build_lirf_band_table_v30.py   # Step A band table, exclusive classes
 ```
 
-Ensemble weight search:
-
-```bash
-python src/ensemble_v15.py  # searches over v7/v9/v10/v11/v15
-# or the extended search including v16:
-# (see src/ that produces ensemble_weights_v16.txt)
-```
+Multi-threaded `linear_tree` training is not bit-deterministic. One v32 seed
+needed a retry (`RECAP.md`, v32 blueprint).
 
 ## 5. Predict + upload
 
 ```bash
-# Best solo model:
-python src/predict_v15.py kind-mango_v<n>.parquet
-# Or the ensemble (best result to date):
-python src/predict_ensemble_v16.py kind-mango_v<n>.parquet
+python src/predict_v33.py kind-mango_v33.parquet    # writes submission/kind-mango_v33.parquet
 
-mc cp submission/kind-mango_v<n>.parquet osn/prc-2026-kind-mango/kind-mango_v<n>.parquet
-sleep 30
-mc cp osn/prc-2026-kind-mango/kind-mango_v<n>.parquet_result.json .
-cat kind-mango_v<n>.parquet_result.json    # will show score
+mc cp submission/kind-mango_v33.parquet osn/prc-2026-kind-mango/kind-mango_v33.parquet
 ```
+
+The limit is 5 uploads per UTC day. The bucket gets a result JSON with the
+score after the upload.
 
 ## Expected hold-out RMSE (2025 Jan+Jul)
 
-Reproduces (within ±0.2 s):
+3-member `R_all_v26` mean (`models/lgbm_r_all_v38.holdout.json`, `full_old` and
+`clean_old`):
 
-- Best solo model (v15): **293.09 s**
-- Best ensemble: **292.77 s**
+- FULL: **392.33 s**
+- CLEAN (`30 <= y <= 7,200`): **266.46 s**
 
 ## Expected leaderboard score
 
-Best submission (2026-09-06): **561.04 s** (2025→2026 shift + truth-set data
-quality issues account for the ~268 s local→live gap).
+v33: **301.87 s**. The gap to the hold-out comes from the 2025 to
+2026 shift and the LIRF fallback rows. See `docs/MODEL_ANALYSIS.md`.

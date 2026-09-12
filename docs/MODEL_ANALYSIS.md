@@ -3,6 +3,7 @@
 Status on 2026-09-12: live best **301.87 s (v33)**, rank 44 of 111
 (`README.md:9-10`). v34, v35 and v36 scored 302.07, 302.09 and 302.05 and
 are rejected (`RECAP.md:31-33`). v37 scored 302.52 and is rejected (section 4.1).
+v38 failed gate 2 and was not uploaded (section 4).
 
 This pass replaces every earlier audit. The old passes stay in git:
 
@@ -22,6 +23,10 @@ files only. It trains no model and runs no pipeline.
 | member-draw lottery on live | 268 MSE, about 0.44 s | `88923a9:151,332` |
 | hold-out evidence bar | 2 s of CLEAN RMSE (`30 <= y <= 7,200`) | `train_r_all_v26.py:138`; user rule |
 | label-free ensemble price | `A * (k - m) / (m * (k - 1))` | `88923a9:305` |
+
+Line citations of `README.md` and `RECAP.md` point to commit `968a782`. A
+later commit rewrote the stale README and RECAP text (section 5), so use
+`git show 968a782:README.md` to follow them.
 
 A number without a citation is marked **unpriced** or **unmeasured**. A live or
 hold-out gap under the bar is not evidence of a cause.
@@ -400,7 +405,7 @@ or no number. Risk grades cite the closest live precedent.
 
 | rank | change | price | risk | verification |
 |---|---|---|---|---|
-| 1 | Add `ARVT_1_flt` planned-time features to the base (F18) | unpriced live; fast-recipe hold-out CLEAN -2.15 and -3.35 s on 2 seeds | medium: base change (v27, v28, v32 regressed); 2026 median drift -34 to +93 s | section 4 |
+| 1 | Add `ARVT_1_flt` planned-time features to the base (F18) | unpriced live; raw form failed gate 2 at +10.8 s CLEAN (section 4) | medium: base change (v27, v28, v32 regressed); 2026 median drift -34 to +93 s | open only as `plan_taxi_res` alone, clipped to ±3,600 s, with fresh gates |
 | — | Replace the single `p_fb` booster with a 5-seed mean, v23 recipe unchanged (F17) | **closed**: priced -151 MSE, live +396 MSE (v37, section 4.1) | — | shipped and regressed |
 | — | Retrain `R_norm_LIRF` without the columns that lose 2026 coverage (F1) | **closed at 103 MSE**, section 4.2 | — | gate 2 failed |
 | 2 | Fill only the 23 v33 zero rows with the airport median; keep the per-member clip (F9) | at most 67 MSE if truth is 1,000 s; loss if truth is near 0 | low size, but below the 268 MSE lottery | diff vs v33 = 23 rows only; do not upload alone |
@@ -630,11 +635,11 @@ Lever 1 is closed at 103 MSE. No upload followed from this test.
 
 | # | claim A | claim B | resolution |
 |---|---|---|---|
-| C1 | README names v30 as the scoring stack and `predict_v30.py` as the entry (`README.md:36,43,189,222`) | v33 is the best submission (`README.md:9`; `RECAP.md:34`; `predict_v33.py:12-16`) | v33 is current; README is stale |
-| C2 | README model card: v21, 153 features (`README.md:85,93`) | base reads 97 features (`models/lgbm_r_all_v26.features.txt`) | 97 for the base, 153 for the LIRF head |
-| C3 | README tail rules: Section 6.3 classifier and ITY340 as `(5/6)(86,400 + R_all_v21) + (1/6) R_all_v21` (`README.md:134-151`) | 6.3 retired in v22 (`RECAP.md:168`); ITY340 constant formula (`predict_v30.py:193`; `README.md:48`) | code governs |
-| C4 | README: `R_norm_LIRF` 5-member mean "awaiting live confirmation" (`README.md:54-56`) | live 301.87 confirms the price (`README.md:79`) | confirmed |
-| C5 | README: Step A uses `86,400 + 1,150` (`README.md:47`) | Step A uses per-band `mean_24h_extra` 1,003, 1,203.5, 1,167 (`predict_v23.py:91-94`; `lirf_band_table_v30.json:112,120,128`) | code governs |
+| C1 | README names v30 as the scoring stack and `predict_v30.py` as the entry (`README.md:36,43,189,222`) | v33 is the best submission (`README.md:9`; `RECAP.md:34`; `predict_v33.py:12-16`) | v33 is current; README fixed on 2026-09-13 |
+| C2 | README model card: v21, 153 features (`README.md:85,93`) | base reads 97 features (`models/lgbm_r_all_v26.features.txt`) | 97 for the base, 153 for the LIRF head; README card notes both on 2026-09-13 |
+| C3 | README tail rules: Section 6.3 classifier and ITY340 as `(5/6)(86,400 + R_all_v21) + (1/6) R_all_v21` (`README.md:134-151`) | 6.3 retired in v22 (`RECAP.md:168`); ITY340 constant formula (`predict_v30.py:193`; `README.md:48`) | code governs; README marks the v21 rules historical on 2026-09-13 |
+| C4 | README: `R_norm_LIRF` 5-member mean "awaiting live confirmation" (`README.md:54-56`) | live 301.87 confirms the price (`README.md:79`) | confirmed; README fixed on 2026-09-13 |
+| C5 | README: Step A uses `86,400 + 1,150` (`README.md:47`) | Step A uses per-band `mean_24h_extra` 1,003, 1,203.5, 1,167 (`predict_v23.py:91-94`; `lirf_band_table_v30.json:112,120,128`) | code governs; README fixed on 2026-09-13 |
 | C6 | v26 removed `ec_*` and `opdi_*` (`README.md:75`); "both shipped until v26 removed them" (`41345e0:85-89`) | LIRF head still reads both (`models/lirf_regime.features.txt:58-95,126-143`) | F1 |
 | C7 | Ninth pass closes "removing `ec_*` from the LIRF head" (`88923a9:397-398`) | no committed audit records a measurement; the tenth-pass closed list omits it (`41345e0:295-298`) | reopen only through section 4 |
 | C8 | Brief: 11 airports with LTAI (`docs/PRC_Data_Challenge_2026_BRIEF.md:15,86`) | code and README: 10 airports (`features_weather.py:16-17`; `README.md:4`) | F10; count the template rows outside the 10 |
@@ -643,6 +648,6 @@ Lever 1 is closed at 103 MSE. No upload followed from this test.
 | C11 | Tenth pass M11 and the v36 debrief name a cause for 0.18-0.22 s live gaps (`41345e0:179-185`; `RECAP.md:31-32`) | the member-draw lottery is 268 MSE, about 0.44 s (`88923a9:151,332`) | the gaps are not evidence |
 | C12 | Tenth pass: Step A uses `p_norm * base` (`41345e0:32`) | code uses `p_norm` times the LIRF mixture (`predict_v23.py:94`; `predict_v30.py:182,186`) | F7 |
 | C13 | Rule: no 0/1 probability from a finite count (`88923a9:43,250`; `41345e0:309`) | Step A ships four bands at probability 1 from 1 to 18 rows (`lirf_band_table_v30.json:90-137`) | smoothing priced worse; rule not applied to the table |
-| C14 | README quick start trains `R_norm_LIRF` with `train_lirf_regime.py` (`README.md:184`) | v33 reads the `train_r_norm_lirf_seeds.py` members (`predict_v33.py:12`) | add the seeds script to the steps |
-| C15 | RECAP "Where we stand": rank 45 at 370.63 s; 2/5 slots used on v14, v15; "nothing gets under v13" (`RECAP.md:63-79,202-214`) | status 301.87 s, rank 44 (`RECAP.md:3`; `README.md:9-10`) | blocks are stale |
-| C16 | README: Section 6.3 mix uses 1,220 s (`README.md:145`) | RECAP: 1,150 s (`RECAP.md:138`) | retired component; no score effect |
+| C14 | README quick start trains `R_norm_LIRF` with `train_lirf_regime.py` (`README.md:184`) | v33 reads the `train_r_norm_lirf_seeds.py` members (`predict_v33.py:12`) | README quick start adds the seeds script on 2026-09-13 |
+| C15 | RECAP "Where we stand": rank 45 at 370.63 s; 2/5 slots used on v14, v15; "nothing gets under v13" (`RECAP.md:63-79,202-214`) | status 301.87 s, rank 44 (`RECAP.md:3`; `README.md:9-10`) | RECAP blocks fixed or labelled as snapshots on 2026-09-13 |
+| C16 | README: Section 6.3 mix uses 1,220 s (`README.md:145`) | RECAP: 1,150 s (`RECAP.md:138`) | retired component; no score effect; README marks it historical |

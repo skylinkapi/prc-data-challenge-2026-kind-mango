@@ -9,6 +9,8 @@ airport-reported truth.
 - **Current leaderboard best:** **301.87 s RMSE** (`kind-mango_v33.parquet`),
   rank 44 of 111 teams. v33 landed at 301.87 vs the priced 301.86 (off by
   0.01 s), validating the 2026 ambiguity framework from the seventh audit.
+- **After v33 (status 2026-09-13):** v34 to v37 scored 302.05 to 302.52 and
+  are rejected. v38 failed its hold-out gate and was not uploaded.
 
 ## License
 
@@ -33,27 +35,29 @@ analysis in `docs/MODEL_ANALYSIS.md`.
 
 ## What the model is
 
-The scoring stack (v30, current best) is documented in `docs/MODEL_ANALYSIS.md`.
+The scoring stack (v33, current best) is documented in `docs/MODEL_ANALYSIS.md`.
 In one line:
 
 **Three-seed LightGBM regressor with `linear_tree` (`R_all_v26`), plus a LIRF
-regime head (`R_norm_LIRF` + calibrated `p_fb` mixture), plus the Step A LIRF
-band lookup, plus the ITY340 offset rule.**
+regime head (5-member `R_norm_LIRF` mean + calibrated `p_fb` mixture), plus
+the Step A LIRF band lookup, plus the ITY340 offset rule.**
 
-Per-airport delegation, applied by `src/predict_v30.py`:
+Per-airport delegation. `src/predict_v33.py` calls `src/predict_v30.py:main`
+with the 5 `R_norm_LIRF` members:
 
 | airport | scoring component |
 |---|---|
-| LIRF, `sd > 14,400`, null flight | Step A band table (`p_fb * sd + p_24h * (86,400 + 1,150) + p_norm * mixture`), exclusive classes since v30 |
+| LIRF, `sd > 14,400`, null flight | Step A band table (`p_fb * sd + p_24h * (86,400 + mean_24h_extra) + p_norm * mixture`), exclusive classes since v30 |
 | LIRF, `sd > 70,000`, outside Step A | ITY340 constant `(5/6) * (86,400 + 1,150) + (1/6) * sd` |
-| LIRF, all other rows | `p_fb_cal * sd + (1 - p_fb_cal) * min(R_norm_LIRF, 4,431)` |
+| LIRF, all other rows | `mixture = p_fb_cal * sd + (1 - p_fb_cal) * min(R_norm_LIRF, 4,431)` |
 | every other airport | 3-seed mean of `lgbm_r_all_v26_s{42,43,44}` |
 
 Both LIRF-head boosters read the LIRF-only encoders in
 `models/lirf_regime.encoders.pkl`. Serving them the all-airport encoders was
 the v30 defect fix. The v33 build swaps `R_norm_LIRF` for a 5-member mean
-(seeds 42-46) — priced at 74 MSE of variance reduction, awaiting live
-confirmation.
+(seeds 42-46). The price was 74 MSE of variance reduction. The live score
+confirmed it. `mean_24h_extra` is a per-band value in
+`models/lirf_band_table_v30.json`; the fallback is 1,150 s.
 
 ## Live leaderboard progression
 
@@ -80,11 +84,23 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v34 to v36 | 302.05-302.09 | +0.18 to +0.22 | hold-out-leak refits and the zero-clip repair; rejected (see RECAP) |
 | kind-mango_v37 | 302.52 | +0.65 | + 5-seed `p_fb` mean; priced 301.62, regressed; rejected (see MODEL_ANALYSIS 4.1) |
 
+v38 (base + `ARVT_1_flt` planned-time features) is not in the table. It failed
+the deployed-recipe gate, so no upload followed (MODEL_ANALYSIS section 4).
+
 The `RECAP.md` file tracks every attempt, including the failures. The
-`docs/MODEL_ANALYSIS.md` file carries the seven audits, the v32 debrief and
-the v33 spec.
+`docs/MODEL_ANALYSIS.md` file carries the eleventh-pass audit, the ranked
+levers and the gate logs for v37 and v38. Earlier passes stay in git.
 
 ## Model card (v21)
+
+This card describes the v21 base. The shipped base `R_all_v26` differs in 3
+ways:
+
+- 3 seeds (42-44), early-stopped on a random 12 % of the train rows.
+- 97 features. v26 dropped the 38 `ec_*` and 18 `opdi_*` columns.
+- Hold-out on Jan+Jul 2025 for the 3-member mean: FULL 392.33, CLEAN 266.46.
+
+The LIRF head still reads 153 columns (MODEL_ANALYSIS F1).
 
 - **Algorithm:** LightGBM regressor, `linear_tree=True`, `linear_lambda=1.0`.
 - **Objective:** RMSE.
@@ -133,9 +149,11 @@ the v33 spec.
   | CLEAN RMSE (`30 <= y <= 7,200`) | 274.08 |
   | per-airport clean (LIRF / EGLL / LFPG / LEMD) | 546.6 / 278.4 / 275.5 / 188.5 |
 
-## Tail rules applied on top of `R_all_v21` on the submission
+## Tail rules of v21 (historical)
 
-Every rule is deterministic. See `src/predict_v21_final.py`.
+The v33 rules are in the delegation table above. v22 replaced the rules below
+with the LIRF regime head and retired the Section 6.3 classifier. The text
+stays for the record. See `src/predict_v21_final.py`.
 
 1. **Step A band table.** LIRF, null flight record, `sd > 14,400`. Prediction:
    `P(fb) * sd + P(24h) * (86,400 + 1,150) + (1 - P(fb) - P(24h)) * v21_base`.
@@ -177,25 +195,26 @@ python src/build_osm_stands.py            # OSM stand centroids
 python src/build_osm_taxi_paths.py        # OSM taxiway graph
 python src/fetch_opdi_events.py           # OPDI ADS-B events (~50 min, 560 MB)
 python src/build_opdi_taxi_v2.py          # OPDI taxi-out record aggregation
-# METAR: see scratchpad/fetch_metar.py or the bootstrap script
+# METAR: no committed fetch script; download Iowa State ASOS CSVs to external/metar/
 
 # 2. Train the base regressor (3 members, linear_tree)
 python src/train_r_all_v26.py
 
 # 3. Train the LIRF regime head, then build the Step A band table
-python src/train_lirf_regime.py           # R_norm_LIRF and its LIRF-only encoders
+python src/train_lirf_regime.py           # LIRF feature list and LIRF-only encoders
+python src/train_r_norm_lirf_seeds.py     # 5 R_norm_LIRF members, seeds 42-46
 python src/train_lirf_regime_v23.py       # p_fb gate, fallback-rate maps, calibrator
 python src/build_lirf_band_table_v30.py   # band table with exclusive classes
 
 # 4. Predict on the ranking set
-python src/predict_v30.py kind-mango_v30.parquet
+python src/predict_v33.py kind-mango_v33.parquet
 
 # 5. Submit
 python -c "\
 from minio import Minio; \
 c = {l.split('=')[0].strip(): l.split('=',1)[1].strip() for l in open('.osn_credentials.txt') if '=' in l}; \
 Minio('s3.opensky-network.org', access_key=c['access_key'], secret_key=c['secret_key'], secure=True) \
-    .fput_object(c['bucket'], 'kind-mango_v30.parquet', 'submission/kind-mango_v30.parquet')"
+    .fput_object(c['bucket'], 'kind-mango_v33.parquet', 'submission/kind-mango_v33.parquet')"
 ```
 
 Full reproduction steps are in [`REPRODUCE.md`](REPRODUCE.md).
@@ -204,7 +223,7 @@ Full reproduction steps are in [`REPRODUCE.md`](REPRODUCE.md).
 
 ```
 src/
-  # v21 pipeline (current)
+  # v33 pipeline (current)
   features_weather.py           # METAR + crosswind + Step 7 temperature block
   features_congestion_v2.py     # arrivals keyed on ADES_mvt, same-runway ARR/DEP counts
   features_congestion.py        # v1 keyed on ADEP_mvt (needed by v21_old booster)
@@ -218,10 +237,20 @@ src/
   features_turnaround.py        # aircraft-on-stand link, uses BLOCK_TIME_UTC_mvt
   features_disruption.py        # 60-min disruption meters
   train_r_all_v26.py            # base regressor, 3 members
-  train_lirf_regime.py          # R_norm_LIRF and its LIRF-only encoders
+  train_lirf_regime.py          # LIRF feature list and LIRF-only encoders
+  train_r_norm_lirf_seeds.py    # 5 R_norm_LIRF members
   train_lirf_regime_v23.py      # LIRF p_fb gate, fallback-rate maps, calibrator
   build_lirf_band_table_v30.py  # Step A band table, exclusive classes
-  predict_v30.py                # ranking submission
+  predict_v30.py                # shared prediction pipeline
+  predict_v33.py                # ranking submission (current best)
+  price_ensemble.py             # label-free ambiguity price on the ranking set
+
+  # rejected ships v34-v38, kept for the paper trail (see RECAP)
+  build_lirf_band_table_v34.py, train_lirf_regime_v34.py,   # v34/v35 fit-month refit
+  tune_lgbm_v36.py,                                          # purified tuner
+  train_p_fb_lirf_seeds.py, price_p_fb_seeds.py,             # v37 p_fb seed mean
+  features_plan.py,                                          # v38 ARVT_1 planned-time features
+  predict_v34.py .. predict_v38.py
 
   # older versions kept for the paper trail
   train_lgbm_v{1..20}.py, train_r_all_v20.py, features_*_v2.py,
@@ -242,7 +271,7 @@ external/                       # open-data caches (gitignored)
 training/                       # organiser-provided 2025 monthly parquets (gitignored)
 submission/                     # ranking.parquet, submitting.parquet, kind-mango_v*.parquet
 models/                         # trained boosters + encoders + JSON config
-docs/                           # PRC brief + MODEL_ANALYSIS.md (seven audits, v32 debrief, v33 spec)
+docs/                           # PRC brief + MODEL_ANALYSIS.md (eleventh-pass audit, gate logs)
 RECAP.md                        # session log for every attempt, submissions and scores
 ```
 
@@ -281,6 +310,16 @@ dead-ends:
   R_all regressor already holds that signal.
 - **Hourly / stand-occupancy / EOBT-copy detector families** — measured and
   worth 48 to 229 MSE at stake per airport, not worth a component.
+- **7-seed base mean (v32)** — priced -1,204 MSE; live +0.13 s. The base
+  expansion drove the regression.
+- **Fit-month refit of the LIRF head statistics (v34, v35)** — live +0.21 and
+  +0.22 s vs v33.
+- **Zero-clip repair on the base mean (v36)** — live +0.18 s vs v33.
+- **5-seed `p_fb` mean (v37)** — priced -151 MSE; live +0.65 s vs v33.
+- **`R_norm_LIRF` retrain without the columns that lose 2026 coverage** —
+  priced at 103 MSE, under the 268 MSE lottery; no upload.
+- **`ARVT_1_flt` planned-time features in the base, raw form (v38)** — seed 43
+  stops at iteration 6; 3-member hold-out CLEAN +10.8 s worse; no upload.
 - **Runway configuration or 3-lane submission variants that differ on a handful
   of rows** — the brief forbids learning from the ranking process.
 

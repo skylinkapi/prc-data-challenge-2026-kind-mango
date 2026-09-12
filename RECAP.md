@@ -1,13 +1,14 @@
 # kind-mango recap
 
-Status as of 2026-09-12. Team best **301.87 s** (v33). 111 teams on
+Status as of 2026-09-13. Team best **301.87 s** (v33). 111 teams on
 leaderboard. **1.87 s from breaking 300.** v34 (Item 2 hold-out-leak refit)
 regressed +0.21 s; v35 (ninth-audit 7.5 repair) failed to revert by
 construction and landed +0.22 s; v36 (tenth-audit measure 1, F7 zero-clip
 repair) landed at 302.05, +0.18 s vs v33 and essentially flat vs v34, so
 the priced ~252 MSE F7 gain did not materialise. v37 (5-seed `p_fb` mean,
-priced -151 MSE) landed at 302.52, +0.65 s. v33 remains best; v34, v35, v36,
-v37 rejected.
+priced -151 MSE) landed at 302.52, +0.65 s. v38 (base + `ARVT_1_flt`
+planned-time features) failed the deployed-recipe gate and was not uploaded.
+v33 remains best; v34, v35, v36, v37 rejected.
 v33 (5-member R_norm_LIRF only, 3-seed base kept) scored 301.87 vs the
 priced 301.86 — the audit's ambiguity framework predicted the live gain to
 0.01 s. Validates the "ship priced-cheap changes one at a time" rule from
@@ -65,6 +66,9 @@ Fixing those (Step 2, v21) took live from **560.91 to 430.45** — a **130 s dro
 
 ## Where we stand vs top
 
+Current: rank 44 of 111 at 301.87 s (v33). The list below is an old snapshot
+from the v18 era (370.63 s).
+
 ```
  1. youthful-giraffe               263.46
  2. upstanding-firefly             267.01
@@ -79,7 +83,7 @@ Fixing those (Step 2, v21) took live from **560.91 to 430.45** — a **130 s dro
 48. tidy-nugget                    404.86
 ```
 
-Next competitor to beat: **versatile-violin 299.74 (-2.24s)**. 7 teams below 300 barrier now.
+Next competitor to beat: **versatile-violin 299.74 (-2.13 s vs v33)**. 7 teams below 300 barrier now.
 
 ## Model progression on hold-out
 
@@ -99,7 +103,14 @@ Next competitor to beat: **versatile-violin 299.74 (-2.24s)**. 7 teams below 300
 | item                               | live effect     |
 |------------------------------------|-----------------|
 | Unfilter labels + OBT deltas       | **-130.5**      |
-| Everything else                    | 0 (noise band)  |
+| Step A LIRF band lookup (v16)      | -58             |
+| Turnaround + disruption + ITY340 (v20) | -13.8 vs v19 |
+| linear_tree + leak fixes (v21)     | -15.6           |
+| LIRF regime head (v22, v23)        | -9.8, -2.8      |
+| Drop `ec_*` + `opdi_*` (v26)       | -13.1           |
+| LIRF-only encoders + band table (v30) | -1.28        |
+| 5-member `R_norm_LIRF` (v33)       | -0.11           |
+| Changes after v33 (v34-v37)        | +0.18 to +0.65 (rejected) |
 
 ## What does not work
 
@@ -124,8 +135,8 @@ Next competitor to beat: **versatile-violin 299.74 (-2.24s)**. 7 teams below 300
 | Step A variant, gate 3600 (extended)    | +9.8           | -          | Normal rows in band get wrongly boosted; rejected. |
 | Step C: LIRF+EGLL detector soft mix (v17)| -8            | +5         | Classifier overfits 2025 hold-out.      |
 | Section 6.3: LIRF no-flight-record group  | -2.3          | **-1.8**   | Shrink 0.6 on detector; mix vs group-mean, not v21. |
-| Section 6.2 R_norm alone                  | LIRF clean -247 | pending  | R_norm removes v21's bimodal bias at LIRF.          |
-| v20 combined per-airport winner (v19 sub) | -2.25         | pending   | v18 on LIRF/EHAM, R_norm+detector on EGLL/LEBL/LTFM, R_norm alone elsewhere. |
+| Section 6.2 R_norm alone                  | LIRF clean -247 | in v19   | R_norm removes v21's bimodal bias at LIRF.          |
+| v20 combined per-airport winner (v19 sub) | -2.25         | **-11.2** | v18 on LIRF/EHAM, R_norm+detector on EGLL/LEBL/LTFM, R_norm alone elsewhere. |
 
 ## Ordered plan status
 
@@ -204,17 +215,18 @@ eobt1_sched   rank  12
 
 ## Submission slots
 
-2/5 used today (v14, v15). Reset at midnight CET.
+The limit is 5 uploads per UTC day. 2026-09-12 used 4 slots (v34 to v37).
+The last upload is v37.
 
 ## Next ideas
 
-Nothing tested yet gets under v13. What could help:
+The ranked levers are in `docs/MODEL_ANALYSIS.md` section 3. The open item:
 
-- Retune Step 3 classifier: train on rows with `sd > 3600` only, higher threshold, add positive-class balancing.
-- Manual tail rule (no classifier): `if sd > 7200 AND |sd - taxi_hat| > 1800, use blend`. Bounded, no false-positive tail.
-- Airport-country holidays (Python `holidays` package).
-- Add ranking-context features (e.g. rolling load using the ranking rows themselves).
-- More seeds in the ensemble with less aggressive ff.
+- `ARVT_1_flt` signal in one new form: `plan_taxi_res` alone, clipped to
+  ±3,600 s, without the raw `plan_block` and `arvt1_mvt`. Run fresh gates
+  before any upload (MODEL_ANALYSIS section 4).
+- Do not ship a change priced under the 268 MSE lottery. Do not replace a
+  shipped single model on a label-free price alone (v32, v37).
 
 ## Discord confirmations
 
