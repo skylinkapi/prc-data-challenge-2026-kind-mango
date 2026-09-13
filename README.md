@@ -6,15 +6,16 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **301.87 s RMSE** (`kind-mango_v33.parquet`),
-  rank 44 of 111 teams. v33 landed at 301.87 vs the priced 301.86 (off by
-  0.01 s), validating the 2026 ambiguity framework from the seventh audit.
+- **Current leaderboard best:** **299.97 s RMSE** (`kind-mango_v40.parquet`,
+  2026-09-13). v40 is the v33 stack with 13 neighbour-tempo, take-off-order,
+  stand-gap and queue columns on the base; paired hold-out priced it at
+  about -1.3 s and live landed -1.90 s.
 - **After v33 (status 2026-09-13):** v34 to v37 scored 302.05 to 302.52 and
-  are rejected. v38 failed its hold-out gate. v39 (twelfth-audit rewrite
-  under `src_v2/`, sections P–F in order) scored 352.19 s live from a cold
-  start; it improved CLEAN by 2 s on hold-out but the 60-column base
-  regressed FULL because it dropped 37 v33 columns the audit did not
-  account for. v33 stays best. See `docs/MODEL_ANALYSIS.md` section 4.1.
+  are rejected. v38 failed its hold-out gate. v39, the cold-start rewrite
+  under `src_v2/`, scored 352.19 s live: one LIRF row with `sd = 94,560`
+  lost the ITY340 hedge and holds 62 to 73 % of the regression, and the
+  rewritten base is 4.5 s worse on clean rows than the v33 base on identical
+  hold-out rows. v33 stays best. See `docs/MODEL_ANALYSIS.md` section 4.1.
 
 ## License
 
@@ -39,10 +40,11 @@ analysis in `docs/MODEL_ANALYSIS.md`.
 
 ## What the model is
 
-The scoring stack (v33, current best) is documented in `docs/MODEL_ANALYSIS.md`.
-In one line:
+The scoring stack (v40, current best) is v33 with a retrained base. It is
+documented in `docs/MODEL_ANALYSIS.md` section 4.2. In one line:
 
-**Three-seed LightGBM regressor with `linear_tree` (`R_all_v26`), plus a LIRF
+**Three-seed LightGBM regressor with `linear_tree` (`R_all_v40`: the v26 recipe
+plus 13 tempo, order, stand-gap and queue columns), plus a LIRF
 regime head (5-member `R_norm_LIRF` mean + calibrated `p_fb` mixture), plus
 the Step A LIRF band lookup, plus the ITY340 offset rule.**
 
@@ -84,9 +86,10 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v29 | 303.26 | -0.45 | + `R_norm_LIRF` clip at 4,431 s + ITY340 constant formula |
 | kind-mango_v30 | 301.98 | -1.28 | + LIRF-only encoders for LIRF models + Step A band table with exclusive classes |
 | kind-mango_v32 | 302.11 | +0.13 | + 7-seed base + 5-member `R_norm_LIRF` — base expansion regressed (see MODEL_ANALYSIS 10) |
-| **kind-mango_v33** | **301.87** | **-0.11** | + 5-member `R_norm_LIRF` only, 3-seed base kept; priced 301.86, live 301.87 |
+| kind-mango_v33 | 301.87 | -0.11 | + 5-member `R_norm_LIRF` only, 3-seed base kept; priced 301.86, live 301.87 |
 | kind-mango_v34 to v36 | 302.05-302.09 | +0.18 to +0.22 | hold-out-leak refits and the zero-clip repair; rejected (see RECAP) |
 | kind-mango_v37 | 302.52 | +0.65 | + 5-seed `p_fb` mean; priced 301.62, regressed; rejected (see MODEL_ANALYSIS 4.1) |
+| **kind-mango_v40** | **299.97** | **-1.90** | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 
 v38 (base + `ARVT_1_flt` planned-time features) is not in the table. It failed
@@ -213,7 +216,8 @@ python src/train_lirf_regime_v23.py       # p_fb gate, fallback-rate maps, calib
 python src/build_lirf_band_table_v30.py   # band table with exclusive classes
 
 # 4. Predict on the ranking set
-python src/predict_v33.py kind-mango_v33.parquet
+python src/train_r_all_v40.py             # base with the 13 tempo columns, paired report
+python src/predict_v40.py kind-mango_v40.parquet
 
 # 5. Submit
 python -c "\
@@ -233,9 +237,12 @@ One evaluation harness (P1), one data layer (A1–A8), neighbour EOBT tempo
 EOBT_1 and MVT (B4), plan-taxi residual (B5), anchor deltas (B6); 3-seed
 constant-leaf base on clean rows (C2, C3, C5); regime heads at seven
 airports (C1); null-flight LIRF tail head (D1); post-processing (E1–E3).
-Ships as `kind-mango_v39.parquet`. Regressed live by +50 s vs v33 because
-the base carries 60 columns against v33's 97. Kept in the repo as the
-anchor for the "layer measures on the v33 stack" path.
+Ships as `kind-mango_v39.parquet`. Regressed live by +50 s vs v33. The
+debrief in `docs/MODEL_ANALYSIS.md` 4.1 puts most of it on the removed
+ITY340 hedge and the rest on the clean-only, cold-start base. The package
+stays as the source of the 13 tempo, order, stand-gap and queue columns
+that `src/train_r_all_v40.py` grafts onto the v33 base, and as the
+cached-frame harness for its own stack. It cannot rebuild v33.
 
 ```bash
 python -m src_v2.cli build      # cache 2 feature frames (~4 min)
@@ -269,6 +276,9 @@ src/
   predict_v30.py                # shared prediction pipeline
   predict_v33.py                # ranking submission (current best)
   price_ensemble.py             # label-free ambiguity price on the ranking set
+  eval_v33_holdout.py           # v33 stack scored end to end on the 2025 hold-out (P1)
+  train_r_all_v40.py            # tempo columns on the v33 base, paired against a control
+  predict_v40.py                # v33 stack with the v40 base members
 
   # rejected ships v34-v38, kept for the paper trail (see RECAP)
   build_lirf_band_table_v34.py, train_lirf_regime_v34.py,   # v34/v35 fit-month refit

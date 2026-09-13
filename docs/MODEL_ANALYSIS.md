@@ -1,12 +1,12 @@
 # Model analysis — twelfth pass
 
-Status on 2026-09-13: live best **301.87 s (v33)**, rank 44 of 111. Top score
-263.46 s. v34 to v37 regressed by 0.18 to 0.65 s. v38 failed its gate. v39
-shipped the section-4 rewrite from a cold start and scored **352.19 s live**
-(+50.32 vs v33); the rewrite dropped 37 columns the audit had not accounted
-for (turnaround, congestion, OSM path, taxi-distance, disruption, OPDI-live).
-The audit's expected-gain table in section 5 assumed those families stayed
-in the base and only the section-4 measures were layered on top.
+Status on 2026-09-13: live best **299.97 s (v40)**, section 4.2; v33 stays the
+reference stack at 301.87 s. Top score 263.46 s. v34 to v37 regressed by 0.18 to 0.65 s. v38 failed its gate. v39,
+the cold-start rewrite of section 4 in `src_v2/`, scored **352.19 s live**
+(+50.32 s). Section 4.1 decomposes that regression: one LIRF row that the
+withdrawn measures D2 and E2 exposed holds 62 to 73 % of it, and the
+rewritten base is 4.5 s worse on clean rows than the v33 base on identical
+hold-out rows. Section 4.2 sets the path for v40.
 
 This pass replaces the eleventh pass. It does not price 0.1-s levers on the
 v33 stack. It audits the construction of the model for the causes of the
@@ -548,55 +548,190 @@ Do not ship a measure that fails its test.
 - **F5. Fix `num_threads` for the final refit and record the LightGBM
   version.** Multi-threaded linear trees are not bit-exact (`REPRODUCE.md`).
 
-## 4.1. v39 outcome (2026-09-13)
+## 4.1 v39 debrief: where the +50 s came from
 
-The section-4 measures were built in order and shipped as `kind-mango_v39`
-after two failed uploads (int32 dtype was silently rejected; the second try
-with `v2b` naming was also ignored — the scorer needs `v<int>.parquet` and
-float64). The stack lives under `src_v2/`.
+v39 built the section-4 measures from a cold start in `src_v2/` and scored
+352.19 s live, +50.32 s against v33. The first debrief blamed the 37 base
+columns that the rewrite dropped. That is not what the numbers say. This
+section replaces it with a row-level decomposition (T15 to T17).
 
-Hold-out (2025 months 1 and 7), per the harness:
+### 4.1.1 The live regression in MSE
 
-| metric | v39 | v33 (RECAP) |
+352.19² - 301.87² = 32,911 MSE. The v39 and v33 files disagree by a mean
+squared distance of 40,507 (T15). One row holds 21,177 of it:
+
+| row | `sd` | `mvt_eobt1` | flight record | v33 | v39 |
+|---|---|---|---|---|---|
+| LIRF, July, ITY340 | 94,560 | 86,280 | yes | 88,718 | 3,262 |
+
+Every 2025 LIRF row with `sd > 70,000` has `y` between 87,002 and 131,167
+(T16, 6 rows). One of the six has a flight record: `y = 87,002` with
+`sd = 87,001`. No such row is a normal taxi. For a truth between 87,000 and
+94,600 s, the v39 value on this one row costs 20,500 to 24,100 MSE, which
+is 62 to 73 % of the live regression.
+
+The rule that protected this row was the ITY340 rule of `predict_v30.py`.
+Measure E2 of this pass removed it, and measure D2 forbade a 24-h prediction
+on any row with a flight record. Both measures were wrong, and this pass
+wrote them. D2 came from T6, which lists rows with `y > 80,000` and not
+fallback: the row with the flight record was excluded by the `|y - sd| <= 5`
+test, because it is a fallback row with a one-day schedule offset. At
+`sd > 70,000` the fallback and 24-h classes converge on the same value, and
+the flight record is not a discriminator.
+
+### 4.1.2 The rest of the regression, on identical hold-out rows
+
+The repo never scored the v33 stack end to end on the hold-out (M4).
+`src/eval_v33_holdout.py` does it now: the three v26 members on the
+97-column frame that `tune_lgbm_v36.py` cached, and the LIRF head, the
+Step A table and the ITY340 rule on the LIRF frame that `train_lirf_regime`
+builds. The v39 harness scored the same 344,336 rows (T17):
+
+| hold-out, months 1 and 7 of 2025 | v33 stack | v39 | delta |
+|---|---|---|---|
+| FULL RMSE | 321.74 | 338.06 | +16.3 s |
+| CLEAN RMSE, `30 <= y <= 7,200` and not fallback | 253.29 | 264.26 | +11.0 s |
+| clean class MSE | 61,554 | 67,004 | +5,450 |
+| fallback class MSE | 7,746 | 7,772 | +26 |
+| tail class MSE | 12,654 | 14,523 | +1,869 |
+| 24-h class MSE | 21,464 | 24,860 | +3,396 |
+
+v39 loses 10,700 MSE to v33 on the hold-out, in the same direction as the
+live gap. The first debrief compared v39's 264.26 with the v26 number 266.46,
+which counts the fallback rows inside the range; the two numbers are not the
+same statistic. The v33 LIRF numbers are optimistic by the leak of
+eleventh-pass F5, and the 24-h delta at LIRF (1,273 against 4,648) carries
+that leak. The clean and tail deltas do not.
+
+v33 scores 321.74 on the hold-out and 301.87 live, so the 2026 set is easier
+than the 2025 hold-out by about 12,500 MSE, most of it the undetectable LFPG
+24-h row (20,191 MSE) that the 2026 set apparently does not repeat.
+
+The clean and tail loss at the 9 airports is about 4,400 MSE on the hold-out
+scale, 7 s of live RMSE. Its sources, in order of evidence:
+
+1. **C3, clean-only training.** The v39 base never saw a row over 7,200 s.
+   On the 2026 set, where v33 predicts 2,500 to 5,000 s, v39 predicts 288 s
+   lower on average (T15). The tail class at EGLL, LFPG and EHAM is worse by
+   1,365 MSE on the hold-out. v21 gained 130 s live from unfiltered labels;
+   C3 reversed that choice without a measurement. Rejected.
+2. **The base changed everything at once**: constant leaves, new
+   hyperparameters, new encoders, 37 dropped columns, 13 added columns. No
+   term is isolated. The paired test of section 4.2 isolates the 13 added
+   columns.
+3. **The tail head reads the regime mixture as its normal term**
+   (`src_v2/heads/tail.py:111`), the same defect as eleventh-pass F7. On
+   the six 2026 rows with `sd` from 15,000 to 18,000 s the head adds the
+   `p_fb * sd` mass twice and lands 2,000 to 3,500 s above v33.
+4. **The Dirichlet prior of 2 pseudo-counts** moves 10 rows in the 25,000
+   to 50,000 band, where 2025 shows 34 fallback rows of 34, by +3,500 s each:
+   about 400 MSE on live.
+5. **The 100,000 s clip (E1)** cuts the `sd = 111,654` fallback row by
+   11,654 s: about 400 MSE if the row is a fallback, as in v33.
+
+### 4.1.3 Decomposition
+
+| term | MSE on live | share |
 |---|---|---|
-| FULL RMSE | 338.06 | 392.33 |
-| CLEAN RMSE | 264.26 | 266.46 |
+| ITY340 row | 20,500 to 24,100 | 62 to 73 % |
+| base clean and tail rows, 9 airports | about 4,400 on the hold-out; larger on 2026 by an unmeasured amount | 13 % or more |
+| tail head normal term, prior and clip | about 1,000 to 2,000 | 3 to 6 % |
+| LIRF regime head and remaining rows | the rest, sign unmeasured | |
 
-Class MSE shares (per-row) on hold-out:
+### 4.1.4 Corrections to section 4
 
-| class | v39 share | contribution |
+- **D2 is withdrawn.** New rule: at LIRF every row with `sd > 70,000` takes
+  the fallback and 24-h hedge, with or without a flight record. At the 9
+  other airports `sd > 70,000` is a normal taxi (251 rows in 2025, median
+  1,111 s, T6 note). Cost of a miss: 21,000 MSE per row.
+- **E2 is withdrawn** until the tail head of D1 reproduces the ITY340 value
+  on the 2025 row `AEZ146R` and on every null-flight row of T6 within the
+  v33 error.
+- **E1 upper clip** moves from 100,000 to 180,000 s. The largest 2025 label
+  is 131,167 s (T16).
+- **C3 is withdrawn.** The base trains on every `y > 0` row, as v21 to v33
+  did. A clean-only base fails the tail class (T17).
+- **D1 prior** drops from 2 to 0.5 pseudo-counts per class, and the normal
+  term reads the clean regressor, never the mixture.
+- **P1 gains a hard gate**: no measure ships from a package that has not
+  rebuilt the v33 file to 0.0 s on the ranking set. v39 skipped that gate.
+  The `src_v2/` package cannot rebuild v33; it is a harness for its own
+  stack only.
+- **P2 adds the paired rule**: every feature or model change is measured
+  against a control trained on the same split and the same recipe, in the
+  same run. A number from a different recipe or a different row set is not
+  a comparison.
+
+## 4.2 v40: the tempo columns on the v33 base, paired
+
+**Change.** The v33 stack with one component swapped: the base members
+`lgbm_r_all_v40_s{42,43,44}` train on the v26 recipe, split and rows, plus
+13 columns from the `src_v2` frame joined by movement id: neighbour
+`mvt_eobt1` median, mean and count over 30 and 60 min at the airport and
+over 30 min on the same runway (B1), the backward take-off order pair (B2),
+the stand re-occupation gap (B3) and the queue between `EOBT_1` and `MVT`
+(B4). The LIRF head, Step A, ITY340 and the post-processing stay at v33.
+Code: `src/train_r_all_v40.py`, `src/predict_v40.py`, one optional merge in
+`predict_v30.main`.
+
+**Paired hold-out, months 1 and 7 of 2025** (`models/lgbm_r_all_v40.holdout.json`).
+The control retrains the 97 columns on the same split in the same run and
+reproduces the shipped v26 members exactly (best iterations 1,275, 890,
+1,240; FULL 392.33, CLEAN 260.13):
+
+| base alone, 3-member mean | control | v40 | delta |
+|---|---|---|---|
+| CLEAN RMSE | 260.13 | 257.46 | **-2.67 s** |
+| FULL RMSE | 392.33 | 393.01 | +0.68 s |
+| clean class MSE, 9 airports outside LIRF | 47,287 | 46,381 | -906 |
+| tail class MSE, 9 airports | 12,007 | 12,157 | +150 |
+| fallback class MSE, 9 airports | 1,802 | 1,753 | -49 |
+| best iterations | 1,275, 890, 1,240 | 1,070, 773, 1,099 | all above half the median |
+
+Per airport, clean class: LTFM -473, LIRF -419, EGLL -193, LEBL -164,
+LEMD -55, LSZH -40, LFPG -26, EHAM -20, EDDM -10, EDDF +74. No airport
+worsens by more than 500 MSE in any class.
+
+The FULL delta of +0.68 s sits entirely at LIRF (fallback +666, 24-h
++1,042), on rows that the LIRF head and Step A serve in the deployed stack.
+On the rows the base serves, the net change is -805 MSE, about 1.3 s of
+live RMSE at the v33 level, and above the 268 MSE lottery bar.
+
+**What the quick test promised and what landed.** T13 priced the tempo
+family at 9 to 11 s on a 17-column base. On the 97-column deployed frame the
+gain is 2.7 s CLEAN. The deployed base already holds the schedule-based
+tempo, the turnaround family and the disruption meters, which carry most of
+the same signal. Section 5 regades B1 and B2 to A with this number. The
+quick-test protocol of T12 and T13 stays useful for ranking candidates, not
+for pricing them.
+
+**Gates for the upload.**
+
+1. Paired hold-out: passed, CLEAN -2.67 s, no airport worse by 500 MSE.
+2. Seed check: passed.
+3. Serve parity: `predict_v33.py` through the patched `predict_v30.main`
+   must rebuild the v33 file to 0.0 s.
+4. Serve: the v40 file has 344,841 rows, no NaN, no negative value, and
+   differs from v33 outside LIRF only.
+5. Label-free 2026 check: per airport, the mean v40 minus v33 shift is within
+   ±60 s; the count of predictions over 7,200 s and under 30 s is recorded.
+
+#### v40 gate log, 2026-09-13
+
+| gate | result | pass |
 |---|---|---|
-| clean | 67,003 | 194 rows worth of the total |
-| fallback | 7,772 | 22 rows worth |
-| tail | 14,522 | 42 rows worth |
-| 24h | 24,859 | 72 rows worth |
+| 1 paired hold-out | CLEAN -2.67 s; clean class -906 MSE outside LIRF; worst airport EDDF +74 MSE | yes |
+| 2 seeds | best iterations 1,070, 773, 1,099; median 1,070; minimum above half | yes |
+| 3 parity | `predict_v33.py` through the patched `predict_v30.main`: maximum difference 0.0 s on 344,841 rows | yes |
+| 4 serve | 344,841 rows, float64, 0 NaN, 0 negative; 0 LIRF rows differ, 317,923 rows outside LIRF differ; 29 rows at 0 s (v33: 23), 101 over 7,200 s (v33: 103), 3 over 80,000 s (v33: 3) | yes |
+| 5 label-free 2026 shift | per-airport mean shift v40 minus v33: LFPG -15.1 s, LSZH -4.8, EGLL +3.8, LTFM -2.7, LEBL -2.6, EDDF +2.1, EHAM +1.2, LEMD -1.1, EDDM 0.0; mean absolute shift 25 to 47 s; mean squared distance 3,756; 55 rows move by more than 1,000 s | yes |
 
-The 24h share sits at LFPG (20,211 alone, one row per T6) and at LIRF
-(4,648). D4 accepted the LFPG row. D1 handled the LIRF 24h class down from
-32,787 (base + regime only) to 4,648 (base + regime + null-flight LIRF head).
+**Live: 299.965 s**, -1.90 s against v33, -1,146 MSE. The paired price was
+-805 MSE. The gain landed with margin, and the team is under 300 s.
 
-Live: **352.19 s**, +50.32 s against v33.
-
-Cause: the audit assumed the base kept the 97 v33 columns; the `src_v2/` base
-holds 60. The dropped families were turnaround (v20, live -13.8 s in a
-bundle), congestion v2 and disruption (rolled into v20), OSM path, taxi
-distance, weather beyond the four base columns, OPDI-live, and the
-Eurocontrol ATFM column that A5 removed. Section 5 priced +10 to +25 s of
-gain from the section-4 measures on top of v33; a cold-start rebuild loses
-the base and re-runs the whole climb from v20's 345 s.
-
-The section-4 measures still improved what they touched: CLEAN moved from
-266 (v33 hold-out) to 264, and the 24h class at LIRF fell by 28,000 MSE. The
-regressions are structural: the base's own error grew because it lost
-features, not because the measures were wrong.
-
-The path that actually beats v33 is to layer the section-4 measures on the
-v33 stack, one at a time under P5. The `src_v2/` code base is the anchor for
-that layering: the harness (P1), the coverage monitor (A3), the neighbour
-tempo (B1) and the take-off order (B2) are the highest-priced items from
-section 5 that a v33 layering could adopt without a base rebuild.
-
-Two upload slots remain on 2026-09-13.
+The expected live value before the upload was about 300.6 s. The
+base-change record (v27, v28, v32 regressed, all seed-count changes) was the
+risk; it did not repeat.
 
 ## 5. Expected gains
 
@@ -605,18 +740,18 @@ test; C = ceiling arithmetic; D = unmeasured.
 
 | measure | expected live gain | grade | risk |
 |---|---|---|---|
-| B1 neighbour EOBT tempo | 5 to 10 s | B | the quick test used 17 columns; the deployed frame holds 97 |
-| B2 take-off order | 3 to 6 s, part shared with B1 | B | two-sided form reads later movements; test backward-only |
+| B1 neighbour EOBT tempo, B2 take-off order, B3 stand gap, B4 queue, together on the v33 base | 1.3 s (CLEAN -2.67 s, -805 MSE outside LIRF, paired, section 4.2) | A | base-feature change; seeds trained normally |
 | C1 fallback heads at 6 airports | 1 to 4 s | C | ceiling 4,892 MSE against the median; residual against the base unmeasured |
 | C2 leaf type decision | 0 to 3 s | D | the linear tree has live evidence inside a bundle |
 | D1 tail head with priors | 0 to 3 s in expectation, high variance | C | 20 to 40 rows decide it; the deployed table is already MSE-optimal per band |
-| B3 stand gap, B4 queue, B5 plan residual | 1 to 3 s together | B | small, cheap |
+| B5 plan residual, clipped form | 0 to 1 s | D | v38 raw form collapsed a seed |
 | A3 to A6 hygiene | 0 to 2 s | D | prevents the next v25-type loss |
 | C4 retune | 0 to 2 s | D | never done on the purified protocol |
 | E3 integer dtype | 0 | A | correctness only |
 
-The sum of the graded gains reaches 10 to 25 s. That range crosses 300 s with
-margin and does not reach 263 s. Section 1.4 states why no lower target is
+The sum of the graded gains is now 3 to 12 s. The tempo family delivered
+1.3 s on the deployed frame, not the 5 to 10 s of the quick test; the other
+rows keep their grades. The range crosses 300 s and does not reach 263 s. Section 1.4 states why no lower target is
 set.
 
 ## 6. Contradictions with earlier passes
@@ -881,3 +1016,80 @@ Gain share: `dep_sd_mean_60m` 1.8 % in the base; the three tempo columns 2.2,
 - Unseen (airport, value) pairs in 2026, percent of rows: stand 0.46 total,
   EDDM 4.55, EDDF 0.83; operator 0.44 total, EDDF 1.46; type 0.02; runway
   0.00; destination 0.24. 3,978 rows on stands with under 20 training rows.
+
+### T15. v39 against v33 on the 344,841 ranking rows, label-free
+
+- Mean difference -0.2 s; mean absolute difference 71.7 s; mean squared
+  difference 40,507.
+- Rows with `|difference| > 3,000`: 43, holding 23,680 of the 40,507. Rows
+  over 10,000: 3. Rows over 50,000: 1 (the ITY340 row, 21,177).
+- Per airport, mean squared difference on the 344,841 scale: LIRF 26,094,
+  LTFM 2,617, EHAM 2,591, LFPG 2,243, EGLL 2,197, EDDF 1,411, LSZH 977, EDDM
+  848, LEBL 841, LEMD 689.
+- Diffuse part, `|difference| <= 3,000`: by v33 level, rows where v33
+  predicts 2,500 to 5,000 s (2,825 rows) have v39 lower by 288 s on average;
+  rows under 1,000 s have v39 higher by 8 s. By `sd` band: EGLL +85 s at
+  3,600 to 14,400; EHAM -139 s at 7,200 to 14,400; LFPG -45 to -78 s over
+  7,200; LIRF -68 s at 3,600 to 7,200.
+- Predictions over 80,000 s: v33 3, v39 2. Over 7,200 s: v33 103, v39 105.
+  Rows at or under 30 s: v33 36, v39 2.
+- The 43 rows over 3,000 s: LIRF 27, EHAM 8, EGLL 3, LFPG 3, EDDM 1, LSZH 1.
+  The 10 LIRF null-flight rows with `sd` from 31,983 to 41,395 sit at `sd` in
+  v33 and at `sd + 3,000 to 4,600` in v39. Seven non-LIRF rows with a flight
+  record and `sd` from 9,000 to 13,600 sit at 4,400 to 9,700 in v33 and at
+  1,000 to 5,600 in v39.
+
+### T16. LIRF rows with `sd > 70,000`, 2025 and 2026
+
+2025, six rows:
+
+| month | `sd` | `y` | `mvt_eobt1` | flight record | `y - 86,400` |
+|---|---|---|---|---|---|
+| 7 | 73,260 | 87,361 | null | no | 961 |
+| 7 | 84,236 | 88,132 | null | no | 1,732 |
+| 12 | 86,102 | 87,605 | null | no | 1,205 |
+| 7 | 87,001 | 87,002 | 87,001 | yes | 602 |
+| 7 | 93,535 | 87,170 | null | no | 770 |
+| 2 | 131,163 | 131,167 | null | no | 44,767 |
+
+2026, three rows: `sd` 111,654 (null record; v33 111,654, v39 100,000),
+94,560 (record; v33 88,718, v39 3,262), 87,484 (null record; v33 87,567,
+v39 85,393). Non-LIRF rows with `sd > 70,000` in 2025: 251, `y` median
+1,111, max 3,032.
+
+### T17. Hold-out months 1 and 7, identical rows, v33 against v39
+
+v33 stack: `src/eval_v33_holdout.py`, output `models/v33.holdout.json`.
+FULL 321.74, CLEAN 253.29, class MSE clean 61,554, fallback 7,746, tail
+12,654, 24-h 21,464. LIRF: clean 14,267, fallback 5,943, tail 646, 24-h
+1,273. The rows below give the intermediate stage without the LIRF head,
+which the first scorer run reported.
+
+| | v33 base + rules | v39 |
+|---|---|---|
+| FULL RMSE | 327.40 | 338.06 |
+| CLEAN RMSE, `30 <= y <= 7,200` and not fallback | 259.74 | 264.26 |
+| clean class MSE | 64,728 | 67,004 |
+| fallback class MSE | 8,213 | 7,772 |
+| tail class MSE | 12,687 | 14,523 |
+| 24-h class MSE | 21,464 | 24,860 |
+
+Per airport, class MSE on the 344,336-row scale, v33 base / v39:
+
+| airport | clean | fallback | tail | 24-h |
+|---|---|---|---|---|
+| EDDF | 4,847 / 4,789 | 25 / 23 | 0 / 0 | 0 / 0 |
+| EDDM | 2,996 / 3,245 | 69 / 73 | 0 / 0 | 0 / 0 |
+| EGLL | 8,542 / 9,955 | 210 / 265 | 1,084 / 1,398 | 0 / 0 |
+| EHAM | 4,738 / 4,934 | 22 / 21 | 451 / 590 | 0 / 0 |
+| LEBL | 3,556 / 3,622 | 818 / 827 | 0 / 0 | 0 / 0 |
+| LEMD | 3,365 / 3,506 | 128 / 122 | 0 / 0 | 0 / 0 |
+| LFPG | 8,044 / 8,673 | 232 / 252 | 9,933 / 10,678 | 20,191 / 20,212 |
+| LIRF | 17,442 / 16,681 | 6,410 / 5,923 | 680 / 1,150 | 1,273 / 4,648 |
+| LSZH | 2,691 / 2,684 | 26 / 25 | 441 / 611 | 0 / 0 |
+| LTFM | 8,508 / 8,914 | 272 / 242 | 98 / 95 | 0 / 0 |
+
+The v26 members alone, without the LIRF rules, score FULL 392.33 and 24-h
+62,157; the two rules remove 40,700 MSE on the hold-out. The v26 base
+CLEAN with the fallback rows inside the range is 266.46; the same rows
+without them give 260.13.

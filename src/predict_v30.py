@@ -74,7 +74,7 @@ def main(out_name="kind-mango_v30.parquet",
          base_seeds=None, r_norm_files=None,
          p_fb_members=None, p_fb_features=None,
          per_member_base_clip=True, fill_zero_rows_per_airport=False,
-         base_model="lgbm_r_all_v26", use_plan_features=False):
+         base_model="lgbm_r_all_v26", use_plan_features=False, extra_columns=None):
     base_seeds = base_seeds or DEFAULT_BASE_SEEDS
     r_norm_files = r_norm_files or DEFAULT_R_NORM_FILES
     p_fb_members = p_fb_members or DEFAULT_P_FB_MEMBERS
@@ -133,6 +133,8 @@ def main(out_name="kind-mango_v30.parquet",
     dep = add_turnaround(dep, ctx)
     dep = add_disruption(dep, ctx)
     del ctx; gc.collect()
+    if extra_columns is not None:
+        dep = dep.merge(extra_columns, on="MVT_ID_mvt", how="left")
 
     with open(os.path.join(MODELS, "lirf_regime_v23.rate_maps.pkl"), "rb") as f:
         rate_bundle = pickle.load(f)
