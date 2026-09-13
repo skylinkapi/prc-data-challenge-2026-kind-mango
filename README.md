@@ -6,10 +6,11 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **299.97 s RMSE** (`kind-mango_v40.parquet`,
-  2026-09-13). v40 is the v33 stack with 13 neighbour-tempo, take-off-order,
-  stand-gap and queue columns on the base; paired hold-out priced it at
-  about -1.3 s and live landed -1.90 s.
+- **Current leaderboard best:** **299.31 s RMSE** (`kind-mango_v41.parquet`,
+  2026-09-13). v40 put 13 neighbour-tempo, take-off-order, stand-gap and
+  queue columns on the base (-1.90 s live); v41 put the same columns on the
+  LIRF regressor and removed its 4,431 s cap (-0.65 s live). Both were
+  priced on a paired hold-out before upload and landed within 0.1 s.
 - **After v33 (status 2026-09-13):** v34 to v37 scored 302.05 to 302.52 and
   are rejected. v38 failed its hold-out gate. v39, the cold-start rewrite
   under `src_v2/`, scored 352.19 s live: one LIRF row with `sd = 94,560`
@@ -40,8 +41,9 @@ analysis in `docs/MODEL_ANALYSIS.md`.
 
 ## What the model is
 
-The scoring stack (v40, current best) is v33 with a retrained base. It is
-documented in `docs/MODEL_ANALYSIS.md` section 4.2. In one line:
+The scoring stack (v41, current best) is v33 with the base and the LIRF
+regressor retrained on 13 extra columns. It is documented in
+`docs/MODEL_ANALYSIS.md` sections 4.2 and 4.3. In one line:
 
 **Three-seed LightGBM regressor with `linear_tree` (`R_all_v40`: the v26 recipe
 plus 13 tempo, order, stand-gap and queue columns), plus a LIRF
@@ -55,7 +57,7 @@ with the 5 `R_norm_LIRF` members:
 |---|---|
 | LIRF, `sd > 14,400`, null flight | Step A band table (`p_fb * sd + p_24h * (86,400 + mean_24h_extra) + p_norm * mixture`), exclusive classes since v30 |
 | LIRF, `sd > 70,000`, outside Step A | ITY340 constant `(5/6) * (86,400 + 1,150) + (1/6) * sd` |
-| LIRF, all other rows | `mixture = p_fb_cal * sd + (1 - p_fb_cal) * min(R_norm_LIRF, 4,431)` |
+| LIRF, all other rows | `mixture = p_fb_cal * sd + (1 - p_fb_cal) * R_norm_LIRF`, five v41 members, no cap |
 | every other airport | 3-seed mean of `lgbm_r_all_v26_s{42,43,44}` |
 
 Both LIRF-head boosters read the LIRF-only encoders in
@@ -89,7 +91,8 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v33 | 301.87 | -0.11 | + 5-member `R_norm_LIRF` only, 3-seed base kept; priced 301.86, live 301.87 |
 | kind-mango_v34 to v36 | 302.05-302.09 | +0.18 to +0.22 | hold-out-leak refits and the zero-clip repair; rejected (see RECAP) |
 | kind-mango_v37 | 302.52 | +0.65 | + 5-seed `p_fb` mean; priced 301.62, regressed; rejected (see MODEL_ANALYSIS 4.1) |
-| **kind-mango_v40** | **299.97** | **-1.90** | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
+| **kind-mango_v41** | **299.31** | **-0.65** | v40 + `R_norm_LIRF` members with the 13 columns and no 4,431 s cap (`train_r_norm_lirf_v41.py`); paired -415 MSE; see MODEL_ANALYSIS 4.3 |
+| kind-mango_v40 | 299.97 | -1.90 | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 
 v38 (base + `ARVT_1_flt` planned-time features) is not in the table. It failed
@@ -217,7 +220,8 @@ python src/build_lirf_band_table_v30.py   # band table with exclusive classes
 
 # 4. Predict on the ranking set
 python src/train_r_all_v40.py             # base with the 13 tempo columns, paired report
-python src/predict_v40.py kind-mango_v40.parquet
+python src/train_r_norm_lirf_v41.py       # LIRF regressor members with the 13 columns, paired report
+python src/predict_v41.py kind-mango_v41.parquet
 
 # 5. Submit
 python -c "\
@@ -279,6 +283,11 @@ src/
   eval_v33_holdout.py           # v33 stack scored end to end on the 2025 hold-out (P1)
   train_r_all_v40.py            # tempo columns on the v33 base, paired against a control
   predict_v40.py                # v33 stack with the v40 base members
+  train_r_norm_lirf_v41.py      # LIRF regressor members with the tempo columns, paired
+  train_p_fb_lirf_v41.py        # LIRF gate with the tempo columns, paired (rejected)
+  features_order_next.py        # forward take-off order column (v42, set aside)
+  train_r_all_v42.py            # forward order on the base, paired (set aside)
+  predict_v41.py                # current best
 
   # rejected ships v34-v38, kept for the paper trail (see RECAP)
   build_lirf_band_table_v34.py, train_lirf_regime_v34.py,   # v34/v35 fit-month refit

@@ -1,7 +1,7 @@
 # Model analysis — twelfth pass
 
-Status on 2026-09-13: live best **299.97 s (v40)**, section 4.2; v33 stays the
-reference stack at 301.87 s. Top score 263.46 s. v34 to v37 regressed by 0.18 to 0.65 s. v38 failed its gate. v39,
+Status on 2026-09-13: live best **299.31 s (v41)**, sections 4.2 and 4.3; v33
+stays the reference stack at 301.87 s. Top score 263.46 s. v34 to v37 regressed by 0.18 to 0.65 s. v38 failed its gate. v39,
 the cold-start rewrite of section 4 in `src_v2/`, scored **352.19 s live**
 (+50.32 s). Section 4.1 decomposes that regression: one LIRF row that the
 withdrawn measures D2 and E2 exposed holds 62 to 73 % of it, and the
@@ -733,6 +733,111 @@ The expected live value before the upload was about 300.6 s. The
 base-change record (v27, v28, v32 regressed, all seed-count changes) was the
 risk; it did not repeat.
 
+## 4.3 Thirteenth pass: the budget after v40 and the next lever
+
+Method: every number below comes from the paired harness on the cached
+frames (`models/v36_tune_cache.parquet` for the base, the LIRF frame of
+`train_lirf_regime.build_features` for the head), months 1 and 7 of 2025,
+344,336 rows. A lever is priced by the class MSE it can move, not by a
+quick test.
+
+### 4.3.1 Where the hold-out MSE of the deployed stack sits
+
+v33 stack (T17) with the v40 base on the non-LIRF rows:
+
+| block | MSE on the hold-out scale | rows | addressable |
+|---|---|---|---|
+| clean rows, 9 airports outside LIRF | 46,381 | 290,000 | yes, by features and tuning |
+| clean rows, LIRF, served by `R_norm` | 14,267 | 22,000 | yes: the head has not seen the tempo columns |
+| 24-h LFPG row, `sd = 1,740`, null record | 20,191 | 1 | no signal |
+| tail LFPG row, `y = 58,206`, `sd = 2,043`, null record | 9,461 | 1 | no signal |
+| tail, other rows | 4,200 | 50 | at most 250 MSE by a hold rule |
+| LIRF fallback, served by the gate | 5,943 | 4,053 | gate quality; two gate refits regressed live |
+| fallback, 9 airports, served by the base | 1,753 | 9,700 | ceiling 1,753; v39's heads did not beat the base |
+
+The two LFPG rows hold 29,650 MSE of the 321.74 s hold-out and have no
+observable. The 2026 set scored 21,600 MSE lower than the hold-out for the
+same stack, which is consistent with the 2026 set holding no such row.
+
+### 4.3.2 Levers priced and set aside
+
+- **Hold rule from `mvt_eobt1`** (D3): on non-LIRF rows with a flight
+  record, `mvt_eobt1 > 7,200` selects 37 hold-out rows of which 76 % have
+  `y > 5,000`; `max(pred, 0.85 * mvt_eobt1)` saves 254 MSE. At 5,400 the
+  same rule loses 216 to 1,490 MSE because only 25 % of the 275 rows are
+  holds. Under the 268 MSE bar. Set aside.
+- **Fallback heads at the 6 spike airports** (C1): the v40 base leaves
+  1,753 MSE on those rows. The v39 heads scored 1,850 on the same rows. A
+  head has to beat a linear-leaf base that reads `sd` directly. Set aside
+  until a gate shows a paired gain.
+- **The two LFPG rows**: no lever. Do not hedge every null-flight row for
+  them (ninth pass 6.1).
+
+### 4.3.3 The lever taken: the tempo columns on the LIRF regressor (v41)
+
+The v40 base with the tempo columns scores 17,220 MSE on the LIRF clean
+rows; the deployed `R_norm` head scores 14,267 on the same rows without
+them. The head is the better model at LIRF and it has not seen the 13
+columns. T13 placed the largest tempo effect at LIRF (-31 to -34 s on the
+quick base). The change is one component: the five `R_norm_LIRF` members
+retrained with the deployed recipe plus the 13 columns
+(`src/train_r_norm_lirf_v41.py`). The gate, Step A, ITY340 and the base
+stay at v40. The head is scored end to end, paired against the deployed
+members on the same LIRF hold-out rows.
+
+### 4.3.4 Paired prices on the LIRF head, 2026-09-13
+
+All on the LIRF hold-out rows, class MSE on the 344,336-row scale, the
+whole head scored end to end (`models/lirf_regime_v41.holdout.json`,
+`models/lirf_regime_v41.gate_holdout.json`):
+
+| arm | clean | fallback | tail | 24-h | sum | delta |
+|---|---|---|---|---|---|---|
+| deployed head (v40) | 14,267 | 5,943 | 646 | 1,273 | 22,129 | |
+| `R_norm` members with the 13 tempo columns (v41 members), cap kept | 14,012 | 5,959 | 657 | 1,273 | 21,901 | **-228** |
+| v41 members, gate with the 13 tempo columns | 14,173 | 5,914 | 635 | 1,273 | 21,995 | +94 against the same members with the deployed gate |
+| v41 members, deployed gate, no 4,431 s cap | 14,031 | 5,913 | 519 | 1,273 | 21,736 | **-187** against the capped arm |
+
+- The tempo columns move the LIRF regressor by -255 MSE on the clean class
+  (LIRF CLEAN RMSE 467.80 to 463.60). Best iterations 234, 371, 430, 286,
+  235, all above half the median.
+- The gate does not gain from the columns: hold-out AUC 0.8684 against
+  0.8666, and the head is worse by 94 MSE. Rejected, as every gate refit
+  before it (v34, v35, v37).
+- The 4,431 s cap of v29 (eleventh pass F6, unpriced) costs 187 MSE on the
+  hold-out; the tail class carries most of it. The cap goes.
+- Each price alone sits under the 268 MSE member-draw lottery. Together the
+  regressor members and the cap removal price -415 MSE, about 0.7 s live.
+  They change one term of the head, `R_norm`, and ship together; the live
+  result attributes to the pair, not to either part.
+
+### 4.3.5 Set aside: the forward take-off order on the base (v42 members)
+
+`features_order_next.py` adds the mirror of B2: departures in the next 30
+min that filed an earlier `EOBT_1`. `train_r_all_v42.py` grafts it onto the
+v40 columns on the same split; the v40 report is the control
+(`models/lgbm_r_all_v42.holdout.json`). Outside LIRF the clean class moves
+by -191 MSE and the total by -93 MSE; CLEAN 256.95 against 257.46. Under the
+bar. The v42 members are not served. The two-sided order signal of T12 was
+already inside the backward count and the tempo medians.
+
+### 4.3.6 The ship: v41
+
+v40 with one term of the LIRF head changed: the five `R_norm_LIRF` members
+of 4.3.4 and no cap. Priced -415 MSE on the paired hold-out, about 0.7 s
+live. Gates: parity of the v40 path through the patched `predict_v30.main`
+at 0.0 s (done before the change); the v41 file differs from v40 on LIRF
+rows only; label-free 2026 shift recorded below.
+
+v41 gate log, 2026-09-13: 344,841 rows, float64, 0 NaN, 0 negative; 0 rows
+outside LIRF differ, 26,808 LIRF rows differ; LIRF mean shift -5.1 s, mean
+absolute shift 39.4 s, 7 rows move by more than 1,000 s, largest 4,512 s;
+104 predictions over 7,200 s (v40: 101), 3 over 80,000 s; 224 LIRF rows
+above the old 4,431 s cap (v40: 218, all capped).
+
+**Live: 299.314 s**, -0.65 s against v40, -391 MSE. The paired price was
+-415 MSE. Second priced ship in a row that landed within 30 MSE of its price.
+
 ## 5. Expected gains
 
 Grades: A = measured on the deployed frame or live; B = measured in a quick
@@ -740,7 +845,10 @@ test; C = ceiling arithmetic; D = unmeasured.
 
 | measure | expected live gain | grade | risk |
 |---|---|---|---|
-| B1 neighbour EOBT tempo, B2 take-off order, B3 stand gap, B4 queue, together on the v33 base | 1.3 s (CLEAN -2.67 s, -805 MSE outside LIRF, paired, section 4.2) | A | base-feature change; seeds trained normally |
+| B1 to B4 on the v33 base (v40) | 1.3 s priced, **1.90 s live** | A | landed |
+| the same columns on the LIRF regressor plus no cap (v41) | 0.7 s priced, **0.65 s live** | A | landed |
+| forward take-off order on the base (v42 members) | 0.15 s, under the bar | A | set aside |
+| tempo columns on the LIRF gate | worse by 94 MSE | A | rejected |
 | C1 fallback heads at 6 airports | 1 to 4 s | C | ceiling 4,892 MSE against the median; residual against the base unmeasured |
 | C2 leaf type decision | 0 to 3 s | D | the linear tree has live evidence inside a bundle |
 | D1 tail head with priors | 0 to 3 s in expectation, high variance | C | 20 to 40 rows decide it; the deployed table is already MSE-optimal per band |
@@ -749,9 +857,8 @@ test; C = ceiling arithmetic; D = unmeasured.
 | C4 retune | 0 to 2 s | D | never done on the purified protocol |
 | E3 integer dtype | 0 | A | correctness only |
 
-The sum of the graded gains is now 3 to 12 s. The tempo family delivered
-1.3 s on the deployed frame, not the 5 to 10 s of the quick test; the other
-rows keep their grades. The range crosses 300 s and does not reach 263 s. Section 1.4 states why no lower target is
+The tempo family delivered 2.55 s live across v40 and v41, not the 5 to
+10 s of the quick test. The remaining graded rows sum to 1 to 9 s. The range crosses 300 s and does not reach 263 s. Section 1.4 states why no lower target is
 set.
 
 ## 6. Contradictions with earlier passes

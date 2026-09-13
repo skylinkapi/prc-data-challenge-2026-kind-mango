@@ -30,7 +30,8 @@ def read_list(name: str) -> list[str]:
         return f.read().splitlines()
 
 
-def lirf_head(dep: pd.DataFrame) -> np.ndarray:
+def lirf_head(dep: pd.DataFrame, members: list[str] = R_NORM_FILES,
+              feat_norm: list[str] | None = None) -> np.ndarray:
     """v33 LIRF prediction: mixture, band table and ITY340 on one LIRF frame."""
     with open(os.path.join(MODELS, "lirf_regime_v23.rate_maps.pkl"), "rb") as f:
         bundle = pickle.load(f)
@@ -38,10 +39,10 @@ def lirf_head(dep: pd.DataFrame) -> np.ndarray:
     cats = {c: pd.Index(dep[c].dropna().unique()) for c in CAT_COLS}
     for c in CAT_COLS:
         dep[c] = pd.Categorical(dep[c], categories=cats[c])
-    feat_norm = read_list("lirf_regime.features.txt")
-    members = [np.clip(lgb.Booster(model_file=os.path.join(MODELS, fn)).predict(dep[feat_norm]), 0, None)
-               for fn in R_NORM_FILES]
-    r_norm = np.minimum(np.mean(members, axis=0), R_NORM_CLIP)
+    feat_norm = feat_norm or read_list("lirf_regime.features.txt")
+    preds = [np.clip(lgb.Booster(model_file=os.path.join(MODELS, fn)).predict(dep[feat_norm]), 0, None)
+             for fn in members]
+    r_norm = np.minimum(np.mean(preds, axis=0), R_NORM_CLIP)
     with open(os.path.join(MODELS, "lirf_regime_v23.isotonic.pkl"), "rb") as f:
         iso = pickle.load(f)
     p_fb = iso.transform(lgb.Booster(model_file=os.path.join(MODELS, "lgbm_p_fb_lirf_v23.txt"))

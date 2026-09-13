@@ -80,8 +80,8 @@ def train_members(train: pd.DataFrame, stop: pd.DataFrame, test: pd.DataFrame,
         b = lgb.train(params, dt, num_boost_round=5000, valid_sets=[dv],
                       callbacks=[lgb.early_stopping(100, verbose=False)])
         log.info("%s seed %d best iter %d in %.0fs", tag, seed, b.best_iteration, time.time() - t0)
-        if tag == "v40":
-            b.save_model(os.path.join(MODELS, f"lgbm_r_all_v40_s{seed}.txt"))
+        if tag != "control":
+            b.save_model(os.path.join(MODELS, f"lgbm_r_all_{tag}_s{seed}.txt"))
         preds.append(np.clip(b.predict(test[feat], num_iteration=b.best_iteration), 0, None))
         iters.append(b.best_iteration)
     return np.mean(preds, axis=0), iters

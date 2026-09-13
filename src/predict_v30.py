@@ -74,7 +74,8 @@ def main(out_name="kind-mango_v30.parquet",
          base_seeds=None, r_norm_files=None,
          p_fb_members=None, p_fb_features=None,
          per_member_base_clip=True, fill_zero_rows_per_airport=False,
-         base_model="lgbm_r_all_v26", use_plan_features=False, extra_columns=None):
+         base_model="lgbm_r_all_v26", use_plan_features=False, extra_columns=None,
+         r_norm_features="lirf_regime.features.txt", r_norm_clip=R_NORM_CLIP):
     base_seeds = base_seeds or DEFAULT_BASE_SEEDS
     r_norm_files = r_norm_files or DEFAULT_R_NORM_FILES
     p_fb_members = p_fb_members or DEFAULT_P_FB_MEMBERS
@@ -165,7 +166,7 @@ def main(out_name="kind-mango_v30.parquet",
 
     # LIRF regime head + R_norm clip
     print(f"LIRF regime head, {len(r_norm_files)} R_norm member(s), clip at 4,431 s...")
-    with open(os.path.join(MODELS, "lirf_regime.features.txt")) as f:
+    with open(os.path.join(MODELS, r_norm_features)) as f:
         feat_norm = f.read().splitlines()
     r_norm_members = []
     for fn in r_norm_files:
@@ -173,9 +174,9 @@ def main(out_name="kind-mango_v30.parquet",
         r_norm_members.append(np.clip(b_n.predict(dep_lirf[feat_norm]), 0, None))
         del b_n; gc.collect()
     r_norm_lirf_raw = np.mean(r_norm_members, axis=0)
-    r_norm_lirf = np.minimum(r_norm_lirf_raw, R_NORM_CLIP)
-    n_clipped = (r_norm_lirf_raw > R_NORM_CLIP).sum()
-    print(f"  R_norm_LIRF clipped {n_clipped} predictions at {R_NORM_CLIP:.0f}s")
+    r_norm_lirf = r_norm_lirf_raw if r_norm_clip is None else np.minimum(r_norm_lirf_raw, r_norm_clip)
+    n_clipped = 0 if r_norm_clip is None else (r_norm_lirf_raw > r_norm_clip).sum()
+    print(f"  R_norm_LIRF clipped {n_clipped} predictions at {r_norm_clip}s")
     del r_norm_members; gc.collect()
 
     print(f"p_fb mean over {len(p_fb_members)} calibrated member(s)...")
