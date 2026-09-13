@@ -70,3 +70,7 @@ tmp/
 
 # Tuner feature caches (over the 100 MB GitHub limit)
 models/*tune_cache*.parquet
+models/v2/cache/*.parquet
+models/v2/*.parquet
+models/v2/logs/*
+models/v2/*.json

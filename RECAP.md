@@ -1,14 +1,13 @@
 # kind-mango recap
 
 Status as of 2026-09-13. Team best **301.87 s** (v33). 111 teams on
-leaderboard. **1.87 s from breaking 300.** v34 (Item 2 hold-out-leak refit)
-regressed +0.21 s; v35 (ninth-audit 7.5 repair) failed to revert by
-construction and landed +0.22 s; v36 (tenth-audit measure 1, F7 zero-clip
-repair) landed at 302.05, +0.18 s vs v33 and essentially flat vs v34, so
-the priced ~252 MSE F7 gain did not materialise. v37 (5-seed `p_fb` mean,
-priced -151 MSE) landed at 302.52, +0.65 s. v38 (base + `ARVT_1_flt`
-planned-time features) failed the deployed-recipe gate and was not uploaded.
-v33 remains best; v34, v35, v36, v37 rejected.
+leaderboard. **1.87 s from breaking 300.** v34 to v37 regressed +0.18 to
++0.65 s; v38 (`ARVT_1_flt` planned-time features) failed its gate.
+v39 shipped the twelfth-audit rewrite (`src_v2/`) from a cold start; it
+scored **352.19 s** live, a +50 s regression, because the new base carries
+60 columns against v33's 97 and the audit-mandated clean-only training
+starves the base of tail-row context. v33 remains best; v34–v37 and v39
+rejected.
 v33 (5-member R_norm_LIRF only, 3-seed base kept) scored 301.87 vs the
 priced 301.86 — the audit's ambiguity framework predicted the live gain to
 0.01 s. Validates the "ship priced-cheap changes one at a time" rule from
@@ -30,6 +29,7 @@ Fixing those (Step 2, v21) took live from **560.91 to 430.45** — a **130 s dro
 
 | tag | RMSE   | notes                                                |
 |-----|--------|------------------------------------------------------|
+| v39 | 352.19 | Twelfth-audit rewrite (`src_v2/`). New package, section-4 order: P1 harness + A1–A8 data layer (5-second fallback window at 7 airports, no OPDI/EC, NaN encoding, robust encoders, stand prefix), B1–B6 features (neighbour EOBT tempo at 30/60 min and same-runway 30 min, take-off order backward-only, stand re-occupation gap, queue between EOBT_1 and MVT, plan-taxi residual clipped, anchor deltas + flt_null), C1 regime heads at 7 airports, C2 constant leaves, C3 clean-only base (`30 <= y <= 7200`, `|y - sd| > 5`), 3-seed base (C5), D1 null-flight tail head restricted to LIRF and `sd > 14400` (initial `sd > 3600` blew up on CLEAN null-flight rows across all airports), D4 accepts undetectable LFPG/LSZH 24h rows, E1 clip [30, 100000], E2 removes `R_NORM_CLIP`/`NORMAL_MEAN_LIRF`/`P24_ITY`/`ITY_SD_THRESHOLD`. Hold-out FULL 338.06, CLEAN 264.26 — CLEAN beats v33 by 2 s but the 2026 shift on the leaner feature set flips it: 60 columns against v33's 97 leaves the base without the turnaround, congestion, OSM path, taxi-distance, disruption and OPDI-live families that R_all_v26 carries. First upload (`v2a`, int32) got no result JSON — the scoring service rejects non-float64 payloads silently, contradicting the audit's T7 dtype claim. Second upload (`v2b`, float64) also got no result — the `v<letter>` naming breaks the scorer. Third upload renamed `v39` scored 352.19, +50.32 s vs v33. Three upload slots consumed today, two left. v33 remains best. |
 | v38 | not uploaded | Base + `ARVT_1_flt` planned-time features (`features_plan.py`, `train_r_all_v26.py --plan`, `predict_v38.py`). Fast A/B CLEAN about -2 s (noisy, gate 1 failed). Deployed recipe: seed 43 collapses at iteration 6 in two identical runs; 3-member hold-out CLEAN 277.27 vs v26 266.46. Gate 2 failed; stopped before upload. See MODEL_ANALYSIS section 4. |
 | v37 | 302.52 | Eleventh audit: v33 pipeline + 5-seed `p_fb_LIRF` mean (`train_p_fb_lirf_seeds.py`, `predict_v37.py`; `predict_v30.main` takes `p_fb_members`, v33 parity 0.0 s). Label-free price -151 MSE (predicted 301.62), under the 268 MSE bar; shipped on user decision. Live +0.65 s vs v33, a 547 MSE miss: the v23 booster is a better-than-average draw on the 2026 labels. Seed-mean lever closed. Earlier the same day the `R_norm_LIRF` coverage-skew retrain failed its replay gate at 103 MSE, no upload. v33 stays best. |
 | v36 | 302.05 | Tenth-audit measure 1: F7 zero-clip repair. `predict_v30` gains two optional kwargs (`per_member_base_clip`, `fill_zero_rows_per_airport`); default preserves v33 bit-parity. v36 sets both — the base ensemble averages raw predictions, then any row still at exactly 0 is filled with the median of positive predictions at its own airport. Diff vs v33: 110 rows, mean 0.06 s, mean \|diff\| 0.13 s, 44 zero rows filled (v33 had 23 zeros; removing per-member clip generated 21 more, all caught by the fill). Live +0.18 s vs v33, -0.02 s vs v34 — priced ~252 MSE gain did not appear on live; the collateral movement from removing the per-member clip cancelled the zero-fill win. v33 stays best. |
@@ -216,11 +216,18 @@ eobt1_sched   rank  12
 ## Submission slots
 
 The limit is 5 uploads per UTC day. 2026-09-12 used 4 slots (v34 to v37).
-The last upload is v37.
+2026-09-13 used 3 slots (v2a int32 — no result; v2b float64 with letter
+suffix — no result; v39 float64 numeric — 352.19). Two slots remain.
+Naming lesson: the scorer needs `kind-mango_v<int>.parquet`, float64 dtype.
 
 ## Next ideas
 
-The ranked levers are in `docs/MODEL_ANALYSIS.md` section 3. The open item:
+The twelfth audit (2026-09-13) replaces the lever list. `docs/MODEL_ANALYSIS.md`
+section 4 holds the ordered measures for the next model: the evaluation
+harness first, then the 5-second fallback definition at 7 airports, the
+neighbour EOBT tempo and take-off order features (quick test -9 to -12 s), a
+fallback head at 6 more airports, and one tail head with priors. The open
+item below stays in that list as measure B5:
 
 - `ARVT_1_flt` signal in one new form: `plan_taxi_res` alone, clipped to
   ±3,600 s, without the raw `plan_block` and `arvt1_mvt`. Run fresh gates

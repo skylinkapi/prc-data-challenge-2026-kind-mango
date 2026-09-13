@@ -10,7 +10,11 @@ airport-reported truth.
   rank 44 of 111 teams. v33 landed at 301.87 vs the priced 301.86 (off by
   0.01 s), validating the 2026 ambiguity framework from the seventh audit.
 - **After v33 (status 2026-09-13):** v34 to v37 scored 302.05 to 302.52 and
-  are rejected. v38 failed its hold-out gate and was not uploaded.
+  are rejected. v38 failed its hold-out gate. v39 (twelfth-audit rewrite
+  under `src_v2/`, sections P–F in order) scored 352.19 s live from a cold
+  start; it improved CLEAN by 2 s on hold-out but the 60-column base
+  regressed FULL because it dropped 37 v33 columns the audit did not
+  account for. v33 stays best. See `docs/MODEL_ANALYSIS.md` section 4.1.
 
 ## License
 
@@ -83,13 +87,15 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | **kind-mango_v33** | **301.87** | **-0.11** | + 5-member `R_norm_LIRF` only, 3-seed base kept; priced 301.86, live 301.87 |
 | kind-mango_v34 to v36 | 302.05-302.09 | +0.18 to +0.22 | hold-out-leak refits and the zero-clip repair; rejected (see RECAP) |
 | kind-mango_v37 | 302.52 | +0.65 | + 5-seed `p_fb` mean; priced 301.62, regressed; rejected (see MODEL_ANALYSIS 4.1) |
+| kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 
 v38 (base + `ARVT_1_flt` planned-time features) is not in the table. It failed
 the deployed-recipe gate, so no upload followed (MODEL_ANALYSIS section 4).
 
 The `RECAP.md` file tracks every attempt, including the failures. The
-`docs/MODEL_ANALYSIS.md` file carries the eleventh-pass audit, the ranked
-levers and the gate logs for v37 and v38. Earlier passes stay in git.
+`docs/MODEL_ANALYSIS.md` file carries the twelfth-pass audit: the MSE budget
+by label class, the data and method findings, and the ordered measures for
+the next model. Earlier passes stay in git.
 
 ## Model card (v21)
 
@@ -219,6 +225,25 @@ Minio('s3.opensky-network.org', access_key=c['access_key'], secret_key=c['secret
 
 Full reproduction steps are in [`REPRODUCE.md`](REPRODUCE.md).
 
+### Rewrite (`src_v2/`, v39, live 352.19)
+
+Cold-start rebuild of the section-4 measures from `docs/MODEL_ANALYSIS.md`.
+One evaluation harness (P1), one data layer (A1–A8), neighbour EOBT tempo
+(B1), take-off order (B2), stand re-occupation gap (B3), queue between
+EOBT_1 and MVT (B4), plan-taxi residual (B5), anchor deltas (B6); 3-seed
+constant-leaf base on clean rows (C2, C3, C5); regime heads at seven
+airports (C1); null-flight LIRF tail head (D1); post-processing (E1–E3).
+Ships as `kind-mango_v39.parquet`. Regressed live by +50 s vs v33 because
+the base carries 60 columns against v33's 97. Kept in the repo as the
+anchor for the "layer measures on the v33 stack" path.
+
+```bash
+python -m src_v2.cli build      # cache 2 feature frames (~4 min)
+python -m src_v2.tests          # F4 label/coverage assertions
+python -m src_v2.cli full kind-mango_v39.parquet   # fit + hold-out + predict
+python -m src_v2.cli upload kind-mango_v39.parquet # MinIO upload
+```
+
 ## Layout
 
 ```
@@ -271,7 +296,7 @@ external/                       # open-data caches (gitignored)
 training/                       # organiser-provided 2025 monthly parquets (gitignored)
 submission/                     # ranking.parquet, submitting.parquet, kind-mango_v*.parquet
 models/                         # trained boosters + encoders + JSON config
-docs/                           # PRC brief + MODEL_ANALYSIS.md (eleventh-pass audit, gate logs)
+docs/                           # PRC brief + MODEL_ANALYSIS.md (twelfth-pass audit, measures for the next model)
 RECAP.md                        # session log for every attempt, submissions and scores
 ```
 
