@@ -229,13 +229,10 @@ Naming lesson: the scorer needs `kind-mango_v<int>.parquet`, float64 dtype.
 
 ## Next ideas
 
-The twelfth audit (2026-09-13) holds the measures in `docs/MODEL_ANALYSIS.md`
-section 4, corrected in 4.1.4 after v39: keep the LIRF `sd > 70,000` hedge,
-train the base on all `y > 0` rows, no upper clip under 180,000 s, paired
-control for every change. Section 4.2 holds the v40 plan: the v33 stack with
-the 13 tempo, order, stand-gap and queue columns grafted onto the base
-(`src/train_r_all_v40.py`, paired against a control on the cached
-97-column frame). The open item below stays in the list as measure B5:
+The fourteenth pass of `docs/MODEL_ANALYSIS.md` (2026-09-13) is the plan
+for a model under 290 s: nine priced levers, a build programme with gates,
+the data-source table and a stop rule. Earlier passes stay at `b193868`.
+The open item below is lever L9 there:
 
 - `ARVT_1_flt` signal in one new form: `plan_taxi_res` alone, clipped to
   ±3,600 s, without the raw `plan_block` and `arvt1_mvt`. Run fresh gates
