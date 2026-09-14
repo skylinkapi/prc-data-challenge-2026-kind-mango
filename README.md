@@ -223,7 +223,14 @@ python src/train_r_all_v40.py             # base with the 13 tempo columns, pair
 python src/train_r_norm_lirf_v41.py       # LIRF regressor members with the 13 columns, paired report
 python src/predict_v41.py kind-mango_v41.parquet
 
-# 5. Submit
+# 5. Run the harness checks (H1 to H5 of the fourteenth pass)
+python src/build_h1_frame_cache.py        # cached frame with the movement id inside
+python src/eval_v33_holdout.py --stack v41  # score any stack on the 2025 hold-out
+python src/test_v33_parity.py             # rebuild v33 to 0.0 s; also writes the 2026 dump
+python src/check_coverage.py --dump models/v33_rank_dump.parquet
+python src/check_submission_2026.py submission/kind-mango_v41.parquet
+
+# 6. Submit
 python -c "\
 from minio import Minio; \
 c = {l.split('=')[0].strip(): l.split('=',1)[1].strip() for l in open('.osn_credentials.txt') if '=' in l}; \
@@ -288,6 +295,13 @@ src/
   features_order_next.py        # forward take-off order column (v42, set aside)
   train_r_all_v42.py            # forward order on the base, paired (set aside)
   predict_v41.py                # current best
+
+  # fourteenth-pass harness (H1 to H5)
+  build_h1_frame_cache.py       # cached frame with the movement id inside (h1_frame_cache.parquet)
+  eval_v33_holdout.py           # scores any stack per class per airport on months 1 and 7
+  check_submission_2026.py      # label-free 2026 checks against the best file
+  check_coverage.py             # per-column coverage 2025 vs Jan/Jul 2026 + OPDI counts
+  test_v33_parity.py            # rebuilds v33 to 0.0 s; writes the 2026 feature dump
 
   # rejected ships v34-v38, kept for the paper trail (see RECAP)
   build_lirf_band_table_v34.py, train_lirf_regime_v34.py,   # v34/v35 fit-month refit

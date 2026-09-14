@@ -75,7 +75,8 @@ def main(out_name="kind-mango_v30.parquet",
          p_fb_members=None, p_fb_features=None,
          per_member_base_clip=True, fill_zero_rows_per_airport=False,
          base_model="lgbm_r_all_v26", use_plan_features=False, extra_columns=None,
-         r_norm_features="lirf_regime.features.txt", r_norm_clip=R_NORM_CLIP):
+         r_norm_features="lirf_regime.features.txt", r_norm_clip=R_NORM_CLIP,
+         dump_features=None):
     base_seeds = base_seeds or DEFAULT_BASE_SEEDS
     r_norm_files = r_norm_files or DEFAULT_R_NORM_FILES
     p_fb_members = p_fb_members or DEFAULT_P_FB_MEMBERS
@@ -168,6 +169,13 @@ def main(out_name="kind-mango_v30.parquet",
     print(f"LIRF regime head, {len(r_norm_files)} R_norm member(s), clip at 4,431 s...")
     with open(os.path.join(MODELS, r_norm_features)) as f:
         feat_norm = f.read().splitlines()
+    if dump_features is not None:
+        with open(os.path.join(MODELS, p_fb_features)) as f:
+            feat_pfb = f.read().splitlines()
+        dump_cols = ["MVT_ID_mvt", "ADEP_mvt", "month"] + sorted(
+            (set(feat_all) | set(feat_norm) | set(feat_pfb)) - {"MVT_ID_mvt", "ADEP_mvt", "month"})
+        dep[[c for c in dump_cols if c in dep.columns]].to_parquet(dump_features)
+        print(f"feature dump -> {dump_features} ({len(dump_cols)} columns)")
     r_norm_members = []
     for fn in r_norm_files:
         b_n = lgb.Booster(model_file=os.path.join(MODELS, fn))

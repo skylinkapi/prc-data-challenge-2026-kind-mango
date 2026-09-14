@@ -1,7 +1,32 @@
 # kind-mango recap
 
 Status as of 2026-09-13. Team best **299.31 s** (v41, below 300). 111 teams on
-leaderboard. v34 to v37 regressed +0.18 to
+leaderboard. The fourteenth-pass harness (H1 to H5) is built:
+
+- H1 `src/build_h1_frame_cache.py` wrote `models/h1_frame_cache.parquet`: the
+  110 served columns, the label, `sd`, the month, the airport and the movement
+  id in one frame. The 169 null ids of the old side file are recovered (129 by
+  a content key, 40 by per-airport time rank); the frame verifies against
+  `frame_train` on every row (label, month, airport) and the tempo columns
+  agree on all 2,084,659 rows. Tempo coverage 0.9962.
+- H2 `src/eval_v33_holdout.py` now scores any stack per class per airport.
+  The v33 default reproduces `models/v33.holdout.json` exactly. The v41 stack
+  measures **102,355 MSE (FULL 319.93, CLEAN 250.83)**, clean 60,365 /
+  fallback 7,688 / tail 12,681 / 24-h 21,517 (`models/v41.holdout.json`).
+  The fourteenth pass priced it at about 102,300 by arithmetic.
+- H3 `src/check_submission_2026.py` writes the label-free 2026 checks. v41 vs
+  v40: LIRF-only rows move (26,808 rows, shift -5.09 s), as shipped.
+- H4 `src/check_coverage.py` wrote `models/coverage_monitor.json`: 4 strict
+  cells flagged, all data drift, not pipeline defects (`dewpt_spread` zeros
+  at LEMD/LSZH in January, `eobt1_sched` zeros at LTFM in July). OPDI counts:
+  LSZH January 2026 is 5,630 vs 7,542 in January 2025, a 25 % drop — the L6
+  January gate fails as written. July 2026 (12,588 vs 11,770) passes.
+- H5 `src/test_v33_parity.py` rebuilds v33 through `predict_v30.main` with the
+  v33 member list. **Parity: max |diff| = 0.0000 s on 344,841 rows**
+  (2026-09-13). The run writes the 2026 dump `models/v33_rank_dump.parquet`
+  for H4.
+
+v34 to v37 regressed +0.18 to
 +0.65 s; v38 (`ARVT_1_flt` planned-time features) failed its gate.
 v39 shipped the twelfth-audit rewrite (`src_v2/`) from a cold start and
 scored **352.19 s** live, +50 s. The row-level debrief (MODEL_ANALYSIS 4.1)
