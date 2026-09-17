@@ -106,9 +106,9 @@ v38 (base + `ARVT_1_flt` planned-time features) is not in the table. It failed
 the deployed-recipe gate, so no upload followed (MODEL_ANALYSIS section 4).
 
 The `RECAP.md` file tracks every attempt, including the failures. The
-`docs/MODEL_ANALYSIS.md` file is the fourteenth pass: the deployed model,
-the MSE budget, the priced levers, the build programme for a model under
-290 s, and the open data sources with licences. Earlier passes stay in git.
+`docs/MODEL_ANALYSIS.md` file is the fifteenth pass: the audit of v47, the
+causes of the remaining error, and the measures for the new model. Earlier
+passes stay in git.
 
 ## Model card (v21)
 
@@ -336,7 +336,7 @@ external/                       # open-data caches (gitignored)
 training/                       # organiser-provided 2025 monthly parquets (gitignored)
 submission/                     # ranking.parquet, submitting.parquet, kind-mango_v*.parquet
 models/                         # trained boosters + encoders + JSON config
-docs/                           # PRC brief + MODEL_ANALYSIS.md (fourteenth pass: plan for the model under 290 s)
+docs/                           # PRC brief + MODEL_ANALYSIS.md (fifteenth pass: audit of v47, measures for the new model)
 RECAP.md                        # session log for every attempt, submissions and scores
 ```
 
