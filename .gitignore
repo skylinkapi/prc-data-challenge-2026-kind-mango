@@ -81,3 +81,6 @@ models/tempo_*.parquet
 models/plan_taxi_res_*.parquet
 models/plan_route_medians.parquet
 models/v33_rank_dump.parquet
+models/calendar_*.parquet
+models/weather_eobt_*.parquet
+models/arr_txi_*.parquet

@@ -67,6 +67,9 @@ Fixing those (Step 2, v21) took live from **560.91 to 430.45** — a **130 s dro
 | v46 | 299.14 | -0.17 s vs v41. L1 retuned base on v45 features. `tune_lgbm_v43.py` Optuna sweep (30 trials, `linear_tree` pinned True, `feature_pre_filter=False`) best trial 10 stop RMSE 245.41 with num_leaves 436, min_data_in_leaf 291, lr 0.0183, feature_fraction 0.5629, linear_lambda 0.0056 (vs deployed lr 0.023, leaves 220, min_data 76, l_lambda 1.0). Paired vs v45: served clean -662 MSE (LSZH -527 dominates), served total -740 MSE, gate 500 passed. Live -102 MSE landed, paired-to-live ratio 14 % — the base stack v44+v45+v46 combined only moved live by 0.17 s despite -1,864 paired MSE. Says the paired hold-out is poorly calibrated once several base changes stack on each other. Uploaded 2026-09-17. |
 | v45 | pending | v44 pipeline + plan_taxi_res, clipped to +/-3600 s (`build_plan_taxi_res.py`, `train_r_all_v45.py`, `predict_v45.py`). Route medians from 5,619 2025-clean-fit-month routes; residual coverage 0.989 train / 0.982 rank. Paired vs v44: clean class outside LIRF -650 MSE, served base total -617 MSE, gate 300 passed. 2026 sanity: LIRF rows unchanged; non-LIRF shifts vs v44 -1.7 to +3.2 s (LSZH +2.54, EDDM +3.15, LFPG +2.72, LTFM -1.72); over_7200 105, over_80000 3, at_zero 27. Uploaded 2026-09-16, score pending. |
 | v44 | pending | v41 pipeline + p25/p75 of neighbour `mvt_eobt1` on the base (`build_tempo_p2575.py`, `train_r_all_v44.py`). Six new columns at the apt30, apt60 and rwy30 windows. Paired vs the v40 recipe reproduced: clean class outside LIRF -552 MSE, served base total -565 MSE, gate 300 passed. 2026 sanity: LIRF rows unchanged; non-LIRF airport shifts -2.1 to +2.0 s; over_7200 106 (v41 104), over_80000 3 (=v41), at_zero 32 (v41 29). Uploaded 2026-09-16, score pending. |
+| v48wx | not uploaded | L7: METAR joined at EOBT_1 (tmpc/vis_km/wind_kt/wx_precip/deicing_gate at pushback time) added to v45's 117-column feature set. `build_weather_eobt.py` (coverage 0.985), `train_r_all_v48wx.py`. Paired vs v45: FULL 391.97 -> 381.55, CLEAN 255.11 -> 254.11. Served (non-LIRF) delta clean -293, fallback -4, tail -58, 24h -12 (total -367 MSE). Served clean price +293, gate 300 short by 7 MSE. All four served classes improved but the gate is unmet as written; kept as an open lever for a future retune-on-v47 session. |
+| v48cal | not uploaded | L8: three calendar flags (public holiday from `holidays` 0.104, weekend, or either) on v45's 117-column feature set. `build_calendar.py`, `train_r_all_v48cal.py`. Public-holiday coverage 2.6 %, weekend 28 %. Paired vs v45: served (non-LIRF) delta clean -144, fallback +24, tail +28, 24h -13 (total -105). Served clean price +144 MSE, gate 200 short by 56. Rejected; the hour/dow categoricals already capture most of the weekend signal. |
+| v48arr | not uploaded | L3.e: arrival taxi-in residual over the previous 30 min minus the 2025 fit-month per-airport median. `build_arr_taxi_res.py` (coverage 0.996, airport medians LTFM 772 s to LEBL 209 s), `train_r_all_v48arr.py`. Paired vs v45: served (non-LIRF) delta clean +102, fallback +8, tail -56, 24h -10 (total +44). Served clean price -102 MSE, gate 300 failed with a genuine regression on clean. Closed. |
 | v45term | not uploaded | L3.c: neighbour `mvt_eobt1` median/mean/count grouped by (ADEP, stand_prefix) over 30 min (`build_tempo_term30.py`, `train_r_all_v45term.py`). Paired vs v44 recipe: served (non-LIRF) delta clean +77, fallback +4, tail -55, 24h 0; total +26 MSE (neutral-slightly worse). Served clean price -77 MSE, gate 300 failed. Rejected; the stand categorical + rwy30 tempo already capture per-terminal geometry. |
 | v45iobt | not uploaded | L3.b: p25/p75 of neighbour `mvt_iobt` at apt30/apt60/rwy30 windows (`build_tempo_iobt_p2575.py`, `train_r_all_v45iobt.py`). Paired vs v44 recipe: served (non-LIRF) delta clean +16, fallback +12, tail +37, 24h +12; total +77 MSE (worse). Served clean price -16 MSE, gate 300 failed. Rejected; IOBT is redundant with EOBT_1 once the eobt quartiles are in. |
 | v45op | not uploaded | L3.d: neighbour `mvt_eobt1` grouped by (airport, operator) over 120 min, median/mean/count (`build_tempo_op120.py`, `train_r_all_v45op.py`). Paired vs v44 recipe: served (non-LIRF) delta clean +54, fallback +1, tail +59, 24h +14; total +128 MSE (worse). Served clean price -54 MSE, gate 300 failed. Rejected; likely captured by the 16 operator-historic taxi encoders already in the base. |
@@ -295,9 +298,32 @@ Session 2026-09-16 paired-gate log (base v44 = v41 + L3.a):
   v46 (v45 features with the retuned base), score pending.
 - L2 12-month refit (`train_r_all_v47.py`): the plan's final step per
   section 5.2 step 6 and section 7 stop rule (sum of shipped paired prices
-  ~1,922 MSE, under the 3,000 threshold). Removes the hold-out. Uploaded
-  as v47; the live delta is the price. Any further work goes into
-  documentation and the paper, not more uploads.
+  ~1,922 MSE, under the 3,000 threshold). Removes the hold-out. Shipped as
+  v47, live 296.57 (-2.74 s vs v41, the dominant live driver).
+- L8 calendar (`build_calendar.py`, `train_r_all_v48cal.py`, holidays 0.104
+  package): paired vs v45, served clean +144 MSE, gate 200 short by 56.
+  Rejected; only 2.6 % of rows hit a public holiday and 28 % a weekend,
+  and the row-hour categorical already captures most of the weekend
+  signal.
+- L7 weather at EOBT (`build_weather_eobt.py`, `train_r_all_v48wx.py`):
+  paired vs v45 with tmpc/vis/wind/wx_precip/deicing_gate joined at
+  EOBT_1 (in addition to the deployed MVT_TIME join), served clean +293
+  MSE, gate 300 short by 7. All four served classes improved (total -367),
+  but rejected as written. Practically at the bar; a fresh paired run on
+  v47 features could tip it over if it survives the L1 retune and L2
+  refit — kept as an open lever for a future session.
+- L3.e arrival taxi-in residual (`build_arr_taxi_res.py`,
+  `train_r_all_v48arr.py`): median arrival TAXITIME_SEC_mvt at same
+  airport in previous 30 min minus 2025 fit-month median, coverage 0.996.
+  Paired vs v45, served clean -102 MSE (regression); gate 300 failed.
+  Airport medians look sensible (LTFM 772 s, LIRF 592, LEBL 209) but the
+  residual does not carry signal for departure taxi that is not already
+  in the disruption / congestion / plan_taxi_res columns. Closed.
+
+Every step of the fourteenth-pass §5.2 build programme is now complete:
+L1 shipped (v46), L5 rejected, L3.a shipped (v44), L3.b/c/d/e/f rejected
+or skipped, L4 rejected, L6 skipped (H4 coverage), L7 rejected (7 MSE
+short), L8 rejected (56 MSE short), L9 shipped (v45), L2 shipped (v47).
 - L3.f runway-use shares: skipped, duplicates `runway_diversity_prev_30m`
   already in features_advanced.py.
 - Open work: L3.e arrival taxi-in residual, L6 OPDI@LSZH tempo (H4 says
