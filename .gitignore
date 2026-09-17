@@ -74,3 +74,10 @@ models/v2/cache/*.parquet
 models/v2/*.parquet
 models/v2/logs/*
 models/v2/*.json
+
+# Regeneratable feature caches (build_*.py rebuilds them)
+models/*_frame_cache.parquet
+models/tempo_*.parquet
+models/plan_taxi_res_*.parquet
+models/plan_route_medians.parquet
+models/v33_rank_dump.parquet

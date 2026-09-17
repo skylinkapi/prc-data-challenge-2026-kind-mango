@@ -6,11 +6,14 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **299.31 s RMSE** (`kind-mango_v41.parquet`,
-  2026-09-13). v40 put 13 neighbour-tempo, take-off-order, stand-gap and
-  queue columns on the base (-1.90 s live); v41 put the same columns on the
-  LIRF regressor and removed its 4,431 s cap (-0.65 s live). Both were
-  priced on a paired hold-out before upload and landed within 0.1 s.
+- **Current leaderboard best:** **296.57 s RMSE** (`kind-mango_v47.parquet`,
+  2026-09-17), -2.74 s vs v41. The fourteenth-pass plan for a model under
+  290 s executed in four uploads: L3.a p25/p75 EOBT quartiles (v44), L9
+  plan_taxi_res (v45), L1 Optuna retune (v46, live 299.14), L2 12-month
+  refit (v47, live 296.57). The L2 refit alone drove -2.57 s live; the
+  L3.a+L9+L1 base stack only moved live by -0.17 s despite paired -1,864
+  MSE served clean. See `docs/MODEL_ANALYSIS.md` for the plan and
+  `RECAP.md` for the paired-to-live decomposition per ship.
 - **After v33 (status 2026-09-13):** v34 to v37 scored 302.05 to 302.52 and
   are rejected. v38 failed its hold-out gate. v39, the cold-start rewrite
   under `src_v2/`, scored 352.19 s live: one LIRF row with `sd = 94,560`
@@ -92,6 +95,10 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v34 to v36 | 302.05-302.09 | +0.18 to +0.22 | hold-out-leak refits and the zero-clip repair; rejected (see RECAP) |
 | kind-mango_v37 | 302.52 | +0.65 | + 5-seed `p_fb` mean; priced 301.62, regressed; rejected (see MODEL_ANALYSIS 4.1) |
 | **kind-mango_v41** | **299.31** | **-0.65** | v40 + `R_norm_LIRF` members with the 13 columns and no 4,431 s cap (`train_r_norm_lirf_v41.py`); paired -415 MSE; see MODEL_ANALYSIS 4.3 |
+| kind-mango_v44 | pending | — | v41 base retrained with 6 new columns: 25th and 75th percentiles of neighbour `mvt_eobt1` at the apt30, apt60 and rwy30 windows (`build_tempo_p2575.py`, `train_r_all_v44.py`). Paired -565 MSE on the base's served rows; gate 300 passed. Uploaded 2026-09-16. |
+| kind-mango_v45 | pending | — | v44 base retrained with `plan_taxi_res` (clipped +/-3600 s), the row's plan-block minus its 2025 route median (`build_plan_taxi_res.py`, `train_r_all_v45.py`). Paired -617 MSE on the base's served rows (-650 on clean); gate 300 passed. Uploaded 2026-09-16. |
+| kind-mango_v46 | 299.14 | -0.17 | v45 features (117 cols) with the L1 retuned base: 30-trial Optuna sweep on `tune_lgbm_v43.py` picked num_leaves 436, min_data 291, lr 0.018, linear_lambda 0.006 (vs deployed 220 / 76 / 0.023 / 1.0). Paired -1,864 MSE served clean cumulative for the L3.a+L9+L1 stack; only -102 MSE landed live. |
+| **kind-mango_v47** | **296.57** | **-2.57** | **L2: 12-month refit of the v46 recipe (`train_r_all_v47.py`).** 3 seeds on ALL months with the retuned params, iterations scaled by 1/0.88 (v46 iters 609/1799/1015 -> 693/2045/1154). Removed the 2025 hold-out. Live -2.57 s vs v46 shows most of the reachable gain came from training on months 1 and 7 directly, not from feature engineering or hyperparameter tuning. |
 | kind-mango_v40 | 299.97 | -1.90 | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 

@@ -27,8 +27,11 @@ log = logging.getLogger(__name__)
 
 
 def make_params(trial: optuna.Trial) -> dict:
-    linear_tree = trial.suggest_categorical("linear_tree", [True, False])
-    params = {
+    # linear_tree pinned to True: the Dataset caches it on first use, so a
+    # per-trial change raises "Cannot change linear_tree after constructed
+    # Dataset handle". The deployed base uses linear_tree=True; the retune
+    # searches its hyperparameters.
+    return {
         "objective": "regression", "metric": "rmse",
         "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.08, log=True),
         "num_leaves": trial.suggest_int("num_leaves", 64, 440),
@@ -38,13 +41,11 @@ def make_params(trial: optuna.Trial) -> dict:
         "lambda_l1": trial.suggest_float("lambda_l1", 1e-3, 10.0, log=True),
         "lambda_l2": trial.suggest_float("lambda_l2", 1e-3, 10.0, log=True),
         "min_gain_to_split": trial.suggest_float("min_gain_to_split", 0.0, 3.0),
-        "linear_tree": linear_tree,
+        "linear_lambda": trial.suggest_float("linear_lambda", 1e-4, 10.0, log=True),
+        "linear_tree": True,
         "bagging_freq": 5, "verbosity": -1, "num_threads": -1,
         "seed": 42, "bagging_seed": 42,
     }
-    if linear_tree:
-        params["linear_lambda"] = trial.suggest_float("linear_lambda", 1e-4, 10.0, log=True)
-    return params
 
 
 def main() -> None:
@@ -52,10 +53,14 @@ def main() -> None:
     train = dep[dep["month"].isin(TRAIN_MONTHS)]
     stop = dep[dep["month"].isin(EARLYSTOP_MONTHS)]
     log.info("train %d stop %d features %d", len(train), len(stop), len(feat))
+    # feature_pre_filter=False lets min_data_in_leaf vary between trials
+    # without hitting the "may cause unexpected behaviour" pre-filter check.
+    ds_params = {"linear_tree": True, "feature_pre_filter": False}
     dt = lgb.Dataset(train[feat], label=train["TAXITIME_SEC_mvt"].values,
-                     categorical_feature=CAT_COLS, free_raw_data=True)
+                     categorical_feature=CAT_COLS, free_raw_data=True, params=ds_params)
     dv = lgb.Dataset(stop[feat], label=stop["TAXITIME_SEC_mvt"].values,
-                     categorical_feature=CAT_COLS, reference=dt, free_raw_data=True)
+                     categorical_feature=CAT_COLS, reference=dt, free_raw_data=True,
+                     params=ds_params)
 
     def objective(trial: optuna.Trial) -> float:
         t0 = time.time()

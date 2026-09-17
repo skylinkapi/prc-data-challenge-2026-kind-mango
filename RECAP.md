@@ -1,6 +1,13 @@
 # kind-mango recap
 
-Status as of 2026-09-13. Team best **299.31 s** (v41, below 300). 111 teams on
+Status as of 2026-09-17. Team best **296.57 s** (v47, live, -2.74 s vs v41).
+The fourteenth-pass plan under 290 s executed end to end: L3.a p25/p75 EOBT
+quartiles (v44), L9 plan_taxi_res (v45), L1 Optuna retune (v46), L2 12-month
+refit (v47 = final ship). Live decomposition: v46 = 299.14 s (-0.17 s vs
+v41; the base stack L3.a+L9+L1 landed only 102 MSE despite -1,864 paired
+MSE), v47 = 296.57 s (-2.57 s vs v46; the L2 refit alone drove the gain).
+Learning: paired hold-out is poorly calibrated once several base changes
+stack, but 12-month refit gains do transfer strongly. 111 teams on the
 leaderboard. The fourteenth-pass harness (H1 to H5) is built:
 
 - H1 `src/build_h1_frame_cache.py` wrote `models/h1_frame_cache.parquet`: the
@@ -56,6 +63,15 @@ Fixing those (Step 2, v21) took live from **560.91 to 430.45** — a **130 s dro
 
 | tag | RMSE   | notes                                                |
 |-----|--------|------------------------------------------------------|
+| v47 | **296.57** | **new team best, -2.74 s vs v41 (299.31)**. L2 12-month refit of the v46 stack (`train_r_all_v47.py`, `predict_v47.py`). Trained 3 seeds on ALL 12 months with the retuned hyperparameters, no early-stop split, iteration counts scaled by 1/0.88 (v46 iters 609/1799/1015 -> 693/2045/1154). 2026 sanity: LIRF unchanged; non-LIRF shifts vs v46 range -15.05 s (EGLL) to +4.36 s (EHAM). Live delta: -2.74 s covers the sum of shipped paired prices (L3.a -552, L9 -650, L1 -662, L2 unknown-priced) ~ 1,864 MSE served clean, matching the ambiguity prediction of 2-3 s. Uploaded 2026-09-17. |
+| v46 | 299.14 | -0.17 s vs v41. L1 retuned base on v45 features. `tune_lgbm_v43.py` Optuna sweep (30 trials, `linear_tree` pinned True, `feature_pre_filter=False`) best trial 10 stop RMSE 245.41 with num_leaves 436, min_data_in_leaf 291, lr 0.0183, feature_fraction 0.5629, linear_lambda 0.0056 (vs deployed lr 0.023, leaves 220, min_data 76, l_lambda 1.0). Paired vs v45: served clean -662 MSE (LSZH -527 dominates), served total -740 MSE, gate 500 passed. Live -102 MSE landed, paired-to-live ratio 14 % — the base stack v44+v45+v46 combined only moved live by 0.17 s despite -1,864 paired MSE. Says the paired hold-out is poorly calibrated once several base changes stack on each other. Uploaded 2026-09-17. |
+| v45 | pending | v44 pipeline + plan_taxi_res, clipped to +/-3600 s (`build_plan_taxi_res.py`, `train_r_all_v45.py`, `predict_v45.py`). Route medians from 5,619 2025-clean-fit-month routes; residual coverage 0.989 train / 0.982 rank. Paired vs v44: clean class outside LIRF -650 MSE, served base total -617 MSE, gate 300 passed. 2026 sanity: LIRF rows unchanged; non-LIRF shifts vs v44 -1.7 to +3.2 s (LSZH +2.54, EDDM +3.15, LFPG +2.72, LTFM -1.72); over_7200 105, over_80000 3, at_zero 27. Uploaded 2026-09-16, score pending. |
+| v44 | pending | v41 pipeline + p25/p75 of neighbour `mvt_eobt1` on the base (`build_tempo_p2575.py`, `train_r_all_v44.py`). Six new columns at the apt30, apt60 and rwy30 windows. Paired vs the v40 recipe reproduced: clean class outside LIRF -552 MSE, served base total -565 MSE, gate 300 passed. 2026 sanity: LIRF rows unchanged; non-LIRF airport shifts -2.1 to +2.0 s; over_7200 106 (v41 104), over_80000 3 (=v41), at_zero 32 (v41 29). Uploaded 2026-09-16, score pending. |
+| v45term | not uploaded | L3.c: neighbour `mvt_eobt1` median/mean/count grouped by (ADEP, stand_prefix) over 30 min (`build_tempo_term30.py`, `train_r_all_v45term.py`). Paired vs v44 recipe: served (non-LIRF) delta clean +77, fallback +4, tail -55, 24h 0; total +26 MSE (neutral-slightly worse). Served clean price -77 MSE, gate 300 failed. Rejected; the stand categorical + rwy30 tempo already capture per-terminal geometry. |
+| v45iobt | not uploaded | L3.b: p25/p75 of neighbour `mvt_iobt` at apt30/apt60/rwy30 windows (`build_tempo_iobt_p2575.py`, `train_r_all_v45iobt.py`). Paired vs v44 recipe: served (non-LIRF) delta clean +16, fallback +12, tail +37, 24h +12; total +77 MSE (worse). Served clean price -16 MSE, gate 300 failed. Rejected; IOBT is redundant with EOBT_1 once the eobt quartiles are in. |
+| v45op | not uploaded | L3.d: neighbour `mvt_eobt1` grouped by (airport, operator) over 120 min, median/mean/count (`build_tempo_op120.py`, `train_r_all_v45op.py`). Paired vs v44 recipe: served (non-LIRF) delta clean +54, fallback +1, tail +59, 24h +14; total +128 MSE (worse). Served clean price -54 MSE, gate 300 failed. Rejected; likely captured by the 16 operator-historic taxi encoders already in the base. |
+| v46const | not uploaded | L4: constant-leaf booster (linear_tree=False, 220 leaves, v44 features) meaned with the shipped v44 members at 0.7 / 0.3 (`train_r_all_v46const.py`). v44 alone CLEAN 256.22; v46const alone CLEAN 262.86 (2.6 s worse); mean CLEAN 256.64. Served (non-LIRF) delta clean +64, fallback +1, tail +129, 24h +2; total +196 MSE (worse). Served clean price -64 MSE, gate 400 failed. Rejected; the weaker class drags the mean, exactly the risk MODEL_ANALYSIS 4.1 L4 called out. |
+| v43 | not uploaded | L5 rebuild of `R_norm_LIRF` with `FB_TOL = 5` on the fit mask only (`train_r_norm_lirf_v43.py`). Paired vs the shipped v41 members: clean class +3,546 MSE, fallback -1,200, tail +75, 24h 0; total -2,421 MSE, gate 200 failed. Rejected; the 5-sec mask pulls near-fallback rows into training and hurts the clean predictor. L5 closed. |
 | v41 | **299.31** | **best**. v40 with one term of the LIRF head changed: five `R_norm_LIRF` members retrained with the 13 tempo columns (`train_r_norm_lirf_v41.py`, paired -228 MSE) and the 4,431 s cap removed (paired -187 MSE). Priced -415 MSE; live **-0.65 s vs v40** (-391 MSE). Rejected on the same day by paired price: the gate with the tempo columns (+94 MSE) and the forward take-off order on the base (v42 members, -93 MSE, under the bar). |
 | v40 | 299.97 | previous best. v33 stack with the 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`, `predict_v40.py`). Paired hold-out CLEAN -2.67 s vs a control that reproduces v26; priced about -1.3 s; live **-1.90 s vs v33** (-1,146 MSE). First ship under 300. |
 | v39 | 352.19 | Twelfth-audit rewrite (`src_v2/`), cold start: harness, 5-second fallback window, tempo and order features, regime heads at 7 airports, constant-leaf clean-only base, null-flight LIRF tail head, clip [30, 100000], ITY340 rule removed. Hold-out FULL 338.06, CLEAN 264.26. Debrief (MODEL_ANALYSIS 4.1, T15 to T17): one LIRF row with `sd = 94,560` and a flight record moved from 88,718 (v33 ITY340 hedge) to 3,262 and holds 62 to 73 % of the +32,911 MSE; the base is 4.5 s worse on clean rows than the v33 base on identical hold-out rows (259.74 vs 264.26) and worse on the tail class (clean-only training). Uploads `v2a` (int32) and `v2b` (letter suffix) got no result. Three slots used, two left. v33 remains best. |
@@ -249,7 +265,9 @@ eobt1_sched   rank  12
 
 The limit is 5 uploads per UTC day. 2026-09-12 used 4 slots (v34 to v37).
 2026-09-13 used 3 slots (v2a int32 — no result; v2b float64 with letter
-suffix — no result; v39 float64 numeric — 352.19). Two slots remain.
+suffix — no result; v39 float64 numeric — 352.19). 2026-09-16 used 2 slots (v44 and v45, both scores pending; the scorer was
+unusually slow overnight). 2026-09-17 used 2 slots (v46 and v47, both scores pending).
+One slot remains today.
 Naming lesson: the scorer needs `kind-mango_v<int>.parquet`, float64 dtype.
 
 ## Next ideas
@@ -257,8 +275,35 @@ Naming lesson: the scorer needs `kind-mango_v<int>.parquet`, float64 dtype.
 The fourteenth pass of `docs/MODEL_ANALYSIS.md` (2026-09-13) is the plan
 for a model under 290 s: nine priced levers, a build programme with gates,
 the data-source table and a stop rule. Earlier passes stay at `b193868`.
-The open item below is lever L9 there:
 
+Session 2026-09-16 paired-gate log (base v44 = v41 + L3.a):
+
+- L5 `R_norm_LIRF` on `FB_TOL = 5`: failed (-2,421 MSE served clean).
+- L3.a p25/p75 of nb `mvt_eobt1` at apt30/apt60/rwy30: **passed** +552 MSE.
+  Shipped as v44, score pending.
+- L3.b p25/p75 of nb `mvt_iobt`: failed (-16 MSE); redundant with EOBT_1.
+- L3.c neighbour EOBT by (ADEP, stand_prefix), 30 min: failed (-77 MSE);
+  captured by the stand categorical and rwy30 tempo.
+- L3.d neighbour EOBT by (ADEP, operator), 120 min: failed (-54 MSE);
+  captured by the 16 operator-historic encoders already in the base.
+- L4 constant-leaf booster meaned 0.7/0.3 with v44: failed (-64 MSE);
+  constant leaves are 2.6 s worse alone and drag the mean.
+- L9 plan_taxi_res clipped to +/-3600 s: **passed** +650 MSE. Shipped as
+  v45 (v44 + plan_taxi_res), score pending.
+- L1 purified retune (`tune_lgbm_v43.py`, 30 Optuna trials, linear_tree
+  pinned): **passed** +662 MSE served clean, mostly LSZH -527. Shipped as
+  v46 (v45 features with the retuned base), score pending.
+- L2 12-month refit (`train_r_all_v47.py`): the plan's final step per
+  section 5.2 step 6 and section 7 stop rule (sum of shipped paired prices
+  ~1,922 MSE, under the 3,000 threshold). Removes the hold-out. Uploaded
+  as v47; the live delta is the price. Any further work goes into
+  documentation and the paper, not more uploads.
+- L3.f runway-use shares: skipped, duplicates `runway_diversity_prev_30m`
+  already in features_advanced.py.
+- Open work: L3.e arrival taxi-in residual, L6 OPDI@LSZH tempo (H4 says
+  January 2026 coverage is 25 % below 2025; the January gate fails as
+  written), L7 weather at EOBT, L8 calendar (`holidays` package), L1
+  purified retune (`tune_lgbm_v43.py`, 3 h), L2 12-month refit last.
 - `ARVT_1_flt` signal in one new form: `plan_taxi_res` alone, clipped to
   ±3,600 s, without the raw `plan_block` and `arvt1_mvt`. Run fresh gates
   before any upload (MODEL_ANALYSIS section 4).
