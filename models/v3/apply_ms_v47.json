@@ -1,0 +1,1088 @@
+{
+ "variants": {
+  "v47_shipped": {
+   "rows_moved": 0,
+   "max_up_s": 0.0,
+   "max_down_s": 0.0,
+   "big_moves_ge_60s": [],
+   "n_big_moves": 0,
+   "per_airport": {
+    "EDDF": {
+     "n": 36317,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "EDDM": {
+     "n": 25966,
+     "before_over_7200": 1,
+     "after_over_7200": 1,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "EGLL": {
+     "n": 39840,
+     "before_over_7200": 3,
+     "after_over_7200": 3,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "EHAM": {
+     "n": 38182,
+     "before_over_7200": 4,
+     "after_over_7200": 4,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "LEBL": {
+     "n": 30080,
+     "before_over_7200": 1,
+     "after_over_7200": 1,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "LEMD": {
+     "n": 36954,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "LFPG": {
+     "n": 39872,
+     "before_over_7200": 2,
+     "after_over_7200": 2,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "LIRF": {
+     "n": 26899,
+     "before_over_7200": 99,
+     "after_over_7200": 99,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "LSZH": {
+     "n": 23150,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "LTFM": {
+     "n": 47581,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    }
+   }
+  },
+  "MS1": {
+   "rows_moved": 5,
+   "max_up_s": 0.0,
+   "max_down_s": -13965.556930390365,
+   "big_moves_ge_60s": [
+    {
+     "row": 22354,
+     "airport": "EDDM",
+     "before": 21464.556930390365,
+     "after": 7499.0,
+     "diff_s": -13965.556930390365,
+     "flt_null": 0,
+     "mvt_eobt1": 1560.0
+    },
+    {
+     "row": 49544,
+     "airport": "EHAM",
+     "before": 11102.546319248378,
+     "after": 7311.0,
+     "diff_s": -3791.5463192483785,
+     "flt_null": 0,
+     "mvt_eobt1": -793.0
+    },
+    {
+     "row": 64080,
+     "airport": "LEBL",
+     "before": 8553.438105731875,
+     "after": 4204.0,
+     "diff_s": -4349.438105731875,
+     "flt_null": 0,
+     "mvt_eobt1": 350.0
+    },
+    {
+     "row": 69870,
+     "airport": "LEBL",
+     "before": 5232.270346655525,
+     "after": 4204.0,
+     "diff_s": -1028.270346655525,
+     "flt_null": 0,
+     "mvt_eobt1": 1149.0
+    },
+    {
+     "row": 86869,
+     "airport": "LEMD",
+     "before": 4375.631542656828,
+     "after": 4198.0,
+     "diff_s": -177.63154265682806,
+     "flt_null": 0,
+     "mvt_eobt1": 6616.0
+    }
+   ],
+   "n_big_moves": 5,
+   "per_airport": {
+    "EDDF": {
+     "n": 36317,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "EDDM": {
+     "n": 25966,
+     "before_over_7200": 1,
+     "after_over_7200": 1,
+     "mean_shift_s": -0.5378401344215653,
+     "max_abs_diff_s": 13965.556930390365
+    },
+    "EGLL": {
+     "n": 39840,
+     "before_over_7200": 3,
+     "after_over_7200": 3,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "EHAM": {
+     "n": 38182,
+     "before_over_7200": 4,
+     "after_over_7200": 4,
+     "mean_shift_s": -0.09930193073302547,
+     "max_abs_diff_s": 3791.5463192483785
+    },
+    "LEBL": {
+     "n": 30080,
+     "before_over_7200": 1,
+     "after_over_7200": 0,
+     "mean_shift_s": -0.1787802012096875,
+     "max_abs_diff_s": 4349.438105731875
+    },
+    "LEMD": {
+     "n": 36954,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": -0.004806828561368947,
+     "max_abs_diff_s": 177.63154265682806
+    },
+    "LFPG": {
+     "n": 39872,
+     "before_over_7200": 2,
+     "after_over_7200": 2,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "LIRF": {
+     "n": 26899,
+     "before_over_7200": 99,
+     "after_over_7200": 99,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "LSZH": {
+     "n": 23150,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "LTFM": {
+     "n": 47581,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    }
+   }
+  },
+  "MS1_MS2": {
+   "rows_moved": 109,
+   "max_up_s": 266.3953403781348,
+   "max_down_s": -13965.556930390365,
+   "big_moves_ge_60s": [
+    {
+     "row": 22354,
+     "airport": "EDDM",
+     "before": 21464.556930390365,
+     "after": 7499.0,
+     "diff_s": -13965.556930390365,
+     "flt_null": 0,
+     "mvt_eobt1": 1560.0
+    },
+    {
+     "row": 40039,
+     "airport": "EGLL",
+     "before": 276.6046596218652,
+     "after": 543.0,
+     "diff_s": 266.3953403781348,
+     "flt_null": 0,
+     "mvt_eobt1": 421.0
+    },
+    {
+     "row": 42182,
+     "airport": "EGLL",
+     "before": 393.04033316904116,
+     "after": 543.0,
+     "diff_s": 149.95966683095884,
+     "flt_null": 0,
+     "mvt_eobt1": 481.0
+    },
+    {
+     "row": 49544,
+     "airport": "EHAM",
+     "before": 11102.546319248378,
+     "after": 7311.0,
+     "diff_s": -3791.5463192483785,
+     "flt_null": 0,
+     "mvt_eobt1": -793.0
+    },
+    {
+     "row": 50127,
+     "airport": "EHAM",
+     "before": 0.0,
+     "after": 66.0,
+     "diff_s": 66.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 64080,
+     "airport": "LEBL",
+     "before": 8553.438105731875,
+     "after": 4204.0,
+     "diff_s": -4349.438105731875,
+     "flt_null": 0,
+     "mvt_eobt1": 350.0
+    },
+    {
+     "row": 67900,
+     "airport": "LEBL",
+     "before": 0.0,
+     "after": 188.809,
+     "diff_s": 188.809,
+     "flt_null": 0,
+     "mvt_eobt1": 354.0
+    },
+    {
+     "row": 69870,
+     "airport": "LEBL",
+     "before": 5232.270346655525,
+     "after": 4204.0,
+     "diff_s": -1028.270346655525,
+     "flt_null": 0,
+     "mvt_eobt1": 1149.0
+    },
+    {
+     "row": 86869,
+     "airport": "LEMD",
+     "before": 4375.631542656828,
+     "after": 4198.0,
+     "diff_s": -177.63154265682806,
+     "flt_null": 0,
+     "mvt_eobt1": 6616.0
+    },
+    {
+     "row": 111205,
+     "airport": "LIRF",
+     "before": 141.91994014561158,
+     "after": 292.0,
+     "diff_s": 150.08005985438842,
+     "flt_null": 0,
+     "mvt_eobt1": 903.0
+    },
+    {
+     "row": 112054,
+     "airport": "LIRF",
+     "before": 214.49795186018605,
+     "after": 292.0,
+     "diff_s": 77.50204813981395,
+     "flt_null": 0,
+     "mvt_eobt1": 1134.0
+    },
+    {
+     "row": 112956,
+     "airport": "LIRF",
+     "before": 84.26224918734334,
+     "after": 292.0,
+     "diff_s": 207.73775081265666,
+     "flt_null": 0,
+     "mvt_eobt1": 842.0
+    },
+    {
+     "row": 113300,
+     "airport": "LIRF",
+     "before": 180.09086770596585,
+     "after": 292.0,
+     "diff_s": 111.90913229403415,
+     "flt_null": 0,
+     "mvt_eobt1": 598.0
+    },
+    {
+     "row": 118614,
+     "airport": "LIRF",
+     "before": 210.35710042307693,
+     "after": 292.0,
+     "diff_s": 81.64289957692307,
+     "flt_null": 0,
+     "mvt_eobt1": 663.0
+    },
+    {
+     "row": 119039,
+     "airport": "LIRF",
+     "before": 144.80344969876907,
+     "after": 292.0,
+     "diff_s": 147.19655030123093,
+     "flt_null": 0,
+     "mvt_eobt1": 1079.0
+    },
+    {
+     "row": 119986,
+     "airport": "LIRF",
+     "before": 220.26614406492735,
+     "after": 292.0,
+     "diff_s": 71.73385593507265,
+     "flt_null": 0,
+     "mvt_eobt1": 179.0
+    },
+    {
+     "row": 120510,
+     "airport": "LSZH",
+     "before": 40.94395074057723,
+     "after": 155.0,
+     "diff_s": 114.05604925942276,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 120759,
+     "airport": "LSZH",
+     "before": 0.46429457563793153,
+     "after": 155.0,
+     "diff_s": 154.53570542436208,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 120909,
+     "airport": "LSZH",
+     "before": 8.07523631694977,
+     "after": 155.0,
+     "diff_s": 146.92476368305023,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 120934,
+     "airport": "LSZH",
+     "before": 16.240577088676297,
+     "after": 155.0,
+     "diff_s": 138.7594229113237,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 121269,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 121670,
+     "airport": "LSZH",
+     "before": 51.41537769268668,
+     "after": 155.0,
+     "diff_s": 103.58462230731331,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 121952,
+     "airport": "LSZH",
+     "before": 20.457169434117514,
+     "after": 155.0,
+     "diff_s": 134.5428305658825,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 121977,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 122230,
+     "airport": "LSZH",
+     "before": 25.677308195085313,
+     "after": 155.0,
+     "diff_s": 129.32269180491468,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 122307,
+     "airport": "LSZH",
+     "before": 22.73596023652853,
+     "after": 155.0,
+     "diff_s": 132.26403976347146,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 122448,
+     "airport": "LSZH",
+     "before": 88.60191050264943,
+     "after": 155.0,
+     "diff_s": 66.39808949735057,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 123261,
+     "airport": "LSZH",
+     "before": 85.06937188910179,
+     "after": 155.0,
+     "diff_s": 69.93062811089821,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 123612,
+     "airport": "LSZH",
+     "before": 83.87957849627216,
+     "after": 155.0,
+     "diff_s": 71.12042150372784,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 124219,
+     "airport": "LSZH",
+     "before": 64.27527095583942,
+     "after": 155.0,
+     "diff_s": 90.72472904416058,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 124220,
+     "airport": "LSZH",
+     "before": 63.14575838960647,
+     "after": 155.0,
+     "diff_s": 91.85424161039353,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 124221,
+     "airport": "LSZH",
+     "before": 84.61849826523535,
+     "after": 155.0,
+     "diff_s": 70.38150173476465,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 124507,
+     "airport": "LSZH",
+     "before": 58.85586189877012,
+     "after": 155.0,
+     "diff_s": 96.14413810122988,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 124816,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 124875,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 125062,
+     "airport": "LSZH",
+     "before": 1.5374787370856382,
+     "after": 155.0,
+     "diff_s": 153.46252126291435,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 125229,
+     "airport": "LSZH",
+     "before": 84.0360733612943,
+     "after": 155.0,
+     "diff_s": 70.9639266387057,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 127496,
+     "airport": "LSZH",
+     "before": 6.138179990386429,
+     "after": 155.0,
+     "diff_s": 148.86182000961358,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 127509,
+     "airport": "LSZH",
+     "before": 24.276463214170196,
+     "after": 155.0,
+     "diff_s": 130.7235367858298,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 127536,
+     "airport": "LSZH",
+     "before": 63.71654614093938,
+     "after": 155.0,
+     "diff_s": 91.28345385906061,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 127993,
+     "airport": "LSZH",
+     "before": 52.980029753060116,
+     "after": 155.0,
+     "diff_s": 102.01997024693989,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 133188,
+     "airport": "LSZH",
+     "before": 31.87766591057733,
+     "after": 155.0,
+     "diff_s": 123.12233408942267,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 175735,
+     "airport": "EDDM",
+     "before": 33.104146965100476,
+     "after": 234.068,
+     "diff_s": 200.96385303489953,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 210139,
+     "airport": "EHAM",
+     "before": 0.0,
+     "after": 66.0,
+     "diff_s": 66.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 247487,
+     "airport": "LFPG",
+     "before": 131.70254629836484,
+     "after": 249.0,
+     "diff_s": 117.29745370163516,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 268582,
+     "airport": "LSZH",
+     "before": 73.13612905994127,
+     "after": 155.0,
+     "diff_s": 81.86387094005873,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 268922,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 269156,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 269174,
+     "airport": "LSZH",
+     "before": 46.1567740851404,
+     "after": 155.0,
+     "diff_s": 108.8432259148596,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 269243,
+     "airport": "LSZH",
+     "before": 3.6152607754394275,
+     "after": 155.0,
+     "diff_s": 151.38473922456058,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 270271,
+     "airport": "LSZH",
+     "before": 44.73550259655104,
+     "after": 155.0,
+     "diff_s": 110.26449740344896,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 270978,
+     "airport": "LSZH",
+     "before": 24.37896105650492,
+     "after": 155.0,
+     "diff_s": 130.62103894349508,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 271360,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 272618,
+     "airport": "LSZH",
+     "before": 59.36133890487065,
+     "after": 155.0,
+     "diff_s": 95.63866109512935,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 274027,
+     "airport": "LSZH",
+     "before": 43.75456883916428,
+     "after": 155.0,
+     "diff_s": 111.24543116083572,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 274771,
+     "airport": "LSZH",
+     "before": 0.5859133698723537,
+     "after": 155.0,
+     "diff_s": 154.41408663012766,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 275118,
+     "airport": "LSZH",
+     "before": 0.5405753579971048,
+     "after": 155.0,
+     "diff_s": 154.4594246420029,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 275201,
+     "airport": "LSZH",
+     "before": 19.193932938023632,
+     "after": 155.0,
+     "diff_s": 135.80606706197636,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 275721,
+     "airport": "LSZH",
+     "before": 16.128854708498853,
+     "after": 155.0,
+     "diff_s": 138.87114529150114,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 275809,
+     "airport": "LSZH",
+     "before": 25.464239089104932,
+     "after": 155.0,
+     "diff_s": 129.53576091089508,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 276232,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 276829,
+     "airport": "LSZH",
+     "before": 72.85227571695006,
+     "after": 155.0,
+     "diff_s": 82.14772428304994,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 278258,
+     "airport": "LSZH",
+     "before": 27.412728704925076,
+     "after": 155.0,
+     "diff_s": 127.58727129507493,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 278652,
+     "airport": "LSZH",
+     "before": 94.93045417727247,
+     "after": 155.0,
+     "diff_s": 60.069545822727534,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 278874,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 278991,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 279139,
+     "airport": "LSZH",
+     "before": 9.89810700337726,
+     "after": 155.0,
+     "diff_s": 145.10189299662275,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 279537,
+     "airport": "LSZH",
+     "before": 3.6973319820950636,
+     "after": 155.0,
+     "diff_s": 151.30266801790495,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 280251,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 281077,
+     "airport": "LSZH",
+     "before": 73.26925466794994,
+     "after": 155.0,
+     "diff_s": 81.73074533205006,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 281537,
+     "airport": "LSZH",
+     "before": 0.0,
+     "after": 155.0,
+     "diff_s": 155.0,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 281715,
+     "airport": "LSZH",
+     "before": 14.701487692631604,
+     "after": 155.0,
+     "diff_s": 140.29851230736838,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 286214,
+     "airport": "LTFM",
+     "before": 171.02812603734654,
+     "after": 304.0,
+     "diff_s": 132.97187396265346,
+     "flt_null": 0,
+     "mvt_eobt1": -483.0
+    },
+    {
+     "row": 291291,
+     "airport": "LTFM",
+     "before": 46.62520777447627,
+     "after": 304.0,
+     "diff_s": 257.3747922255237,
+     "flt_null": 0,
+     "mvt_eobt1": 594.0
+    },
+    {
+     "row": 292163,
+     "airport": "LTFM",
+     "before": 228.7377235979056,
+     "after": 304.0,
+     "diff_s": 75.26227640209439,
+     "flt_null": 0,
+     "mvt_eobt1": 5.0
+    },
+    {
+     "row": 300207,
+     "airport": "LTFM",
+     "before": 80.41580171290136,
+     "after": 304.0,
+     "diff_s": 223.58419828709864,
+     "flt_null": 0,
+     "mvt_eobt1": 1384.0
+    },
+    {
+     "row": 340717,
+     "airport": "LEBL",
+     "before": 0.0,
+     "after": 188.809,
+     "diff_s": 188.809,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    },
+    {
+     "row": 342787,
+     "airport": "LEBL",
+     "before": 102.05409832179673,
+     "after": 188.809,
+     "diff_s": 86.75490167820327,
+     "flt_null": 1,
+     "mvt_eobt1": 0.0
+    }
+   ],
+   "n_big_moves": 78,
+   "per_airport": {
+    "EDDF": {
+     "n": 36317,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": 0.0,
+     "max_abs_diff_s": 0.0
+    },
+    "EDDM": {
+     "n": 25966,
+     "before_over_7200": 1,
+     "after_over_7200": 1,
+     "mean_shift_s": -0.5294446224986019,
+     "max_abs_diff_s": 13965.556930390365
+    },
+    "EGLL": {
+     "n": 39840,
+     "before_over_7200": 3,
+     "after_over_7200": 3,
+     "mean_shift_s": 0.010784307688424827,
+     "max_abs_diff_s": 266.3953403781348
+    },
+    "EHAM": {
+     "n": 38182,
+     "before_over_7200": 4,
+     "after_over_7200": 4,
+     "mean_shift_s": -0.09584480433838925,
+     "max_abs_diff_s": 3791.5463192483785
+    },
+    "LEBL": {
+     "n": 30080,
+     "before_over_7200": 1,
+     "after_over_7200": 0,
+     "mean_shift_s": -0.16022612077081186,
+     "max_abs_diff_s": 4349.438105731875
+    },
+    "LEMD": {
+     "n": 36954,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": -0.003576125654699184,
+     "max_abs_diff_s": 177.63154265682806
+    },
+    "LFPG": {
+     "n": 39872,
+     "before_over_7200": 2,
+     "after_over_7200": 2,
+     "mean_shift_s": 0.002941850263383707,
+     "max_abs_diff_s": 117.29745370163516
+    },
+    "LIRF": {
+     "n": 26899,
+     "before_over_7200": 99,
+     "after_over_7200": 99,
+     "mean_shift_s": 0.040538602114346005,
+     "max_abs_diff_s": 207.73775081265666
+    },
+    "LSZH": {
+     "n": 23150,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": 0.29894853028738927,
+     "max_abs_diff_s": 155.0
+    },
+    "LTFM": {
+     "n": 47581,
+     "before_over_7200": 0,
+     "after_over_7200": 0,
+     "mean_shift_s": 0.017959878648753144,
+     "max_abs_diff_s": 257.3747922255237
+    }
+   }
+  }
+ },
+ "ms1_moved": {
+  "EDDF": {
+   "rows_moved": 0,
+   "max_move_s": 0.0,
+   "before_over_7200": 0,
+   "cap_used": 7166.0
+  },
+  "EDDM": {
+   "rows_moved": 1,
+   "max_move_s": 13965.556930390365,
+   "before_over_7200": 1,
+   "cap_used": 7499.0
+  },
+  "EGLL": {
+   "rows_moved": 0,
+   "max_move_s": 0.0,
+   "before_over_7200": 3,
+   "cap_used": 7795.0
+  },
+  "EHAM": {
+   "rows_moved": 1,
+   "max_move_s": 3791.5463192483785,
+   "before_over_7200": 4,
+   "cap_used": 7311.0
+  },
+  "LEBL": {
+   "rows_moved": 2,
+   "max_move_s": 4349.438105731875,
+   "before_over_7200": 1,
+   "cap_used": 4204.0
+  },
+  "LEMD": {
+   "rows_moved": 1,
+   "max_move_s": 177.63154265682806,
+   "before_over_7200": 0,
+   "cap_used": 4198.0
+  },
+  "LFPG": {
+   "rows_moved": 0,
+   "max_move_s": 0.0,
+   "before_over_7200": 2,
+   "cap_used": 7685.0
+  },
+  "LSZH": {
+   "rows_moved": 0,
+   "max_move_s": 0.0,
+   "before_over_7200": 0,
+   "cap_used": 7478.0
+  },
+  "LTFM": {
+   "rows_moved": 0,
+   "max_move_s": 0.0,
+   "before_over_7200": 0,
+   "cap_used": 7789.0
+  }
+ },
+ "ms2_moved": {
+  "EDDF": {
+   "rows_moved": 0,
+   "floor_s": 172.0
+  },
+  "EDDM": {
+   "rows_moved": 2,
+   "floor_s": 234.068
+  },
+  "EGLL": {
+   "rows_moved": 3,
+   "floor_s": 543.0
+  },
+  "EHAM": {
+   "rows_moved": 2,
+   "floor_s": 66.0
+  },
+  "LEBL": {
+   "rows_moved": 6,
+   "floor_s": 188.809
+  },
+  "LEMD": {
+   "rows_moved": 1,
+   "floor_s": 258.0
+  },
+  "LFPG": {
+   "rows_moved": 1,
+   "floor_s": 249.0
+  },
+  "LIRF": {
+   "rows_moved": 14,
+   "floor_s": 292.0
+  },
+  "LSZH": {
+   "rows_moved": 64,
+   "floor_s": 155.0
+  },
+  "LTFM": {
+   "rows_moved": 11,
+   "floor_s": 304.0
+  }
+ }
+}
