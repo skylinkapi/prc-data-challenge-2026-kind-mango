@@ -1,0 +1,19 @@
+{
+ "n_test": 26528,
+ "dropped_from_r_norm": 56,
+ "dropped_from_p_fb": 56,
+ "r_norm_v41_full_rmse": 887.4248217724868,
+ "r_norm_v49_full_rmse": 869.2762194697542,
+ "r_norm_v41_clean_rmse": 463.5502237648797,
+ "r_norm_v49_clean_rmse": 460.68902832856605,
+ "delta_full_mse": -31868.396219959017,
+ "iters_r_norm": [
+  446,
+  410,
+  379,
+  406,
+  400
+ ],
+ "p_fb_stop_auc": 0.8609558940636974,
+ "p_fb_stop_logloss": 0.3660407737511447
+}
