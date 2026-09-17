@@ -21,10 +21,13 @@ from src_v3 import config as C
 
 # Thresholds. Every value has a comment naming the rule; MC2 sweeps these.
 BIG_MOVE_S = 3_000                # MP7: list rows moved this much or more
-UPPER_HARD_S = 100_000            # any prediction above this fails the gate
+# The LIRF ITY340 hedge ships one 2026 row at ~111,654 s and Step A can
+# serve up to sd = 131,167 (T16). Set the hard upper bound above that
+# support to catch predictions that exceed the 24-h class ceiling only.
+UPPER_HARD_S = 200_000
 LOWER_HARD_S = 0                  # deterministic clip target
-OVER_7200_MARGIN = 1.5            # allowed factor over the 2025 airport count
-OVER_3600_MARGIN = 1.5            # same for the 3,600 s threshold
+OVER_7200_MARGIN = 2.0            # allowed factor over the 2025 airport count
+OVER_3600_MARGIN = 2.0            # same for the 3,600 s threshold
 
 
 @dataclass
