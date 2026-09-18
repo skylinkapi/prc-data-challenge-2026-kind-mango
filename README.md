@@ -109,6 +109,7 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v52 | 288.36 | +0.11 vs v51 (noise) | MB3 + MB4 (cyclic doy, local hour, holidays, drop numeric month). MB4 does not help on top of MB3; the numeric month wasn't the defect P2 warned about once L2 gave the base all 12 months. |
 | kind-mango_v54 | 324.11 | +35.86 vs v51 (rejected) | MB1 anchored-offset target broke on 2026 delayed rows: pred_y = anchor + small_offset fails when anchor is 10,000+ s but the true taxi is 1,000 s. Lever closed. |
 | **kind-mango_v55** | **287.83** | **-0.42 vs v51 (new best, -11.48 s vs v41)** | MB8 12-month refit applied to R_norm_LIRF. Landed at the ~0.4 s ceiling for a LIRF-only change (26k of 344k rows). Confirms the L2/MB3 pattern of broader training exposure transfers to the LIRF head. |
+| kind-mango_v56 | pending | — | MB8 12-month refit applied to the p_fb LIRF gate + isotonic. LIRF-only shift vs v55 (mean -16.81 s, max |d| 3,648 s). Larger perturbation than v55 because the calibration was recomputed on the full year. |
 | kind-mango_v40 | 299.97 | -1.90 | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 
