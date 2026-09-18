@@ -1,0 +1,17 @@
+{
+ "v47_members_scored": [
+  42,
+  43,
+  44
+ ],
+ "ms3_rows_moved_per_airport": {
+  "EDDF": 3,
+  "EDDM": 4,
+  "EHAM": 4,
+  "LEBL": 1,
+  "LFPG": 5
+ },
+ "ms3_total_rows_moved": 17,
+ "rows_diff_vs_v48": 15,
+ "max_abs_diff_vs_v48_s": 4349.243242476738
+}
