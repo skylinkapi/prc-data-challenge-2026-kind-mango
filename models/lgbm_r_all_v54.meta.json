@@ -1,0 +1,81 @@
+{
+ "tuned": {
+  "learning_rate": 0.018251635679008563,
+  "num_leaves": 436,
+  "min_data_in_leaf": 291,
+  "feature_fraction": 0.5628923285852835,
+  "bagging_fraction": 0.9766191411793946,
+  "lambda_l1": 0.0010742170943614932,
+  "lambda_l2": 0.02738510389167975,
+  "min_gain_to_split": 2.9738183007585954,
+  "linear_lambda": 0.0055513819638595375,
+  "objective": "regression",
+  "metric": "rmse",
+  "bagging_freq": 5,
+  "verbosity": -1,
+  "num_threads": -1,
+  "seed": 42,
+  "bagging_seed": 42
+ },
+ "v46_iters": [
+  609,
+  1799,
+  1015
+ ],
+ "scaled_iters": [
+  767,
+  2265,
+  1278
+ ],
+ "scale_factor": 1.2585146417103135,
+ "n_served": 1923953,
+ "target": "y - anchor, anchor = mvt_eobt1 if not-null else sched_delay",
+ "filter": "adep != 'LIRF' and 0 < y <= 80_000",
+ "per_airport_offset_bounds": {
+  "EDDF": {
+   "q_low": -8247.88,
+   "q_high": 774.859999999986,
+   "n": 230141
+  },
+  "EDDM": {
+   "q_low": -6536.001,
+   "q_high": 724.6669999999867,
+   "n": 167334
+  },
+  "EGLL": {
+   "q_low": -7500.639999999999,
+   "q_high": 1734.4549999999872,
+   "n": 239546
+  },
+  "EHAM": {
+   "q_low": -9508.636,
+   "q_high": 1017.0529999999853,
+   "n": 247948
+  },
+  "LEBL": {
+   "q_low": -9421.602,
+   "q_high": 1746.8060000000405,
+   "n": 179700
+  },
+  "LEMD": {
+   "q_low": -6659.036,
+   "q_high": 1318.758999999991,
+   "n": 212242
+  },
+  "LFPG": {
+   "q_low": -9475.515,
+   "q_high": 2249.7800000007264,
+   "n": 239486
+  },
+  "LSZH": {
+   "q_low": -7571.016,
+   "q_high": 1092.6319999999832,
+   "n": 134593
+  },
+  "LTFM": {
+   "q_low": -5341.076,
+   "q_high": 2876.0380000000005,
+   "n": 272963
+  }
+ }
+}
