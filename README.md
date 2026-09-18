@@ -6,15 +6,17 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **294.24 s RMSE** (`kind-mango_v48.parquet`,
-  2026-09-17), -5.07 s vs v41. Path: L3.a p25/p75 EOBT quartiles (v44),
-  L9 plan_taxi_res (v45), L1 Optuna retune (v46 = 299.14), L2 12-month
-  refit (v47 = 296.57), fifteenth-pass MS1 per-airport upper bounds and
-  MS2 clean-floor post-processing (v48 = 294.24). The L2 refit drove
-  -2.57 s live; MS1 caught 5 extreme rows (biggest EDDM -13,966 s) for
-  another -2.33 s at zero training cost. See `docs/MODEL_ANALYSIS.md`
-  fifteenth pass and `RECAP.md` for the paired-to-live decomposition per
-  ship.
+- **Current leaderboard best:** **288.25 s RMSE** (`kind-mango_v51.parquet`,
+  2026-09-18), -11.06 s vs v41. Path: L3.a/L9/L1 stacked base changes
+  (v44-v46, live -0.17 s), L2 12-month refit (v47 = 296.57, -2.57 s),
+  fifteenth-pass MS1+MS2 bounds (v48 = 294.24, -2.33 s), fifteenth-pass
+  MB3 base retrained on served rows only, LIRF and y>80,000 excluded
+  (v51 = 288.25, -5.99 s vs v48). MB3 is the biggest single lever of
+  the season: -5.99 s live at zero paired price, because the base's
+  linear leaves were being shaped by LIRF's 16.6 % fallback rate and
+  the 12 24-h rows and extrapolating badly on 2026 out-of-distribution
+  rows. See `docs/MODEL_ANALYSIS.md` fifteenth pass and `RECAP.md` for
+  the full decomposition per ship.
 - **After v33 (status 2026-09-13):** v34 to v37 scored 302.05 to 302.52 and
   are rejected. v38 failed its hold-out gate. v39, the cold-start rewrite
   under `src_v2/`, scored 352.19 s live: one LIRF row with `sd = 94,560`
@@ -103,8 +105,8 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | **kind-mango_v48** | **294.24** | **-2.33** | **Fifteenth-pass Phase 1: MS1 per-airport upper bounds and MS2 clean-floor post-processing on the v47 parquet (`src_v3/build_v48.py`).** 5 non-LIRF extreme rows capped (biggest EDDM 21,465 -> 7,499 s). MP7 label-free gate passed. Zero training cost. Live -2.33 s (about 1,400 MSE) essentially all from the five MS1 clips - MS1 fold price was 0 MSE because the base doesn't extrapolate on 2025 rows, but does on 2026 out-of-distribution rows. |
 | kind-mango_v49 | 294.65 | +0.42 | Fifteenth-pass MD2+MH1 rebuild of the LIRF head without the 56 drifted columns; paired LIRF hold-out -2,405 MSE did not transfer live. Head rebuild lever closed. |
 | kind-mango_v50 | pending | — | Fifteenth-pass Phase 1: MS3 member-disagreement median on top of v48. 17 rows moved (EDDF 3, EDDM 4, EHAM 4, LEBL 1, LFPG 5) where the 3 v47 base members disagreed by more than 3,600 s outside LIRF. 15 remain distinct after MS1's cap. MP7 gate passed. |
-| kind-mango_v51 | pending | — | Fifteenth-pass Phase 1: MB3 base retrained on served rows only (LIRF and y > 80,000 rows filtered out). 3 seeds on 1.92 M rows; rounds scaled by 1.259 (v46 iters -> 767, 2265, 1278). Post-processing (MS1 + MS2) moves only 85 rows with max 304 s -- the MB3 base already avoids extreme predictions natively. |
-| kind-mango_v52 | pending | — | Fifteenth-pass Phase 1: MB3 + MB4 base. Adds cyclic day-of-year, DST-aware local hour and a public-holiday flag to the v51 recipe; drops the numeric month column. 120 features (was 117). Same served-row filter and iter scaling as v51. Post-processing moves 86 rows with max 304 s. |
+| **kind-mango_v51** | **288.25** | **-5.99** | **Fifteenth-pass MB3: base retrained on served rows only** (LIRF and y > 80,000 excluded). Biggest single lever of the season. -5.99 s live at zero paired price - the MB3 base avoids the extreme predictions v47/v48 relied on MS1 to clip. |
+| kind-mango_v52 | 288.36 | +0.11 vs v51 (noise) | MB3 + MB4 (cyclic doy, local hour, holidays, drop numeric month). MB4 does not help on top of MB3; the numeric month wasn't the defect P2 warned about once L2 gave the base all 12 months. |
 | kind-mango_v40 | 299.97 | -1.90 | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 
