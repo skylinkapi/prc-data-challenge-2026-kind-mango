@@ -1,0 +1,9 @@
+{
+ "v23_iter": 182,
+ "scaled_iter": 207,
+ "scale_factor": 1.1363636363636365,
+ "n_rows": 160704,
+ "auc": 0.9255671234835721,
+ "log_loss": 0.2778949665462202,
+ "shares_features_with_v23": true
+}
