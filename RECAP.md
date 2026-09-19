@@ -1,6 +1,6 @@
 # kind-mango recap
 
-Status as of 2026-09-19. Team best **287.50 s** (v56, live, -11.81 s vs v41). MB3 base filter (v51 -5.99 s), MB8 12-month refit of R_norm_LIRF (v55 -0.42 s) and MB8 of the p_fb gate (v56 -0.33 s). Winning theme: broader training exposure + label-free defensive gates. v57 (MB8 for plan_taxi_res route medians) uploaded 2026-09-19 pending.
+Status as of 2026-09-19. Team best **287.33 s** (v57, live, -11.98 s vs v41). MB3 base filter (v51 -5.99 s) plus the MB8 rollout: R_norm 12-month refit (v55 -0.42 s), p_fb gate 12-month refit (v56 -0.33 s) and plan_taxi_res route medians 12-month refit (v57 -0.17 s). Winning theme: broader training exposure + label-free defensive gates. v58 (MB8 for operator encoders) uploaded 2026-09-19 pending.
 The fourteenth-pass plan under 290 s executed end to end: L3.a p25/p75 EOBT
 quartiles (v44), L9 plan_taxi_res (v45), L1 Optuna retune (v46), L2 12-month
 refit (v47 = final ship). Live decomposition: v46 = 299.14 s (-0.17 s vs
@@ -63,7 +63,8 @@ Fixing those (Step 2, v21) took live from **560.91 to 430.45** — a **130 s dro
 
 | tag | RMSE   | notes                                                |
 |-----|--------|------------------------------------------------------|
-| v57 | pending | Fifteenth-pass MB8 applied to the plan_taxi_res route medians: recompute the medians on all 12 months of 2025 clean rows (was fit months 2..6+8..10+11..12 only), rebuild the plan_taxi_res parquets, retrain the v51 base on the updated frame. Extra columns list unchanged; only the plan_taxi_res values differ. 5,883 routes with medians (v45 had 5,619 - Jan+Jul added new routes). Same iter scaling as v51 (767, 2265, 1278). Non-LIRF mean shifts vs v56 are tiny (-0.51 to +0.44 s), max |d| < 1,400 s. LIRF unchanged (LIRF head untouched). Uploaded 2026-09-19. |
+| v58 | pending | Fifteenth-pass MB8 applied to the operator target encoders: refit `features_operator.fit_encoders` on all 12 months (was months 2..12 excluding 7 in the deployed v26 encoders). Same 5 encoder keys (op_apt, op_apt_rwy, op_apt_hbin, op, op_apt_stand) with MIN_COUNT=20. Recomputed openc_* columns on the training frame, retrained the v57 base recipe on the updated frame. Same iter scaling (767, 2265, 1278). Non-LIRF mean shifts vs v57 are small (-1.80 to +0.26 s per airport), max |d| up to 6,307 s on individual rows where the encoder value shift moved a leaf. LIRF unchanged. rows over_7200 125 -> 129. Uploaded 2026-09-19. |
+| v57 | 287.33 | -0.17 s vs v56. Fifteenth-pass MB8 applied to the plan_taxi_res route medians: recompute the medians on all 12 months of 2025 clean rows (was fit months 2..6+8..10+11..12 only), rebuild the plan_taxi_res parquets, retrain the v51 base on the updated frame. Extra columns list unchanged; only the plan_taxi_res values differ. 5,883 routes with medians (v45 had 5,619 - Jan+Jul added new routes). Same iter scaling as v51 (767, 2265, 1278). Non-LIRF mean shifts vs v56 are tiny (-0.51 to +0.44 s), max |d| < 1,400 s. LIRF unchanged (LIRF head untouched). Uploaded 2026-09-19. |
 | v56 | 287.50 | -0.33 s vs v55. Fifteenth-pass MB8 applied to the p_fb LIRF gate: refit lgbm_p_fb_lirf and its isotonic on all 12 months of LIRF rows (v23 recipe otherwise). v23 gate trained on months 2..6+8..10 with isotonic on 11-12; v56 refits with iter count scaled from v23 (182 -> 207) and calibrates on the same full-year rows. Full-year AUC 0.9256, log-loss 0.2779 (in-sample). LIRF-only shift vs v55: 25,044 rows moved, mean -16.81 s, max |d| 3,648 s. over_7200 107 -> 126 (19 more) - the recalibrated gate pushes some rows closer to sd. Uploaded 2026-09-19. |
 | **v55** | **287.83** | **-0.42 s vs v51, new team best (-11.48 s vs v41)**. Fifteenth-pass Phase 5 MB8 applied to R_norm_LIRF: refit the 5 R_norm boosters on ALL 12 months of LIRF genuine rows (v51 recipe otherwise, MB3 base unchanged). Same L2-style 12-month exposure trick that gave the base -2.57 s. Iter counts scaled from v41 (234, 371, 430, 286, 235) by 1/0.88 -> 266, 422, 489, 326, 268. LIRF-only shift (26,795 rows moved, mean -0.27 s, max |d| 2,707 s). Non-LIRF unchanged. Ceiling was ~0.4 s (LIRF weight 26k/344k) and it landed at that ceiling - the L2/MB3 pattern of broader-training-exposure works on the LIRF head too. |
 | v54 | 324.11 | +35.86 s vs v51 (rejected). Fifteenth-pass MB1 anchored-offset target `y - anchor` (anchor = mvt_eobt1 else sched_delay) on top of MB3. Failed because anchor is bimodal on 2026 delayed rows: rows with mvt_eobt1 > 10,000 s (aircraft held past EOBT) but normal taxi output pred_y = anchor + small_offset = 10,000+ s instead of the true 1,000 s. 101 rows at EHAM over 7,200 (v51 had ~4), 25 at LFPG (v51 ~4). The tree learns median offset ~-300 s, cannot correct on huge-anchor rows. Grade D audit missed the bimodality. Lever closed. | Train the base on `y - anchor` where anchor = mvt_eobt1 if not-null else sched_delay. 3 seeds, retuned params, same iter scaling as v51/v52. Predict-time: score the boosters directly (bypassing predict_v30's clip at 0 which would destroy negative offsets), add anchor per row, clip to per-airport [q0.001, q0.999] offset range from training. LIRF rows come from the v51 parquet unchanged. Post MS1+MS2. Mean shift vs v51: +3 to +25 s per airport upward, biggest EHAM +25.54; over_7200 108 -> 279 (extra tails at EHAM 101 and LFPG 25). Could be over-correction or 2026 drift catch-up (arrival mirror showed +6% drift). Uploaded 2026-09-18. |
@@ -371,6 +372,40 @@ short), L8 rejected (56 MSE short), L9 shipped (v45), L2 shipped (v47).
 
 - **No phase 2 is planned**, though the organiser reserves the right to add one "if reverse engineering the ranking is too easy" — "which we despise". Strong external validation for our permanent exclusion of `AOBT_3_flt` and `LOBT_flt` and for the audit rule against setting row-level predictions from live scores.
 - **Trino data access is NOT allowed for the challenge** (Piyush Patil raised; espinielli confirmed). Any Trino-derived feature would disqualify.
+
+### 2026-09-17 to 2026-09-18 (espinielli, fl340, others)
+
+- **EUROCONTROL AIU daily airport files and ADSB.lol (ODbL 1.0) count as open
+  data for the challenge if declared with attribution**, despite
+  EUROCONTROL's non-commercial-use disclaimer and ADSB.lol not being OSN.
+  espinielli: "can be considered open data for the challenge." Does not
+  extend to OSN state vectors (ground truth there is airport-reported).
+- **X1/MX1 resolved.** fl340 raised the same leak concern the audit's X1
+  finding names: `AOBT_3_flt`/`MVT_TIME_UTC_mvt` sit in the ranking set and
+  their difference nearly reveals the target, and ADS-B trajectory archives
+  (adsb.lol) can back out off-block time directly at well-covered airports
+  (~40 % of EDDM flights have a first observation near the gate). espinielli:
+  "the model is for post-ops, not for tactical use" and "there are no such
+  restrictions: if you can find open trajectory data with good ground
+  coverage and extract off-block times, we are ok. Practically speaking it
+  won't be possible" (poor coverage at LFPG, LIRF, LEMD, LFTM named as the
+  reason it is impractical). No formal rule bans either input; the organiser
+  is relying on the coverage gap, not a prohibition. We keep our stricter
+  exclusion — see `README.md` Ethics section and `docs/MODEL_ANALYSIS.md`
+  section 4.9 (X1) / 5.8 (MX1).
+- **Training-data corruption may also affect the ranking set.** lbragado
+  reported corrupted rows in training data; isaacoluwafemiog said prior
+  organiser replies imply the ranking set likely has the same corrupt
+  instances. We have not audited our own pipeline for this yet.
+- **Domain feature ideas from team GREKI [VTSM]** (their numbers, unverified
+  on our data): wake-turbulence take-off sequencing on the same runway
+  (medians 113/148/182/241 s by ICAO wake-class pair) priced at only +0.25 s
+  live for them, explaining 15 % of raw taxi-out variance but 0.18 % of
+  their residual — mostly redundant with congestion + WTC features.
+  Target-encoding the (airport, stand, runway) triple on median historical
+  taxi time substitutes for gate-to-runway distance without GIS data.
+- **Team correspondents share MinIO access keys with teammates**, or create
+  dedicated ones; MinIO CLI is the recommended client (espinielli).
 
 ## Prize window
 

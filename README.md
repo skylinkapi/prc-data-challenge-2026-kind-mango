@@ -6,8 +6,8 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **287.50 s RMSE** (`kind-mango_v56.parquet`,
-  2026-09-19), -11.81 s vs v41. Path: L3.a/L9/L1 stacked base changes
+- **Current leaderboard best:** **287.33 s RMSE** (`kind-mango_v57.parquet`,
+  2026-09-19), -11.98 s vs v41. Path: L3.a/L9/L1 stacked base changes
   (v44-v46, live -0.17 s), L2 12-month refit (v47 = 296.57, -2.57 s),
   fifteenth-pass MS1+MS2 bounds (v48 = 294.24, -2.33 s), fifteenth-pass
   MB3 base retrained on served rows only, LIRF and y>80,000 excluded
@@ -44,6 +44,18 @@ inputs that would place us in the top 3 but that we read as excluded:
 Both fields are visible in the training and ranking files. Our submissions never
 read them. The exclusion sets the floor near 300 s on the leaderboard, per the
 analysis in `docs/MODEL_ANALYSIS.md`.
+
+**Organiser ruling (MX1, resolved 2026-09-18).** espinielli, replying to a
+Discord question about `AOBT_3_flt`/`MVT_TIME_UTC_mvt` and ADS-B-derived
+off-block times: "the model is for post-ops, not for tactical use" and
+"there are no such restrictions: if you can find open trajectory data with
+good ground coverage and extract off-block times, we are ok. Practically
+speaking it won't be possible." No formal rule bans either input. We keep
+the exclusion anyway: the organiser separately called ranking
+reverse-engineering something "we despise" (2026-09-11), and their own
+answer relies on poor ADS-B surface coverage at most airports to make the
+exploit impractical, not on a rule against it. See `RECAP.md` Discord
+confirmations (2026-09-18) and `docs/MODEL_ANALYSIS.md` section 4.9 (X1).
 
 ## What the model is
 
@@ -110,7 +122,8 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v54 | 324.11 | +35.86 vs v51 (rejected) | MB1 anchored-offset target broke on 2026 delayed rows: pred_y = anchor + small_offset fails when anchor is 10,000+ s but the true taxi is 1,000 s. Lever closed. |
 | **kind-mango_v55** | **287.83** | **-0.42 vs v51 (new best, -11.48 s vs v41)** | MB8 12-month refit applied to R_norm_LIRF. Landed at the ~0.4 s ceiling for a LIRF-only change (26k of 344k rows). Confirms the L2/MB3 pattern of broader training exposure transfers to the LIRF head. |
 | **kind-mango_v56** | **287.50** | **-0.33 vs v55 (new best, -11.81 s vs v41)** | MB8 12-month refit applied to the p_fb LIRF gate + isotonic. Pattern held at four levels now: L2 base -> MB3 base filter -> MB8 R_norm -> MB8 gate. |
-| kind-mango_v57 | pending | — | MB8 for `plan_taxi_res` route medians: recompute on all 12 months (5,883 routes vs v45's 5,619) and retrain the v51 base on the updated frame. Very small perturbation (mean shifts under 0.51 s). |
+| **kind-mango_v57** | **287.33** | **-0.17 vs v56 (new best, -11.98 s vs v41)** | MB8 for `plan_taxi_res` route medians: recompute on all 12 months (5,883 routes vs v45's 5,619) and retrain the v51 base on the updated frame. Pattern held at five levels now: L2 base -> MB3 filter -> MB8 R_norm -> MB8 gate -> MB8 route medians. |
+| kind-mango_v58 | pending | — | MB8 for `features_operator` target encoders: refit fit_encoders on all 12 months, recompute openc_* columns, retrain v57-style base. Same iter scaling. |
 | kind-mango_v40 | 299.97 | -1.90 | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 
@@ -209,7 +222,7 @@ stays for the record. See `src/predict_v21_final.py`.
 | Iowa State ASOS | METAR reports, hourly, per station | Public domain |
 | OurAirports | Runway coordinates, headings, lengths | Public domain |
 | OSM Overpass | `aeroway=parking_position`, `taxiway`, `runway` | ODbL |
-| Eurocontrol NM | Daily ATC pre-dep delay, ATFM slot adherence, airport traffic | Open |
+| Eurocontrol NM | Daily ATC pre-dep delay, ATFM slot adherence, airport traffic | Open (non-commercial-use clause; challenge use confirmed by organiser, 2026-09-17) |
 | OPDI (PRC + OSN) | Flight events (entry-runway, entry-taxiway, exit-parking, …) | Open (CC-BY 4.0, confirmed by organiser) |
 | VRS StandingData | Aircraft-type metadata | Open |
 
