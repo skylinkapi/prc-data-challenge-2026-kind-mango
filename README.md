@@ -125,7 +125,7 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | **kind-mango_v57** | **287.33** | **-0.17 vs v56 (new best, -11.98 s vs v41)** | MB8 for `plan_taxi_res` route medians: recompute on all 12 months (5,883 routes vs v45's 5,619) and retrain the v51 base on the updated frame. Pattern held at five levels now: L2 base -> MB3 filter -> MB8 R_norm -> MB8 gate -> MB8 route medians. |
 | kind-mango_v58 | 288.62 | +1.29 vs v57 (rejected) | MB8 for `features_operator` target encoders. Backfires because the encoders have an inherent L1 leak that MB8 exacerbates. Lever closed. Fix is MD4 (leave-one-month-out) which we did not ship. |
 | kind-mango_v59 | 287.70 | +0.37 vs v57 (rejected) | MF4 arrival drift features. Signal did not transfer to departure taxi-out; other features (congestion, tempo) already capture the drift. Lever closed. |
-| kind-mango_v60 | pending | — | MD4 (leave-one-month-out operator encoders), the audit-recommended fix for the v58 encoder leak. 12 fold-encoders per key. Non-LIRF shift vs v57: LTFM +11.73 s (biggest), EDDM +4.55, EDDF +3.37. |
+| kind-mango_v60 | 289.58 | +2.25 vs v57 (rejected) | MD4 OOF encoders regressed worse than v58's MB8. Alignment between training and serving encoders matters more than leak removal. Both encoder levers now closed; v57's v26 encoders sit at the local optimum. |
 | kind-mango_v40 | 299.97 | -1.90 | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 
