@@ -44,6 +44,7 @@ stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
 | L12 Step A normal term reads `R_norm` (MH5, T1) | v63 | -0.24 | accepted; 18 LIRF cell rows move, all down by 100 to 4,241 s. The plan bar is -0.30 s; a deterministic change with no retrain has no retrain noise |
 | L10 out-of-fold isotonic map for the v56 gate (MH1, fixes L3) | v64 | -1.14 | accepted; 25,988 LIRF rows outside Step A move, mean +8.7 s, max 1,805 s; rows above 7,200 s 125 to 105 |
 | L9 `plan_nm_taxi` = `ARVT_1 - EOBT_1` minus its (ADEP, ADES, type) median (MF5, fixes C2) | v65 | -1.22 | accepted; base retrained with 118 columns; non-LIRF shifts -1.3 to +2.7 s, max 2,188 s |
+| L11 weather at `EOBT_1` (MF1), five METAR columns on the v65 base | v66 | +0.33 | rejected; one LSZH row on the 8 January 2026 snow day moved 1,257 to 5,536 s |
 | Discord tail rules: blend heavy-hold rows toward the 2025 curve of y on `mvt_eobt1`; cap normal rows | not uploaded | hold-out +1,639 / -3 MSE | rejected on the 2025 hold-out (`src_v3/measure_tail_rules.py`); see below |
 | MP9 read every score | | | v44 299.846, v45 296.125, v50 293.816 now read |
 | MX1 organiser ruling | | | resolved 2026-09-18 |
@@ -61,10 +62,9 @@ record, `mvt_eobt1` of 3,905 to 7,443 s and `sd` of 12,543 to 21,014 s.
 
 | next | WINNING_PLAN lever | measure | upload |
 |---|---|---|---|
-| 1 | L11 weather at `EOBT_1` | MF1 | |
-| 2 | L3 CatBoost second class, fixed blend | MB7 | needs the `catboost` decision |
-| 3 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
-| 4 | L15 final 12-month refit | MB8 | last |
+| 1 | L3 CatBoost second class, fixed blend | MB7 | needs the `catboost` decision |
+| 2 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
+| 3 | L15 final 12-month refit | MB8 | last |
 
 A Discord post (2026-09-23) said: make the outliers of the submission look
 like the outliers of the training set. The 2026 prediction tail at EHAM is

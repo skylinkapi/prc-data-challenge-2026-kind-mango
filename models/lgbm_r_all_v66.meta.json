@@ -1,0 +1,33 @@
+{
+ "tuned": {
+  "learning_rate": 0.018251635679008563,
+  "num_leaves": 436,
+  "min_data_in_leaf": 291,
+  "feature_fraction": 0.5628923285852835,
+  "bagging_fraction": 0.9766191411793946,
+  "lambda_l1": 0.0010742170943614932,
+  "lambda_l2": 0.02738510389167975,
+  "min_gain_to_split": 2.9738183007585954,
+  "linear_lambda": 0.0055513819638595375,
+  "objective": "regression",
+  "metric": "rmse",
+  "bagging_freq": 5,
+  "verbosity": -1,
+  "num_threads": -1,
+  "seed": 42,
+  "bagging_seed": 42
+ },
+ "v46_iters": [
+  609,
+  1799,
+  1015
+ ],
+ "scaled_iters": [
+  767,
+  2265,
+  1278
+ ],
+ "scale_factor": 1.2585146417103135,
+ "n_served": 1923953,
+ "changed": "v65 recipe plus weather at EOBT_1 (WINNING_PLAN L11, MF1)"
+}
