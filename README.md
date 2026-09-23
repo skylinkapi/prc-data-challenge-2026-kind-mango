@@ -380,6 +380,10 @@ RECAP.md                        # session log for every attempt, submissions and
 For transparency, and so the next replicator does not waste days on the same
 dead-ends:
 
+- **Tail rules that pull predicted outliers toward the 2025 label tail** (Discord
+  suggestion, 2026-09-23) — +1,639 MSE on the 2025 hold-out for a 50/50 blend
+  with the 2025 curve of y on `mvt_eobt1`; a cap on normal rows moves 3 rows
+  (`python -m src_v3.measure_tail_rules`).
 - **Huber loss and log-target regression** — 408 s hold-out, much worse than MSE.
 - **Tighter target range `[30, 21600]`** — hurt RMSE 6+ s.
 - **LIRF specialist model** — converged in the same range as the general model.

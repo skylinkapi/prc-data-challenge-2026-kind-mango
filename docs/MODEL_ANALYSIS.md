@@ -44,6 +44,7 @@ stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
 | L12 Step A normal term reads `R_norm` (MH5, T1) | v63 | -0.24 | accepted; 18 LIRF cell rows move, all down by 100 to 4,241 s. The plan bar is -0.30 s; a deterministic change with no retrain has no retrain noise |
 | L10 out-of-fold isotonic map for the v56 gate (MH1, fixes L3) | v64 | -1.14 | accepted; 25,988 LIRF rows outside Step A move, mean +8.7 s, max 1,805 s; rows above 7,200 s 125 to 105 |
 | L9 `plan_nm_taxi` = `ARVT_1 - EOBT_1` minus its (ADEP, ADES, type) median (MF5, fixes C2) | v65 | -1.22 | accepted; base retrained with 118 columns; non-LIRF shifts -1.3 to +2.7 s, max 2,188 s |
+| Discord tail rules: blend heavy-hold rows toward the 2025 curve of y on `mvt_eobt1`; cap normal rows | not uploaded | hold-out +1,639 / -3 MSE | rejected on the 2025 hold-out (`src_v3/measure_tail_rules.py`); see below |
 | MP9 read every score | | | v44 299.846, v45 296.125, v50 293.816 now read |
 | MX1 organiser ruling | | | resolved 2026-09-18 |
 
@@ -64,6 +65,25 @@ record, `mvt_eobt1` of 3,905 to 7,443 s and `sd` of 12,543 to 21,014 s.
 | 2 | L3 CatBoost second class, fixed blend | MB7 | needs the `catboost` decision |
 | 3 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
 | 4 | L15 final 12-month refit | MB8 | last |
+
+A Discord post (2026-09-23) said: make the outliers of the submission look
+like the outliers of the training set. The 2026 prediction tail at EHAM is
+fatter than the 2025 label tail (37.5 against 3.3 rows per 10,000 above
+3,600 s). 143 of these rows fall on 3 to 9 January 2026, all with a flight
+record and `mvt_eobt1` of 4,197 to 13,414 s: a real disruption week, like
+5 January 2025. Conditioned on `mvt_eobt1`, the v65 predictions sit below
+the 2025 label means (-1,216 s above 7,200 s). The v46 members score
+January and July 2025 out of sample:
+
+1. A blend with the isotonic curve of y on `mvt_eobt1` (record rows,
+   `mvt_eobt1` > 3,600 s, 5,192 rows) costs +390 to +6,711 MSE at base
+   weights 0.75 to 0, and costs at every airport. The row-level base beats
+   the band mean.
+2. A cap at the 2025 99.99 % label quantile of record rows with
+   `mvt_eobt1` < 1,800 s moves 3 hold-out rows (-3 MSE) and 10 rows of
+   v65. MB3 and MS1 already hold this tail.
+
+Neither rule ships.
 
 Every open lever builds on v65: serve with `predict_v57 --base-model lgbm_r_all_v65
 --stepa-normal-rnorm --gate-iso lirf_regime_v64.isotonic.pkl --extra
