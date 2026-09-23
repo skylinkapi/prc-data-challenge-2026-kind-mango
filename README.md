@@ -6,9 +6,10 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **287.09 s RMSE** (`kind-mango_v63.parquet`,
-  2026-09-23), -12.22 s vs v41. v63 is v57 with the Step A normal term
-  read from `R_norm` (finding T1). Before v63, v57 held 287.33 s. Path: L3.a/L9/L1 stacked base changes
+- **Current leaderboard best:** **285.95 s RMSE** (`kind-mango_v64.parquet`,
+  2026-09-23), -13.36 s vs v41. v64 is v57 with the Step A normal term
+  read from `R_norm` (finding T1, v63 287.09 s) and an out-of-fold isotonic
+  map on the LIRF gate (finding L3). Before v63, v57 held 287.33 s. Path: L3.a/L9/L1 stacked base changes
   (v44-v46, live -0.17 s), L2 12-month refit (v47 = 296.57, -2.57 s),
   fifteenth-pass MS1+MS2 bounds (v48 = 294.24, -2.33 s), fifteenth-pass
   MB3 base retrained on served rows only, LIRF and y>80,000 excluded
@@ -130,6 +131,7 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v61 | 288.32 | +0.99 vs v57 (rejected) | WINNING_PLAN L4: the v57 recipe with the v45 base parameters (220 leaves, `linear_lambda` 1.0, `BEST_PARAMS`) in place of the v43 retune; rounds 2,091 / 1,795 / 986. Run: `python -m src_v3.train_v61_base`, then `python -m src_v3.predict_v57 --base-model lgbm_r_all_v61 --pre-ms kind-mango_v61_pre_ms.parquet --out kind-mango_v61.parquet`. On the MB3 rows the retuned parameters are better. |
 | kind-mango_v62 | not uploaded | 0 (equals v57) | WINNING_PLAN L13: MS3 member median on the v57 base (`python -m src_v3.predict_v62`). The v57 members never differ by more than 3,600 s outside LIRF (max 2,376 s), so no row moves. |
 | **kind-mango_v63** | **287.09** | **-0.24 vs v57 (new best, -12.22 s vs v41)** | WINNING_PLAN L12, finding T1: Step A reads `R_norm` as its normal term, not the mixture, so the schedule weight counts once. 18 LIRF cell rows move, all down (100 to 4,241 s); no retrain. Run: `python -m src_v3.predict_v57 --stepa-normal-rnorm --pre-ms kind-mango_v63_pre_ms.parquet --out kind-mango_v63.parquet`. |
+| **kind-mango_v64** | **285.95** | **-1.14 vs v63 (new best, -13.36 s vs v41)** | WINNING_PLAN L10, finding L3: the v56 gate booster with an isotonic map fit on out-of-fold scores of six month-pair fold boosters (`python -m src_v3.train_p_fb_v64`), not on its own in-sample scores. 25,988 LIRF rows outside Step A move, mean +8.7 s. Run: `python -m src_v3.predict_v57 --stepa-normal-rnorm --gate-iso lirf_regime_v64.isotonic.pkl --pre-ms kind-mango_v64_pre_ms.parquet --out kind-mango_v64.parquet`. |
 | kind-mango_v40 | 299.97 | -1.90 | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 

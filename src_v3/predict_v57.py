@@ -25,12 +25,13 @@ from src_v3.predict_v51 import _load_train_min
 from src_v3.support import build_support
 
 R_NORM_FILES = [f"lgbm_r_norm_lirf_v55_s{s}.txt" for s in (42, 43, 44, 45, 46)]
-P_FB_MEMBERS = [("lgbm_p_fb_lirf_v56.txt", "lirf_regime_v56.isotonic.pkl")]
+P_FB_BOOSTER = "lgbm_p_fb_lirf_v56.txt"
 log = logging.getLogger(__name__)
 
 
 def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
-              stepa_normal_rnorm: bool = False) -> None:
+              stepa_normal_rnorm: bool = False,
+              gate_iso: str = "lirf_regime_v56.isotonic.pkl") -> None:
     """Write the pre-MS file of the v57 stack with the given base members."""
     tempo = pd.read_parquet(V2_RANK, columns=["MVT_ID_mvt", *TEMPO_COLS])
     p2575 = pd.read_parquet(C.ROOT / "models" / "tempo_p2575_rank.parquet",
@@ -46,7 +47,7 @@ def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
         extra_columns=extra,
         r_norm_features="lirf_regime_v41.features.txt",
         r_norm_clip=None,
-        p_fb_members=P_FB_MEMBERS,
+        p_fb_members=[(P_FB_BOOSTER, gate_iso)],
         p_fb_features="lirf_regime_v23.features.txt",
         dump_features=dump_features,
         stepa_normal_rnorm=stepa_normal_rnorm,
@@ -81,9 +82,12 @@ def main() -> None:
     ap.add_argument("--base-model", default="lgbm_r_all_v57")
     ap.add_argument("--stepa-normal-rnorm", action="store_true",
                     help="Step A normal term reads R_norm, not the mixture (T1, L12).")
+    ap.add_argument("--gate-iso", default="lirf_regime_v56.isotonic.pkl",
+                    help="Isotonic map for the v56 gate booster.")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    serve_v30(args.pre_ms, args.base_model, stepa_normal_rnorm=args.stepa_normal_rnorm)
+    serve_v30(args.pre_ms, args.base_model, stepa_normal_rnorm=args.stepa_normal_rnorm,
+              gate_iso=args.gate_iso)
     write_ms(pd.read_parquet(C.ROOT / "submission" / args.pre_ms), args.out)
 
 

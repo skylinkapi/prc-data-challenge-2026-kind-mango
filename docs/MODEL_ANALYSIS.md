@@ -18,7 +18,7 @@ holds no code.
 
 ## Progress, 2026-09-23: section 5 measures merged with `WINNING_PLAN.md`
 
-Live best **287.09 s (v63)**. On 2026-09-23 the rank was 57 of 178 at 287.33 s (v57). `docs/WINNING_PLAN.md` ranks
+Live best **285.95 s (v64)**. On 2026-09-23 the rank was 57 of 178 at 287.33 s (v57). `docs/WINNING_PLAN.md` ranks
 levers L1 to L15; this table maps them onto the measures of section 5.
 Live deltas come from the official API (WINNING_PLAN section 3). The team
 stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
@@ -42,6 +42,7 @@ stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
 | L4 v45 parameters on the v57 recipe (MB5) | v61 | +0.99 | rejected |
 | L13 MS3 on the v57 base | v62, not uploaded | 0 | no-op: largest non-LIRF member spread 2,376 s, under the 3,600 s trigger; v62 equals v57 on every row |
 | L12 Step A normal term reads `R_norm` (MH5, T1) | v63 | -0.24 | accepted; 18 LIRF cell rows move, all down by 100 to 4,241 s. The plan bar is -0.30 s; a deterministic change with no retrain has no retrain noise |
+| L10 out-of-fold isotonic map for the v56 gate (MH1, fixes L3) | v64 | -1.14 | accepted; 25,988 LIRF rows outside Step A move, mean +8.7 s, max 1,805 s; rows above 7,200 s 125 to 105 |
 | MP9 read every score | | | v44 299.846, v45 296.125, v50 293.816 now read |
 | MX1 organiser ruling | | | resolved 2026-09-18 |
 
@@ -58,14 +59,19 @@ record, `mvt_eobt1` of 3,905 to 7,443 s and `sd` of 12,543 to 21,014 s.
 
 | next | WINNING_PLAN lever | measure | upload |
 |---|---|---|---|
-| 1 | L10 out-of-fold isotonic map for the gate | MH1, fixes L3 | v64 |
-| 2 | L9 planned-taxi proxy `ARVT_1 - EOBT_1` | MF5, fixes C2 | v65 |
-| 3 | L11 weather at `EOBT_1` | MF1 | |
-| 4 | L3 CatBoost second class, fixed blend | MB7 | needs the `catboost` decision |
-| 5 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
-| 6 | L15 final 12-month refit | MB8 | last |
+| 1 | L9 planned-taxi proxy `ARVT_1 - EOBT_1` | MF5, fixes C2 | v65 |
+| 2 | L11 weather at `EOBT_1` | MF1 | |
+| 3 | L3 CatBoost second class, fixed blend | MB7 | needs the `catboost` decision |
+| 4 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
+| 5 | L15 final 12-month refit | MB8 | last |
 
-Every open lever builds on v63: serve with `predict_v57 --stepa-normal-rnorm`.
+Every open lever builds on v64: serve with `predict_v57 --stepa-normal-rnorm
+--gate-iso lirf_regime_v64.isotonic.pkl`.
+
+v64 test on held-out months (`models/lirf_regime_v64.meta.json`): log loss of the gate
+falls from 0.383 to 0.364 for `sd` <= 3,600 s and from 0.140 to 0.122 for 3,600 to
+14,400 s. For `sd` > 14,400 s (510 rows) log loss is flat (0.1209 to 0.1216) and the
+mean bias grows from -0.25 to -2.04 points. That bin fails the plan's per-bin test.
 
 Not on track A: L1, L2, L5, L6 and L8 read `AOBT_3_flt` or `LOBT_flt`.
 No WINNING_PLAN lever covers MP1 to MP8, MD1, MD3, MD5 to MD10, MB2,
