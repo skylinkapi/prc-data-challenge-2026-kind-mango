@@ -246,7 +246,7 @@ Leaderboard API (as published on the ranking page):
 
 ## 9. Timeline, prize, licence
 
-- Competition window stated on the site: September 2026 through **end of October 2026, 23:59:59 CET**. Exact start day on the homepage is incompletely rendered (“the of September 2026”); treat October 31 23:59:59 CET as the published close unless Discord/site updates it.
+- Competition window stated on the site (https://prc-data-challenge-2026.netlify.app/): **1 September 2026 to 11 October 2026, 23:59:59 CET**. The site text is unchanged since 2026-08-13. An earlier version of this brief stated 31 October; that date was wrong.
 - Combined prize for top 3 teams: **5000 EUR**.
 - Prize-eligible solutions must:
   - use only openly accessible, documented extra datasets

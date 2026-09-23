@@ -9,6 +9,10 @@ the fourteenth pass. Earlier passes stay in git:
 - twelfth and thirteenth passes (diagnostic tables T1 to T17, v39 debrief):
   `git show b193868:docs/MODEL_ANALYSIS.md`
 
+Correction on 2026-09-23: the official API shows v45 at 296.125 s
+(uploaded 2026-09-16). v45, not v47, was the live best on 2026-09-17. The
+v44 and v45 scores resolve finding P6. See `docs/WINNING_PLAN.md` section 3.
+
 This pass prices no new lever. It audits the construction of v47 for the
 causes of the remaining error: data integrity, leakage, feature mathematics,
 the model class, the tail rules, the evaluation protocol and the code.
@@ -1029,7 +1033,8 @@ orders them. No measure ships without its test.
 
 ## 6. Build order, gates and stop rule
 
-The window closes on 2026-10-31. Each phase ends in fold prices, an arrival
+The window closes on 2026-10-11 (corrected from 2026-10-31 on 2026-09-23).
+Each phase ends in fold prices, an arrival
 mirror delta and the MP7 gates.
 
 1. **Phase 0, harness.** MP1 to MP10, MC1, MC5. Exit when the fold harness

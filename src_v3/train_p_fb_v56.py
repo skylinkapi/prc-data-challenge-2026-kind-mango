@@ -6,8 +6,9 @@ those 2 stop months. MB8 refits the same recipe on ALL 12 months with a
 fixed round count scaled from the v23 best iter.
 
 Rate features (fbrate/fbcount) are recomputed on the full-year map via
-`add_fallback_rate_features` (returns the scoring maps). Isotonic
-calibration on the whole set (leave-one-month-out predictions).
+`add_fallback_rate_features` (returns the scoring maps). The isotonic
+map is fit on the in-sample scores of the full-year booster; only the
+rate features are out of fold.
 
 Writes lgbm_p_fb_lirf_v56.txt + lirf_regime_v56.isotonic.pkl and reuses
 v23's gate feature list (v56 shares the same 167 features).

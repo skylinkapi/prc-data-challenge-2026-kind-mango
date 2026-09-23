@@ -4,11 +4,16 @@ Solo entry. Predicts **taxi-out time in seconds** (`TAXITIME_SEC_mvt`) for
 departing flights at 10 major European airports. Metric is RMSE against
 airport-reported truth.
 
-- **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
+- **Challenge home:** https://prc-data-challenge-2026.netlify.app/ (moved
+  from https://ansperformance.eu/study/data-challenge/dc2026/). The
+  challenge closes on **11 October 2026, 23:59:59 CET**.
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
+- **Rank:** 57 of 178 teams on 2026-09-23. Third place is 238.78 s. The
+  plan to the deadline is `docs/WINNING_PLAN.md`.
 - **Current leaderboard best:** **287.33 s RMSE** (`kind-mango_v57.parquet`,
-  2026-09-19), -11.98 s vs v41. Path: L3.a/L9/L1 stacked base changes
-  (v44-v46, live -0.17 s), L2 12-month refit (v47 = 296.57, -2.57 s),
+  2026-09-19), -11.98 s vs v41. Path: L3.a quartiles (v44, +0.53 s live),
+  L9 `plan_taxi_res` (v45, -3.72 s), L1 retune (v46, +3.01 s), L2 12-month
+  refit of the retuned recipe (v47 = 296.57, -2.57 s vs v46, +0.44 s vs v45),
   fifteenth-pass MS1+MS2 bounds (v48 = 294.24, -2.33 s), fifteenth-pass
   MB3 base retrained on served rows only, LIRF and y>80,000 excluded
   (v51 = 288.25, -5.99 s vs v48). MB3 is the biggest single lever of
@@ -31,19 +36,27 @@ public, open-data only, documented reproduction path.
 
 ## Ethics — features we deliberately did NOT use
 
-The challenge brief forbids "exploiting the ranking process". We stay off two
-inputs that would place us in the top 3 but that we read as excluded:
+The ranking page warns against attempts "to learn from or exploit the
+ranking process". We read two inputs as close to that line and stay off
+them. Five public teams at rank 23 to 38 read `AOBT_3_flt` and score 268.5
+to 278.0 s (`docs/WINNING_PLAN.md` section 6).
 
-1. **`AOBT_3_flt` on ranking DEP rows** — present on 98.9 % of ranking rows;
-   `MVT_TIME - AOBT_3_flt` reconstructs the hidden off-block time to within
-   the reporting-offset noise. The brief warns "using them is probably
-   exploiting the ranking process".
+1. **`AOBT_3_flt` on ranking DEP rows** — non-null on 339,551 of the
+   344,841 scored DEP rows (98.47 %; 98.9 % of all ranking rows). It is a
+   strong, noisy clock, not a copy of the label. On 2025 departures,
+   `BLOCK - AOBT_3` is exact on 0.65 % of rows and within 60 s on 21.0 %;
+   the median absolute difference is 175 s. Our own agent brief
+   (`docs/PRC_Data_Challenge_2026_BRIEF.md` section 7.2) calls such a field
+   "probably exploiting the ranking process". No organiser page holds that
+   sentence.
 2. **`LOBT_flt`** — equals `AOBT_3_flt` on 4.3 % of rows and is otherwise a
    planned time, not an actual off-block. Excluded for the same reason.
 
-Both fields are visible in the training and ranking files. Our submissions never
-read them. The exclusion sets the floor near 300 s on the leaderboard, per the
-analysis in `docs/MODEL_ANALYSIS.md`.
+Both fields are visible in the training and ranking files. v57, the best
+file, reads neither field. One rejected file read `LOBT_flt`: v39 (352.19 s,
+and its two unscored re-uploads v2a and v2b) served `mvt_lobt = MVT -
+LOBT_flt` (`src_v2/frame.py:76`, `src_v2/features.py:10`). No kind-mango
+file reads `AOBT_3_flt`.
 
 **Organiser ruling (MX1, resolved 2026-09-18).** espinielli, replying to a
 Discord question about `AOBT_3_flt`/`MVT_TIME_UTC_mvt` and ADS-B-derived
@@ -110,14 +123,14 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v34 to v36 | 302.05-302.09 | +0.18 to +0.22 | hold-out-leak refits and the zero-clip repair; rejected (see RECAP) |
 | kind-mango_v37 | 302.52 | +0.65 | + 5-seed `p_fb` mean; priced 301.62, regressed; rejected (see MODEL_ANALYSIS 4.1) |
 | **kind-mango_v41** | **299.31** | **-0.65** | v40 + `R_norm_LIRF` members with the 13 columns and no 4,431 s cap (`train_r_norm_lirf_v41.py`); paired -415 MSE; see MODEL_ANALYSIS 4.3 |
-| kind-mango_v44 | pending | — | v41 base retrained with 6 new columns: 25th and 75th percentiles of neighbour `mvt_eobt1` at the apt30, apt60 and rwy30 windows (`build_tempo_p2575.py`, `train_r_all_v44.py`). Paired -565 MSE on the base's served rows; gate 300 passed. Uploaded 2026-09-16. |
-| kind-mango_v45 | pending | — | v44 base retrained with `plan_taxi_res` (clipped +/-3600 s), the row's plan-block minus its 2025 route median (`build_plan_taxi_res.py`, `train_r_all_v45.py`). Paired -617 MSE on the base's served rows (-650 on clean); gate 300 passed. Uploaded 2026-09-16. |
-| kind-mango_v46 | 299.14 | -0.17 | v45 features (117 cols) with the L1 retuned base: 30-trial Optuna sweep on `tune_lgbm_v43.py` picked num_leaves 436, min_data 291, lr 0.018, linear_lambda 0.006 (vs deployed 220 / 76 / 0.023 / 1.0). Paired -1,864 MSE served clean cumulative for the L3.a+L9+L1 stack; only -102 MSE landed live. |
-| **kind-mango_v47** | **296.57** | **-2.57** | **L2: 12-month refit of the v46 recipe (`train_r_all_v47.py`).** 3 seeds on ALL months with the retuned params, iterations scaled by 1/0.88 (v46 iters 609/1799/1015 -> 693/2045/1154). Removed the 2025 hold-out. Live -2.57 s vs v46 shows most of the reachable gain came from training on months 1 and 7 directly, not from feature engineering or hyperparameter tuning. |
-| **kind-mango_v48** | **294.24** | **-2.33** | **Fifteenth-pass Phase 1: MS1 per-airport upper bounds and MS2 clean-floor post-processing on the v47 parquet (`src_v3/build_v48.py`).** 5 non-LIRF extreme rows capped (biggest EDDM 21,465 -> 7,499 s). MP7 label-free gate passed. Zero training cost. Live -2.33 s (about 1,400 MSE) essentially all from the five MS1 clips - MS1 fold price was 0 MSE because the base doesn't extrapolate on 2025 rows, but does on 2026 out-of-distribution rows. |
+| kind-mango_v44 | 299.85 | +0.53 vs v41 (regression) | v41 base retrained with 6 new columns: 25th and 75th percentiles of neighbour `mvt_eobt1` at the apt30, apt60 and rwy30 windows (`build_tempo_p2575.py`, `train_r_all_v44.py`). Paired -565 MSE on the base's served rows; gate 300 passed. Uploaded 2026-09-16. Live +0.53 s: the paired price did not transfer. |
+| **kind-mango_v45** | **296.13** | **-3.72 vs v44 (new best)** | v44 base retrained with `plan_taxi_res` (clipped +/-3600 s), the row's plan-block minus its 2025 route median (`build_plan_taxi_res.py`, `train_r_all_v45.py`). Paired -617 MSE on the base's served rows (-650 on clean); gate 300 passed. Uploaded 2026-09-16. Live -3.72 s (-2,217 MSE), 3.4 times the paired price. |
+| kind-mango_v46 | 299.14 | +3.01 vs v45 (regression) | v45 features (117 cols) with the L1 retuned base: 30-trial Optuna sweep on `tune_lgbm_v43.py` picked num_leaves 436, min_data 291, lr 0.018, linear_lambda 0.006 (vs deployed 220 / 76 / 0.023 / 1.0). Paired -662 MSE served clean; live +1,793 MSE vs v45. The retune lost 3 s. v47 to v57 still use these parameters. |
+| kind-mango_v47 | 296.57 | -2.57 vs v46, +0.44 vs v45 | L2: 12-month refit of the v46 recipe (`train_r_all_v47.py`). 3 seeds on ALL months with the retuned params, iterations scaled by 1/0.88 (v46 iters 609/1799/1015 -> 693/2045/1154). Removed the 2025 hold-out. Live -2.57 s vs v46 but +0.44 s vs v45, so not a new best. The 12-month gain is not isolated from a repair of the retune loss: no upload tests the v45 parameters on 12 months. |
+| **kind-mango_v48** | **294.24** | **-2.33 vs v47 (new best, -1.89 vs v45)** | **Fifteenth-pass Phase 1: MS1 per-airport upper bounds and MS2 clean-floor post-processing on the v47 parquet (`src_v3/build_v48.py`).** 5 non-LIRF extreme rows capped (biggest EDDM 21,465 -> 7,499 s). MP7 label-free gate passed. Zero training cost. Live -2.33 s (about 1,400 MSE) essentially all from the five MS1 clips - MS1 fold price was 0 MSE because the base doesn't extrapolate on 2025 rows, but does on 2026 out-of-distribution rows. |
 | kind-mango_v49 | 294.65 | +0.42 | Fifteenth-pass MD2+MH1 rebuild of the LIRF head without the 56 drifted columns; paired LIRF hold-out -2,405 MSE did not transfer live. Head rebuild lever closed. |
-| kind-mango_v50 | pending | — | Fifteenth-pass Phase 1: MS3 member-disagreement median on top of v48. 17 rows moved (EDDF 3, EDDM 4, EHAM 4, LEBL 1, LFPG 5) where the 3 v47 base members disagreed by more than 3,600 s outside LIRF. 15 remain distinct after MS1's cap. MP7 gate passed. |
-| **kind-mango_v51** | **288.25** | **-5.99** | **Fifteenth-pass MB3: base retrained on served rows only** (LIRF and y > 80,000 excluded). Biggest single lever of the season. -5.99 s live at zero paired price - the MB3 base avoids the extreme predictions v47/v48 relied on MS1 to clip. |
+| **kind-mango_v50** | **293.82** | **-0.42 vs v48 (new best)** | Fifteenth-pass Phase 1: MS3 member-disagreement median on top of v48. 17 rows moved (EDDF 3, EDDM 4, EHAM 4, LEBL 1, LFPG 5) where the 3 v47 base members disagreed by more than 3,600 s outside LIRF. 15 remain distinct after MS1's cap. MP7 gate passed. Live -0.42 s (-248 MSE). v51 was built on v48, so MS3 left the stack. |
+| **kind-mango_v51** | **288.25** | **-5.57 vs v50 (-5.99 vs v48)** | **Fifteenth-pass MB3: base retrained on served rows only** (LIRF and y > 80,000 excluded). Biggest single lever of the season. -5.99 s live at zero paired price - the MB3 base avoids the extreme predictions v47/v48 relied on MS1 to clip. |
 | kind-mango_v52 | 288.36 | +0.11 vs v51 (noise) | MB3 + MB4 (cyclic doy, local hour, holidays, drop numeric month). MB4 does not help on top of MB3; the numeric month wasn't the defect P2 warned about once L2 gave the base all 12 months. |
 | kind-mango_v54 | 324.11 | +35.86 vs v51 (rejected) | MB1 anchored-offset target broke on 2026 delayed rows: pred_y = anchor + small_offset fails when anchor is 10,000+ s but the true taxi is 1,000 s. Lever closed. |
 | **kind-mango_v55** | **287.83** | **-0.42 vs v51 (new best, -11.48 s vs v41)** | MB8 12-month refit applied to R_norm_LIRF. Landed at the ~0.4 s ceiling for a LIRF-only change (26k of 344k rows). Confirms the L2/MB3 pattern of broader training exposure transfers to the LIRF head. |

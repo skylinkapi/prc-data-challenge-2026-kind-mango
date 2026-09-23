@@ -1,14 +1,19 @@
 # kind-mango recap
 
 Status as of 2026-09-19 end-of-day. Team best **287.33 s** (v57, live, -11.98 s vs v41). MB3 base filter (v51 -5.99 s) plus the MB8 rollout: R_norm 12-month refit (v55 -0.42 s), p_fb gate 12-month refit (v56 -0.33 s) and plan_taxi_res route medians 12-month refit (v57 -0.17 s). Winning theme: broader training exposure + label-free defensive gates. v58 (MB8 for operator encoders) rejected +1.29 s (encoder leak amplified). v59 (MF4 arrival drift features) rejected +0.37 s (drift signal did not transfer).
+Ledger corrections on 2026-09-23 (official API; `docs/WINNING_PLAN.md`
+section 3): rank 57 of 178; the challenge closes on 11 October 2026,
+23:59:59 CET.
 The fourteenth-pass plan under 290 s executed end to end: L3.a p25/p75 EOBT
 quartiles (v44), L9 plan_taxi_res (v45), L1 Optuna retune (v46), L2 12-month
-refit (v47 = final ship). Live decomposition: v46 = 299.14 s (-0.17 s vs
-v41; the base stack L3.a+L9+L1 landed only 102 MSE despite -1,864 paired
-MSE), v47 = 296.57 s (-2.57 s vs v46; the L2 refit alone drove the gain).
-Learning: paired hold-out is poorly calibrated once several base changes
-stack, but 12-month refit gains do transfer strongly. 111 teams on the
-leaderboard. The fourteenth-pass harness (H1 to H5) is built:
+refit (v47). Live decomposition from the official API: v44 = 299.85 s
+(+0.53 s vs v41), v45 = 296.13 s (-3.72 s vs v44), v46 = 299.14 s (+3.01 s
+vs v45), v47 = 296.57 s (-2.57 s vs v46, +0.44 s vs v45).
+Learning: the paired hold-out mis-priced each single lever. L3.a: paired
+-565 MSE, live +318. L9: paired -650, live -2,217. L1: paired -662, live
++1,793. The retune lost 3 s, and v47 to v57 still use its parameters. The
+12-month refit gain is not isolated from a repair of that loss. The
+fourteenth-pass harness (H1 to H5) is built:
 
 - H1 `src/build_h1_frame_cache.py` wrote `models/h1_frame_cache.parquet`: the
   110 served columns, the label, `sd`, the month, the airport and the movement
@@ -72,13 +77,13 @@ Fixing those (Step 2, v21) took live from **560.91 to 430.45** — a **130 s dro
 | v54 | 324.11 | +35.86 s vs v51 (rejected). Fifteenth-pass MB1 anchored-offset target `y - anchor` (anchor = mvt_eobt1 else sched_delay) on top of MB3. Failed because anchor is bimodal on 2026 delayed rows: rows with mvt_eobt1 > 10,000 s (aircraft held past EOBT) but normal taxi output pred_y = anchor + small_offset = 10,000+ s instead of the true 1,000 s. 101 rows at EHAM over 7,200 (v51 had ~4), 25 at LFPG (v51 ~4). The tree learns median offset ~-300 s, cannot correct on huge-anchor rows. Grade D audit missed the bimodality. Lever closed. | Train the base on `y - anchor` where anchor = mvt_eobt1 if not-null else sched_delay. 3 seeds, retuned params, same iter scaling as v51/v52. Predict-time: score the boosters directly (bypassing predict_v30's clip at 0 which would destroy negative offsets), add anchor per row, clip to per-airport [q0.001, q0.999] offset range from training. LIRF rows come from the v51 parquet unchanged. Post MS1+MS2. Mean shift vs v51: +3 to +25 s per airport upward, biggest EHAM +25.54; over_7200 108 -> 279 (extra tails at EHAM 101 and LFPG 25). Could be over-correction or 2026 drift catch-up (arrival mirror showed +6% drift). Uploaded 2026-09-18. |
 | v52 | 288.36 | +0.11 vs v51 (noise). Fifteenth-pass MB3+MB4: v51 recipe with cyclic doy/local hour/public holiday added, numeric month dropped. MB4 did not help; MB3 alone is the best point. |
 | **v51** | **288.25** | **-11.06 s vs v41, -5.99 vs v48; new team best**. Fifteenth-pass MB3: base retrained on served rows only. Excluded 160,706 LIRF rows and 2 non-LIRF y>80,000 rows; retuned Optuna params, 3 seeds, all 12 months, iter scaling 1.259 (767/2265/1278). Post-processing MS1+MS2 moved only 85 rows (max 304 s) because the MB3 base already avoids extreme predictions natively. MS1 finds nothing to clip; without LIRF's 16.6 % fallback rate and the 12 24-h rows in training the linear leaves stop being shaped by those extreme labels. Live -5.99 s at zero paired price - the paired hold-out cannot see this because the base's errors on 2025 rows are moderate; MB3's benefit shows up entirely on 2026 OOD rows. | `src_v3/train_v51_base.py` filters out LIRF rows and rows with y > 80,000, then trains the retuned v47 recipe on the 1,923,953 remaining rows across all 12 months (dropped 160,706 = 7.7 %). Round counts scaled from the v46 paired iters by the served-row growth ratio (1.259 vs 1.136 for v47's 1/0.88). 3 seeds: 767, 2265, 1278 rounds. `predict_v51.py` serves the new base with the v41 LIRF head unchanged plus MS1 + MS2. Sanity: post-MS moved only 85 rows with max |diff| 304 s (v48 had 109 rows, max 13,966 s) - the MB3 base already avoids the extreme predictions natively because its linear leaves are no longer shaped by LIRF's 16.6 % fallback rate and the 12 24-h rows. Non-LIRF shifts vs v48: EHAM +6.25 (largest), all others under 1 s absolute. Uploaded 2026-09-18. |
-| v50 | pending | Fifteenth-pass Phase 1: MS3 member-disagreement median on top of v48. `src_v3/predict_v50.py` dumps the v47 served feature frame via predict_v30.main(dump_features=...), aligns categoricals to the training vocab, scores the three v47 base members individually, replaces the ensemble mean with the row median where the three-member spread exceeds 3,600 s outside LIRF, then reapplies MS1 and MS2 exactly as v48. MS3 moved 17 rows (EDDF 3, EDDM 4, EHAM 4, LEBL 1, LFPG 5); MS1 clipped 2 of them back to the same value, so v50 differs from v48 on 15 rows total (max |diff| 4,349 s at EHAM). Non-LIRF only; LIRF head untouched (v41 v41). MP7 label-free gate passed. Uploaded 2026-09-17, score pending. |
+| v50 | 293.82 | -0.42 s vs v48, new team best at upload. Fifteenth-pass Phase 1: MS3 member-disagreement median on top of v48. `src_v3/predict_v50.py` dumps the v47 served feature frame via predict_v30.main(dump_features=...), aligns categoricals to the training vocab, scores the three v47 base members individually, replaces the ensemble mean with the row median where the three-member spread exceeds 3,600 s outside LIRF, then reapplies MS1 and MS2 exactly as v48. MS3 moved 17 rows (EDDF 3, EDDM 4, EHAM 4, LEBL 1, LFPG 5); MS1 clipped 2 of them back to the same value, so v50 differs from v48 on 15 rows total (max |diff| 4,349 s at EHAM). Non-LIRF only; LIRF head untouched (v41 v41). MP7 label-free gate passed. Uploaded 2026-09-17. Live -248 MSE. v51 was built on v48, so MS3 left the stack. |
 | v49 | 294.65 | +0.42 s vs v48 (regression). Fifteenth-pass MD2+MH1 rebuild of the LIRF head without the 56 drifted columns (38 ec_* + 9 opdi_* + 9 opdi_live_*). `src_v3/train_lirf_head_v49.py` retrained R_norm_LIRF (5 seeds) and p_fb+isotonic; rate features (fbrate/fbcount) kept. Paired LIRF-only hold-out (26,528 rows): v41 head FULL 887.42 CLEAN 463.55, v49 head FULL 869.28 CLEAN 460.69; LIRF MSE contribution to the 344,341-row scale -2,405 MSE paired. Live -2,405 MSE did NOT transfer. The v41 head's zero-imputed ec_* rows in July 2026 were apparently routed to sensible branches, not the "wrong" one D1 predicted. Grade C estimate of 700 MSE gain was optimistic. Head rebuild lever closed for this stack. |
-| v48 | **294.24** | **new best, -2.33 s vs v47 (296.57), -5.07 s vs v41 (299.31)**. Fifteenth-pass Phase 1: MS1 per-airport upper bounds + MS2 clean floor applied post-hoc to the v47 parquet (`src_v3/build_v48.py`, `src_v3/postprocess.py`, `src_v3/support.py`). MS1 caps at the 2025 tail-class max plus a 600 s margin at EDDF/EDDM/LEBL/LEMD (no long tail), and at the clean max plus margin at EGLL/EHAM/LFPG/LSZH/LTFM unless the row has flt_null=0 and mvt_eobt1 > 5400. MS2 floors at the 2025 clean 0.1 %-quantile per airport. MS1 moved 5 non-LIRF rows (EDDM 21,465 -> 7,499 the biggest -13,966 s; EHAM 11,103 -> 7,311; two LEBL rows to 4,204; LEMD 4,376 -> 4,198). MS2 moved 104 rows (small pushes). LIRF head output untouched by MS1; MS2 raised 14 LIRF rows by tiny amounts. Zero training cost. MP7 gate passed. Live -2.33 s (about 1,400 MSE) essentially all came from the five MS1 clips; MS1 fold price was 0 MSE because the base does not extrapolate on 2025 rows. The label-free evidence at upload time (5 rows with predictions 2-6x above the airport's 2025 support, all with mvt_eobt1 below the eligibility bar) was correct. |
-| v47 | **296.57** | **new team best, -2.74 s vs v41 (299.31)**. L2 12-month refit of the v46 stack (`train_r_all_v47.py`, `predict_v47.py`). Trained 3 seeds on ALL 12 months with the retuned hyperparameters, no early-stop split, iteration counts scaled by 1/0.88 (v46 iters 609/1799/1015 -> 693/2045/1154). 2026 sanity: LIRF unchanged; non-LIRF shifts vs v46 range -15.05 s (EGLL) to +4.36 s (EHAM). Live delta: -2.74 s covers the sum of shipped paired prices (L3.a -552, L9 -650, L1 -662, L2 unknown-priced) ~ 1,864 MSE served clean, matching the ambiguity prediction of 2-3 s. Uploaded 2026-09-17. |
-| v46 | 299.14 | -0.17 s vs v41. L1 retuned base on v45 features. `tune_lgbm_v43.py` Optuna sweep (30 trials, `linear_tree` pinned True, `feature_pre_filter=False`) best trial 10 stop RMSE 245.41 with num_leaves 436, min_data_in_leaf 291, lr 0.0183, feature_fraction 0.5629, linear_lambda 0.0056 (vs deployed lr 0.023, leaves 220, min_data 76, l_lambda 1.0). Paired vs v45: served clean -662 MSE (LSZH -527 dominates), served total -740 MSE, gate 500 passed. Live -102 MSE landed, paired-to-live ratio 14 % — the base stack v44+v45+v46 combined only moved live by 0.17 s despite -1,864 paired MSE. Says the paired hold-out is poorly calibrated once several base changes stack on each other. Uploaded 2026-09-17. |
-| v45 | pending | v44 pipeline + plan_taxi_res, clipped to +/-3600 s (`build_plan_taxi_res.py`, `train_r_all_v45.py`, `predict_v45.py`). Route medians from 5,619 2025-clean-fit-month routes; residual coverage 0.989 train / 0.982 rank. Paired vs v44: clean class outside LIRF -650 MSE, served base total -617 MSE, gate 300 passed. 2026 sanity: LIRF rows unchanged; non-LIRF shifts vs v44 -1.7 to +3.2 s (LSZH +2.54, EDDM +3.15, LFPG +2.72, LTFM -1.72); over_7200 105, over_80000 3, at_zero 27. Uploaded 2026-09-16, score pending. |
-| v44 | pending | v41 pipeline + p25/p75 of neighbour `mvt_eobt1` on the base (`build_tempo_p2575.py`, `train_r_all_v44.py`). Six new columns at the apt30, apt60 and rwy30 windows. Paired vs the v40 recipe reproduced: clean class outside LIRF -552 MSE, served base total -565 MSE, gate 300 passed. 2026 sanity: LIRF rows unchanged; non-LIRF airport shifts -2.1 to +2.0 s; over_7200 106 (v41 104), over_80000 3 (=v41), at_zero 32 (v41 29). Uploaded 2026-09-16, score pending. |
+| v48 | **294.24** | **new best, -2.33 s vs v47 (296.57), -1.89 s vs v45 (296.13), -5.07 s vs v41 (299.31)**. Fifteenth-pass Phase 1: MS1 per-airport upper bounds + MS2 clean floor applied post-hoc to the v47 parquet (`src_v3/build_v48.py`, `src_v3/postprocess.py`, `src_v3/support.py`). MS1 caps at the 2025 tail-class max plus a 600 s margin at EDDF/EDDM/LEBL/LEMD (no long tail), and at the clean max plus margin at EGLL/EHAM/LFPG/LSZH/LTFM unless the row has flt_null=0 and mvt_eobt1 > 5400. MS2 floors at the 2025 clean 0.1 %-quantile per airport. MS1 moved 5 non-LIRF rows (EDDM 21,465 -> 7,499 the biggest -13,966 s; EHAM 11,103 -> 7,311; two LEBL rows to 4,204; LEMD 4,376 -> 4,198). MS2 moved 104 rows (small pushes). LIRF head output untouched by MS1; MS2 raised 14 LIRF rows by tiny amounts. Zero training cost. MP7 gate passed. Live -2.33 s (about 1,400 MSE) essentially all came from the five MS1 clips; MS1 fold price was 0 MSE because the base does not extrapolate on 2025 rows. The label-free evidence at upload time (5 rows with predictions 2-6x above the airport's 2025 support, all with mvt_eobt1 below the eligibility bar) was correct. |
+| v47 | 296.57 | -2.74 s vs v41 (299.31), +0.44 s vs v45 (296.13); not a new team best. L2 12-month refit of the v46 stack (`train_r_all_v47.py`, `predict_v47.py`). Trained 3 seeds on ALL 12 months with the retuned hyperparameters, no early-stop split, iteration counts scaled by 1/0.88 (v46 iters 609/1799/1015 -> 693/2045/1154). 2026 sanity: LIRF unchanged; non-LIRF shifts vs v46 range -15.05 s (EGLL) to +4.36 s (EHAM). Live delta: -2.74 s covers the sum of shipped paired prices (L3.a -552, L9 -650, L1 -662, L2 unknown-priced) ~ 1,864 MSE served clean, matching the ambiguity prediction of 2-3 s. Uploaded 2026-09-17. |
+| v46 | 299.14 | +3.01 s vs v45 (+1,793 MSE; the retune lost 3 s). L1 retuned base on v45 features. `tune_lgbm_v43.py` Optuna sweep (30 trials, `linear_tree` pinned True, `feature_pre_filter=False`) best trial 10 stop RMSE 245.41 with num_leaves 436, min_data_in_leaf 291, lr 0.0183, feature_fraction 0.5629, linear_lambda 0.0056 (vs deployed lr 0.023, leaves 220, min_data 76, l_lambda 1.0). Paired vs v45: served clean -662 MSE (LSZH -527 dominates), served total -740 MSE, gate 500 passed. Live +1,793 MSE vs v45: the paired price had the wrong sign. The v44+v45+v46 stack moved live by -106 MSE in total (v44 +318, v45 -2,217, v46 +1,793). Uploaded 2026-09-17. |
+| v45 | **296.13** | **new team best, -3.72 s vs v44.** v44 pipeline + plan_taxi_res, clipped to +/-3600 s (`build_plan_taxi_res.py`, `train_r_all_v45.py`, `predict_v45.py`). Route medians from 5,619 2025-clean-fit-month routes; residual coverage 0.989 train / 0.982 rank. Paired vs v44: clean class outside LIRF -650 MSE, served base total -617 MSE, gate 300 passed. 2026 sanity: LIRF rows unchanged; non-LIRF shifts vs v44 -1.7 to +3.2 s (LSZH +2.54, EDDM +3.15, LFPG +2.72, LTFM -1.72); over_7200 105, over_80000 3, at_zero 27. Uploaded 2026-09-16. Live -3.72 s vs v44 (-2,217 MSE), 3.4 times the paired price. |
+| v44 | 299.85 | v41 pipeline + p25/p75 of neighbour `mvt_eobt1` on the base (`build_tempo_p2575.py`, `train_r_all_v44.py`). Six new columns at the apt30, apt60 and rwy30 windows. Paired vs the v40 recipe reproduced: clean class outside LIRF -552 MSE, served base total -565 MSE, gate 300 passed. 2026 sanity: LIRF rows unchanged; non-LIRF airport shifts -2.1 to +2.0 s; over_7200 106 (v41 104), over_80000 3 (=v41), at_zero 32 (v41 29). Uploaded 2026-09-16. Live +0.53 s vs v41 (+318 MSE). |
 | v48wx | not uploaded | L7: METAR joined at EOBT_1 (tmpc/vis_km/wind_kt/wx_precip/deicing_gate at pushback time) added to v45's 117-column feature set. `build_weather_eobt.py` (coverage 0.985), `train_r_all_v48wx.py`. Paired vs v45: FULL 391.97 -> 381.55, CLEAN 255.11 -> 254.11. Served (non-LIRF) delta clean -293, fallback -4, tail -58, 24h -12 (total -367 MSE). Served clean price +293, gate 300 short by 7 MSE. All four served classes improved but the gate is unmet as written; kept as an open lever for a future retune-on-v47 session. |
 | v48cal | not uploaded | L8: three calendar flags (public holiday from `holidays` 0.104, weekend, or either) on v45's 117-column feature set. `build_calendar.py`, `train_r_all_v48cal.py`. Public-holiday coverage 2.6 %, weekend 28 %. Paired vs v45: served (non-LIRF) delta clean -144, fallback +24, tail +28, 24h -13 (total -105). Served clean price +144 MSE, gate 200 short by 56. Rejected; the hour/dow categoricals already capture most of the weekend signal. |
 | v48arr | not uploaded | L3.e: arrival taxi-in residual over the previous 30 min minus the 2025 fit-month per-airport median. `build_arr_taxi_res.py` (coverage 0.996, airport medians LTFM 772 s to LEBL 209 s), `train_r_all_v48arr.py`. Paired vs v45: served (non-LIRF) delta clean +102, fallback +8, tail -56, 24h -10 (total +44). Served clean price -102 MSE, gate 300 failed with a genuine regression on clean. Closed. |
@@ -126,24 +131,25 @@ Fixing those (Step 2, v21) took live from **560.91 to 430.45** — a **130 s dro
 
 ## Where we stand vs top
 
-Current: rank 44 of 111 at 301.87 s (v33). The list below is an old snapshot
-from the v18 era (370.63 s).
+Snapshot from the official API, 2026-09-23 07:26 UTC. 178 teams, 2,412
+scored uploads. `docs/WINNING_PLAN.md` section 5 holds the trajectories.
 
 ```
- 1. youthful-giraffe               263.46
- 2. upstanding-firefly             267.01
+  1. vigorous-whistle         235.307
+  2. gentle-tractor           238.651
+  3. jolly-lobster            238.783
+  4. jovial-uniform           239.945
+  5. zesty-puzzle             241.954
+  6. gentle-igloo             242.656
+  7. enthusiastic-daisy       243.291
+  8. youthful-giraffe         245.021
+  9. bubbly-telephone         253.337
+ 10. quick-boat               254.523
  ...
-41. reliable-hamburger             343.31
-42. gentle-lemon                   348.99
-43. jolly-lobster                  353.71
-44. affectionate-ukulele           366.52
-45. kind-mango                     370.63   ← us
-46. vigorous-jungle                389.86
-47. versatile-violin               396.23
-48. tidy-nugget                    404.86
+ 20. dependable-eagle         266.662
+ 50. nice-umbrella            284.775
+ 57. kind-mango               287.334   <- us (v57)
 ```
-
-Team best is now 299.97 s (v40). The old snapshot list above predates v40.
 
 ## Model progression on hold-out
 
@@ -280,8 +286,8 @@ eobt1_sched   rank  12
 
 The limit is 5 uploads per UTC day. 2026-09-12 used 4 slots (v34 to v37).
 2026-09-13 used 3 slots (v2a int32 — no result; v2b float64 with letter
-suffix — no result; v39 float64 numeric — 352.19). 2026-09-16 used 2 slots (v44 and v45, both scores pending; the scorer was
-unusually slow overnight). 2026-09-17 used 2 slots (v46 and v47, both scores pending).
+suffix — no result; v39 float64 numeric — 352.19). 2026-09-16 used 2 slots (v44 299.85 and v45 296.13; the result files did not reach
+the repo, the official API holds both scores). 2026-09-17 used 2 slots (v46 299.14 and v47 296.57).
 One slot remains today.
 Naming lesson: the scorer needs `kind-mango_v<int>.parquet`, float64 dtype.
 
@@ -295,7 +301,7 @@ Session 2026-09-16 paired-gate log (base v44 = v41 + L3.a):
 
 - L5 `R_norm_LIRF` on `FB_TOL = 5`: failed (-2,421 MSE served clean).
 - L3.a p25/p75 of nb `mvt_eobt1` at apt30/apt60/rwy30: **passed** +552 MSE.
-  Shipped as v44, score pending.
+  Shipped as v44, live 299.85 (+0.53 s vs v41).
 - L3.b p25/p75 of nb `mvt_iobt`: failed (-16 MSE); redundant with EOBT_1.
 - L3.c neighbour EOBT by (ADEP, stand_prefix), 30 min: failed (-77 MSE);
   captured by the stand categorical and rwy30 tempo.
@@ -304,14 +310,14 @@ Session 2026-09-16 paired-gate log (base v44 = v41 + L3.a):
 - L4 constant-leaf booster meaned 0.7/0.3 with v44: failed (-64 MSE);
   constant leaves are 2.6 s worse alone and drag the mean.
 - L9 plan_taxi_res clipped to +/-3600 s: **passed** +650 MSE. Shipped as
-  v45 (v44 + plan_taxi_res), score pending.
+  v45 (v44 + plan_taxi_res), live 296.13 (-3.72 s vs v44).
 - L1 purified retune (`tune_lgbm_v43.py`, 30 Optuna trials, linear_tree
   pinned): **passed** +662 MSE served clean, mostly LSZH -527. Shipped as
-  v46 (v45 features with the retuned base), score pending.
+  v46 (v45 features with the retuned base), live 299.14 (+3.01 s vs v45).
 - L2 12-month refit (`train_r_all_v47.py`): the plan's final step per
   section 5.2 step 6 and section 7 stop rule (sum of shipped paired prices
   ~1,922 MSE, under the 3,000 threshold). Removes the hold-out. Shipped as
-  v47, live 296.57 (-2.74 s vs v41, the dominant live driver).
+  v47, live 296.57 (-2.74 s vs v41, +0.44 s vs v45).
 - L8 calendar (`build_calendar.py`, `train_r_all_v48cal.py`, holidays 0.104
   package): paired vs v45, served clean +144 MSE, gate 200 short by 56.
   Rejected; only 2.6 % of rows hit a public holiday and 28 % a weekend,
@@ -411,4 +417,4 @@ short), L8 rejected (56 MSE short), L9 shipped (v45), L2 shipped (v47).
 
 ## Prize window
 
-Closes **2026-10-31 23:59 CET**. GPLv3 licence + open data only.
+Closes **2026-10-11 23:59:59 CET** (site text since 2026-08-13). GPLv3 licence + open data only.

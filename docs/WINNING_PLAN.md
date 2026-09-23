@@ -716,15 +716,19 @@ blend 50/50 with R8. Apply MS1 and MS2 after the blend.
   accepted levers, reproducibility and the paper.
 - **Hard stop.** No new feature family after Thu 8 Oct 23:59 UTC.
 
-## 12. Repo corrections to make with the next commit
+## 12. Repo corrections (applied on 2026-09-23)
 
-1. `README.md` and `RECAP.md`: deadline 11 October 2026, 23:59:59 CET.
-2. `README.md:113-114, 119` and `RECAP.md:75, 80-81`: v44 299.846, v45
-   296.125, v50 293.816.
-3. `README.md:115-116` and `RECAP.md:5-10`: the L1 retune cost +3.01 s; the
-   12-month refit is not isolated.
-4. `README.md:38-46`: the quoted warning is the team's brief; v39 read
-   `LOBT_flt`; `AOBT_3_flt` is a noisy clock, 98.47 % of DEP rows.
-5. `src_v3/train_p_fb_v56.py:9-10`: the docstring does not match the fit.
-6. `RECAP.md:127-146`: replace the rank snapshot.
-7. `README.md`: add one line that points to this file (AGENTS.md section 7).
+1. `README.md`, `RECAP.md`, `docs/PRC_Data_Challenge_2026_BRIEF.md` and
+   `docs/MODEL_ANALYSIS.md`: deadline 11 October 2026, 23:59:59 CET.
+2. `README.md` and `RECAP.md`: v44 299.846, v45 296.125, v50 293.816. v45
+   and v50 are new bests at upload; v47 is not. `docs/MODEL_ANALYSIS.md`
+   holds a dated correction note for its v47 status line.
+3. `README.md` and `RECAP.md`: the L1 retune cost +3.01 s; the 12-month
+   refit is not isolated.
+4. `README.md` ethics section: the quoted warning is the team's brief; v39
+   read `LOBT_flt`; `AOBT_3_flt` is a noisy clock on 98.47 % of DEP rows.
+5. `src_v3/train_p_fb_v56.py`: the docstring now matches the in-sample
+   isotonic fit. The code is unchanged.
+6. `RECAP.md`: the rank snapshot is from 2026-09-23.
+7. `README.md`: the challenge home points to the new site, and the header
+   points to this file.
