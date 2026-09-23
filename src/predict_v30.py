@@ -76,7 +76,7 @@ def main(out_name="kind-mango_v30.parquet",
          per_member_base_clip=True, fill_zero_rows_per_airport=False,
          base_model="lgbm_r_all_v26", use_plan_features=False, extra_columns=None,
          r_norm_features="lirf_regime.features.txt", r_norm_clip=R_NORM_CLIP,
-         dump_features=None):
+         dump_features=None, stepa_normal_rnorm=False):
     base_seeds = base_seeds or DEFAULT_BASE_SEEDS
     r_norm_files = r_norm_files or DEFAULT_R_NORM_FILES
     p_fb_members = p_fb_members or DEFAULT_P_FB_MEMBERS
@@ -204,7 +204,12 @@ def main(out_name="kind-mango_v30.parquet",
 
     with open(os.path.join(MODELS, "lirf_band_table_v30.json")) as f:
         band = json.load(f)
-    p_final, cell_A = apply_stepA_v22(p_final, sd_r, adep_r, fltid_r, band)
+    stepa_in = p_final.copy()
+    if stepa_normal_rnorm:
+        # T1: the band table already weights the schedule; the mixture would count it twice.
+        stepa_in[lirf_mask] = r_norm_lirf[lirf_mask]
+    stepa_out, cell_A = apply_stepA_v22(stepa_in, sd_r, adep_r, fltid_r, band)
+    p_final[cell_A] = stepa_out[cell_A]
     print(f"Step A: {cell_A.sum()} rows")
 
     # STEP 2 FIX: ITY340 uses constant terms

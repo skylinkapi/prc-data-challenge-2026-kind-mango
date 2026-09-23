@@ -29,7 +29,8 @@ P_FB_MEMBERS = [("lgbm_p_fb_lirf_v56.txt", "lirf_regime_v56.isotonic.pkl")]
 log = logging.getLogger(__name__)
 
 
-def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None) -> None:
+def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
+              stepa_normal_rnorm: bool = False) -> None:
     """Write the pre-MS file of the v57 stack with the given base members."""
     tempo = pd.read_parquet(V2_RANK, columns=["MVT_ID_mvt", *TEMPO_COLS])
     p2575 = pd.read_parquet(C.ROOT / "models" / "tempo_p2575_rank.parquet",
@@ -48,6 +49,7 @@ def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None) ->
         p_fb_members=P_FB_MEMBERS,
         p_fb_features="lirf_regime_v23.features.txt",
         dump_features=dump_features,
+        stepa_normal_rnorm=stepa_normal_rnorm,
     )
 
 
@@ -77,9 +79,11 @@ def main() -> None:
     ap.add_argument("--pre-ms", default="kind-mango_v57_pre_ms.parquet")
     ap.add_argument("--out", default="kind-mango_v57.parquet")
     ap.add_argument("--base-model", default="lgbm_r_all_v57")
+    ap.add_argument("--stepa-normal-rnorm", action="store_true",
+                    help="Step A normal term reads R_norm, not the mixture (T1, L12).")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    serve_v30(args.pre_ms, args.base_model)
+    serve_v30(args.pre_ms, args.base_model, stepa_normal_rnorm=args.stepa_normal_rnorm)
     write_ms(pd.read_parquet(C.ROOT / "submission" / args.pre_ms), args.out)
 
 
