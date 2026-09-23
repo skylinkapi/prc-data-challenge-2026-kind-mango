@@ -16,6 +16,60 @@ Section 3 states why the model sits at 296.57 s. Section 4 holds the
 findings. Section 5 is the list of measures for the new model. The file
 holds no code.
 
+## Progress, 2026-09-23: section 5 measures merged with `WINNING_PLAN.md`
+
+Live best **287.33 s (v57)**, rank 57 of 178. `docs/WINNING_PLAN.md` ranks
+levers L1 to L15; this table maps them onto the measures of section 5.
+Live deltas come from the official API (WINNING_PLAN section 3). The team
+stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
+(section 4.9, MX1).
+
+### Done
+
+| measure | upload | live delta, s | state |
+|---|---|---|---|
+| MS1, MS2 bounds and floors | v48 | -2.33 | accepted |
+| MS3 member median | v50 | -0.42 | accepted on v48; v51 to v57 dropped it (L13) |
+| MS4 fail on a missing row | v48 onward | | served (`assert_ms4`) |
+| MD2, MH1 LIRF head without drifted columns | v49 | +0.42 | rejected |
+| MB3 base on served rows | v51 | -5.57 | accepted |
+| MB4 calendar | v52 | +0.11 | rejected |
+| MB1 anchored offset on `mvt_eobt1` | v54 | +35.86 | rejected, closed |
+| MB8 `R_norm`, gate, route medians | v55, v56, v57 | -0.42, -0.33, -0.17 | accepted |
+| MB8 operator encoders | v58 | +1.29 | rejected, closed |
+| MF4 arrival drift | v59 | +0.37 | rejected, closed |
+| MD4 out-of-fold encoders | v60 | +2.25 | rejected, closed |
+| L4 v45 parameters on the v57 recipe (MB5) | v61 | +0.99 | rejected |
+| MP9 read every score | | | v44 299.846, v45 296.125, v50 293.816 now read |
+| MX1 organiser ruling | | | resolved 2026-09-18 |
+
+The API scores change one reading: the L1 retune (v45 to v46) cost
++3.01 s live. v61 put the v45 parameters back on the v57 recipe and
+landed 288.32 s, +0.99 s. One reading, grade D: MB3 removed the LIRF and
+24-h rows that the tuner followed (P3), and the retuned parameters now
+suit the served rows. L14 (blend of both recipes) needed v61 within
+0.5 s of v57 and does not run.
+v61 moved 5 rows of one EHAM day by more than 3,000 s: each has a flight
+record, `mvt_eobt1` of 3,905 to 7,443 s and `sd` of 12,543 to 21,014 s.
+
+### Open, in upload order (track A)
+
+| next | WINNING_PLAN lever | measure | upload |
+|---|---|---|---|
+| 1 | L13 MS3 on the current base | MS3 | v62 |
+| 2 | L12 Step A normal term reads `R_norm` | MH5, fixes T1 | v63 |
+| 3 | L10 out-of-fold isotonic map for the gate | MH1, fixes L3 | v64 |
+| 4 | L9 planned-taxi proxy `ARVT_1 - EOBT_1` | MF5, fixes C2 | v65 |
+| 5 | L11 weather at `EOBT_1` | MF1 | |
+| 6 | L3 CatBoost second class, fixed blend | MB7 | needs the `catboost` decision |
+| 7 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
+| 8 | L15 final 12-month refit | MB8 | last |
+
+Not on track A: L1, L2, L5, L6 and L8 read `AOBT_3_flt` or `LOBT_flt`.
+No WINNING_PLAN lever covers MP1 to MP8, MD1, MD3, MD5 to MD10, MB2,
+MB6, MH2, MH4, MF2, MF3 or MC1 to MC7. The stop rule of WINNING_PLAN
+11.4 replaces the stop rule of section 6.
+
 ## 0. Scope, evidence and units
 
 ### 0.1 How this pass was made
@@ -793,7 +847,15 @@ needs a written ruling.** V, decision.
   the average error, the live MSE falls to 66,850 to 73,000, or 258 to 270 s.
   The top score, 263.46 s, sits inside that range. This does not prove what
   other teams did.
-- Status: a team decision. No measure in section 5 reads these fields.
+- Status: **MX1 resolved 2026-09-18.** The organiser confirmed no formal
+  rule bans reading `AOBT_3_flt`/`MVT_TIME_UTC_mvt` or trajectory-derived
+  off-block times: "the model is for post-ops, not for tactical use" and
+  "there are no such restrictions ... Practically speaking it won't be
+  possible" (`RECAP.md`, Discord 2026-09-18). The ruling relies on poor
+  ADS-B surface coverage at most airports to make the exploit impractical,
+  not on a prohibition. The exclusion stays a team decision regardless.
+  No measure in section 5 reads these fields. See `README.md` Ethics
+  section for the recorded verbatim answer.
 
 ## 5. Measures for the new model
 
@@ -1026,10 +1088,15 @@ orders them. No measure ships without its test.
   forward windows over other flights' movements are admissible. Record the
   answer verbatim in `README.md`. Until then no measure reads them. Fixes X1,
   L4.
+  **Resolved 2026-09-18** — answer recorded verbatim in `README.md` Ethics
+  section and in `RECAP.md` Discord confirmations. No formal rule bans it;
+  the exclusion stays in force as a team decision. No measure reads these
+  fields.
 
 ## 6. Build order, gates and stop rule
 
-The window closes on 2026-10-31. Each phase ends in fold prices, an arrival
+The window closes on 2026-10-11, 23:59:59 CET (`docs/WINNING_PLAN.md`
+3.1 item 10; the earlier 2026-10-31 date was wrong). Each phase ends in fold prices, an arrival
 mirror delta and the MP7 gates.
 
 1. **Phase 0, harness.** MP1 to MP10, MC1, MC5. Exit when the fold harness

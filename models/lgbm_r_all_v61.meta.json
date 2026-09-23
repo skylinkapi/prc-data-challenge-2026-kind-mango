@@ -1,0 +1,28 @@
+{
+ "params": {
+  "learning_rate": 0.022810159868114487,
+  "num_leaves": 220,
+  "min_data_in_leaf": 76,
+  "feature_fraction": 0.6737480156722359,
+  "bagging_fraction": 0.9366340145580665,
+  "lambda_l1": 0.0887022084743886,
+  "lambda_l2": 0.3423614383968606,
+  "min_gain_to_split": 1.8309877581737415,
+  "objective": "regression",
+  "metric": "rmse",
+  "linear_lambda": 1.0
+ },
+ "v45_iters": [
+  1661,
+  1426,
+  783
+ ],
+ "scaled_iters": [
+  2091,
+  1795,
+  986
+ ],
+ "scale_factor": 1.2585146417103135,
+ "n_served": 1923953,
+ "changed": "v45 parameters on the v57 recipe (WINNING_PLAN L4)"
+}

@@ -14,6 +14,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--pre-ms", default="kind-mango_v57_pre_ms.parquet")
     ap.add_argument("--out", default="kind-mango_v57.parquet")
+    ap.add_argument("--base-model", default="lgbm_r_all_v57")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
@@ -49,7 +50,7 @@ def main() -> None:
     predict_v30_main(
         args.pre_ms,
         r_norm_files=R_NORM_FILES,
-        base_model="lgbm_r_all_v57",
+        base_model=args.base_model,
         extra_columns=extra,
         r_norm_features="lirf_regime_v41.features.txt",
         r_norm_clip=None,
