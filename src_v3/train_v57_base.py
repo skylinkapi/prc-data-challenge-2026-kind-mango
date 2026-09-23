@@ -44,16 +44,12 @@ def _load_frame_v57() -> pd.DataFrame:
     return dep
 
 
-def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+def train_base(dep: pd.DataFrame, feat: list[str], tag: str, changed: str) -> None:
+    """Fit the three MB3 base members with the v43 parameters and write them as `lgbm_r_all_<tag>`."""
     with open(TUNED) as f:
         tuned = json.load(f)["tuned"]
     with open(V46_REPORT) as f:
         v46_iters = json.load(f)["v46"]["best_iters"]
-
-    log.info("loading v57 feature frame (with all-months plan medians)")
-    dep = _load_frame_v57()
-    feat = v47_feature_names()
     log.info("frame %d rows, features %d", len(dep), len(feat))
 
     adep = dep["ADEP_mvt"].astype(str)
@@ -63,9 +59,9 @@ def main() -> None:
     log.info("MB3 filter: %d rows", len(dep))
 
     n_v46_train = int(0.88 * 10 / 12 * 2_084_659)
-    v57_scale = len(dep) / n_v46_train
-    scaled = [int(math.ceil(i * v57_scale)) for i in v46_iters]
-    log.info("v46 iters %s -> v57 %s (x %.3f)", v46_iters, scaled, v57_scale)
+    scale = len(dep) / n_v46_train
+    scaled = [int(math.ceil(i * scale)) for i in v46_iters]
+    log.info("v46 iters %s -> %s %s (x %.3f)", v46_iters, tag, scaled, scale)
 
     dt = lgb.Dataset(dep[feat], label=dep["TAXITIME_SEC_mvt"].values,
                      categorical_feature=CAT_COLS,
@@ -79,19 +75,25 @@ def main() -> None:
              "deterministic": C.DETERMINISTIC}
         t0 = time.time()
         b = lgb.train(p, dt, num_boost_round=n_iter)
-        b.save_model(str(C.ROOT / "models" / f"lgbm_r_all_v57_s{seed}.txt"))
-        log.info("v57 seed %d %d rounds in %.0fs", seed, n_iter, time.time() - t0)
+        b.save_model(str(C.ROOT / "models" / f"lgbm_r_all_{tag}_s{seed}.txt"))
+        log.info("%s seed %d %d rounds in %.0fs", tag, seed, n_iter, time.time() - t0)
 
-    with open(C.ROOT / "models" / "lgbm_r_all_v57.features.txt", "w") as f:
+    with open(C.ROOT / "models" / f"lgbm_r_all_{tag}.features.txt", "w") as f:
         f.write("\n".join(feat))
     shutil.copy(str(C.ROOT / "models" / "lgbm_r_all_v26.encoders.pkl"),
-                str(C.ROOT / "models" / "lgbm_r_all_v57.encoders.pkl"))
-    (C.ROOT / "models" / "lgbm_r_all_v57.meta.json").write_text(json.dumps({
+                str(C.ROOT / "models" / f"lgbm_r_all_{tag}.encoders.pkl"))
+    (C.ROOT / "models" / f"lgbm_r_all_{tag}.meta.json").write_text(json.dumps({
         "tuned": tuned, "v46_iters": v46_iters, "scaled_iters": scaled,
-        "scale_factor": v57_scale, "n_served": len(dep),
-        "changed": "plan_taxi_res uses all-12-month route medians (MB8)",
+        "scale_factor": scale, "n_served": len(dep), "changed": changed,
     }, indent=1))
-    log.info("wrote v57 base members")
+    log.info("wrote %s base members", tag)
+
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+    log.info("loading v57 feature frame (with all-months plan medians)")
+    train_base(_load_frame_v57(), v47_feature_names(), "v57",
+               "plan_taxi_res uses all-12-month route medians (MB8)")
 
 
 if __name__ == "__main__":

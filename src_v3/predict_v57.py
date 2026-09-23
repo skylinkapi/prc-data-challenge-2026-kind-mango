@@ -31,7 +31,8 @@ log = logging.getLogger(__name__)
 
 def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
               stepa_normal_rnorm: bool = False,
-              gate_iso: str = "lirf_regime_v56.isotonic.pkl") -> None:
+              gate_iso: str = "lirf_regime_v56.isotonic.pkl",
+              extra_files: tuple[str, ...] = ()) -> None:
     """Write the pre-MS file of the v57 stack with the given base members."""
     tempo = pd.read_parquet(V2_RANK, columns=["MVT_ID_mvt", *TEMPO_COLS])
     p2575 = pd.read_parquet(C.ROOT / "models" / "tempo_p2575_rank.parquet",
@@ -40,6 +41,9 @@ def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
                            columns=["MVT_ID_mvt", *PLAN_COLS])
     extra = tempo.merge(p2575, on="MVT_ID_mvt", how="left") \
                  .merge(plan, on="MVT_ID_mvt", how="left")
+    for path in extra_files:
+        extra = extra.merge(pd.read_parquet(C.ROOT / path), on="MVT_ID_mvt",
+                            how="left", validate="1:1")
     predict_v30_main(
         pre_ms,
         r_norm_files=R_NORM_FILES,
@@ -84,10 +88,12 @@ def main() -> None:
                     help="Step A normal term reads R_norm, not the mixture (T1, L12).")
     ap.add_argument("--gate-iso", default="lirf_regime_v56.isotonic.pkl",
                     help="Isotonic map for the v56 gate booster.")
+    ap.add_argument("--extra", action="append", default=[],
+                    help="Parquet of extra ranking columns keyed on MVT_ID_mvt, relative to the repo root.")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     serve_v30(args.pre_ms, args.base_model, stepa_normal_rnorm=args.stepa_normal_rnorm,
-              gate_iso=args.gate_iso)
+              gate_iso=args.gate_iso, extra_files=tuple(args.extra))
     write_ms(pd.read_parquet(C.ROOT / "submission" / args.pre_ms), args.out)
 
 
