@@ -363,7 +363,7 @@ external/                       # open-data caches (gitignored)
 training/                       # organiser-provided 2025 monthly parquets (gitignored)
 submission/                     # ranking.parquet, submitting.parquet, kind-mango_v*.parquet
 models/                         # trained boosters + encoders + JSON config
-docs/                           # PRC brief + MODEL_ANALYSIS.md (fifteenth pass: audit of v47, measures for the new model)
+docs/                           # PRC brief + MODEL_ANALYSIS.md (fifteenth pass: audit of v47, measures for the new model) + WINNING_PLAN.md (gap analysis and ranked levers to 11 Oct)
 RECAP.md                        # session log for every attempt, submissions and scores
 ```
 
