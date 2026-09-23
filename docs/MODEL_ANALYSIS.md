@@ -40,6 +40,7 @@ stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
 | MF4 arrival drift | v59 | +0.37 | rejected, closed |
 | MD4 out-of-fold encoders | v60 | +2.25 | rejected, closed |
 | L4 v45 parameters on the v57 recipe (MB5) | v61 | +0.99 | rejected |
+| L13 MS3 on the v57 base | v62, not uploaded | 0 | no-op: largest non-LIRF member spread 2,376 s, under the 3,600 s trigger; v62 equals v57 on every row |
 | MP9 read every score | | | v44 299.846, v45 296.125, v50 293.816 now read |
 | MX1 organiser ruling | | | resolved 2026-09-18 |
 
@@ -56,14 +57,13 @@ record, `mvt_eobt1` of 3,905 to 7,443 s and `sd` of 12,543 to 21,014 s.
 
 | next | WINNING_PLAN lever | measure | upload |
 |---|---|---|---|
-| 1 | L13 MS3 on the current base | MS3 | v62 |
-| 2 | L12 Step A normal term reads `R_norm` | MH5, fixes T1 | v63 |
-| 3 | L10 out-of-fold isotonic map for the gate | MH1, fixes L3 | v64 |
-| 4 | L9 planned-taxi proxy `ARVT_1 - EOBT_1` | MF5, fixes C2 | v65 |
-| 5 | L11 weather at `EOBT_1` | MF1 | |
-| 6 | L3 CatBoost second class, fixed blend | MB7 | needs the `catboost` decision |
-| 7 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
-| 8 | L15 final 12-month refit | MB8 | last |
+| 1 | L12 Step A normal term reads `R_norm` | MH5, fixes T1 | v63 |
+| 2 | L10 out-of-fold isotonic map for the gate | MH1, fixes L3 | v64 |
+| 3 | L9 planned-taxi proxy `ARVT_1 - EOBT_1` | MF5, fixes C2 | v65 |
+| 4 | L11 weather at `EOBT_1` | MF1 | |
+| 5 | L3 CatBoost second class, fixed blend | MB7 | needs the `catboost` decision |
+| 6 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
+| 7 | L15 final 12-month refit | MB8 | last |
 
 Not on track A: L1, L2, L5, L6 and L8 read `AOBT_3_flt` or `LOBT_flt`.
 No WINNING_PLAN lever covers MP1 to MP8, MD1, MD3, MD5 to MD10, MB2,
