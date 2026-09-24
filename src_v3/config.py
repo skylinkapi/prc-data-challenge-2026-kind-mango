@@ -110,3 +110,14 @@ LGB_LINEAR_BASE = dict(
     seed=GLOBAL_SEED, bagging_seed=GLOBAL_SEED,
     feature_fraction_seed=GLOBAL_SEED,
 )
+
+# -- CatBoost second model class, MB7 / WINNING_PLAN L3 ---------------------
+# Depth 8 and RMSE follow the plan (L3). A fixed thread count keeps CPU fits
+# deterministic; early stop reads the v46 stop months 11 and 12.
+CATBOOST_PARAMS = dict(
+    loss_function="RMSE", depth=8, learning_rate=0.08, l2_leaf_reg=3.0,
+    iterations=5000, od_type="Iter", od_wait=200,
+    random_seed=GLOBAL_SEED, thread_count=12, verbose=250,
+    train_dir=str(CACHE / "catboost_info"),
+)
+CATBOOST_BLEND_WEIGHTS = (0.3, 0.5)     # pre-registered in WINNING_PLAN L3

@@ -20,7 +20,7 @@ cd prc-data-challenge-2026-kind-mango
 python -m venv .venv
 source .venv/bin/activate       # Windows: .venv\Scripts\activate
 
-pip install pandas pyarrow numpy scikit-learn lightgbm optuna openpyxl networkx minio
+pip install pandas pyarrow numpy scikit-learn lightgbm optuna openpyxl networkx minio catboost
 ```
 
 ## 2. Get organiser data

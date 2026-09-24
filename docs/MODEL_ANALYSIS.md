@@ -18,7 +18,7 @@ holds no code.
 
 ## Progress, 2026-09-23: section 5 measures merged with `WINNING_PLAN.md`
 
-Live best **284.74 s (v65)**. On 2026-09-23 the rank was 57 of 178 at 287.33 s (v57). `docs/WINNING_PLAN.md` ranks
+Live best **281.87 s (v67)**. On 2026-09-23 the rank was 57 of 178 at 287.33 s (v57). `docs/WINNING_PLAN.md` ranks
 levers L1 to L15; this table maps them onto the measures of section 5.
 Live deltas come from the official API (WINNING_PLAN section 3). The team
 stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
@@ -45,6 +45,7 @@ stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
 | L10 out-of-fold isotonic map for the v56 gate (MH1, fixes L3) | v64 | -1.14 | accepted; 25,988 LIRF rows outside Step A move, mean +8.7 s, max 1,805 s; rows above 7,200 s 125 to 105 |
 | L9 `plan_nm_taxi` = `ARVT_1 - EOBT_1` minus its (ADEP, ADES, type) median (MF5, fixes C2) | v65 | -1.22 | accepted; base retrained with 118 columns; non-LIRF shifts -1.3 to +2.7 s, max 2,188 s |
 | L11 weather at `EOBT_1` (MF1), five METAR columns on the v65 base | v66 | +0.33 | rejected; one LSZH row on the 8 January 2026 snow day moved 1,257 to 5,536 s |
+| L3 CatBoost second class, 0.5 blend on the base outside LIRF (MB7, fixes M5) | v67 | -2.87 | accepted; hold-out price -2,079 MSE at w 0.5; like-for-like LightGBM control 1,636 MSE worse than v46, CatBoost 1,358 better |
 | Discord tail rules: blend heavy-hold rows toward the 2025 curve of y on `mvt_eobt1`; cap normal rows | not uploaded | hold-out +1,639 / -3 MSE | rejected on the 2025 hold-out (`src_v3/measure_tail_rules.py`); see below |
 | MP9 read every score | | | v44 299.846, v45 296.125, v50 293.816 now read |
 | MX1 organiser ruling | | | resolved 2026-09-18 |
@@ -62,9 +63,8 @@ record, `mvt_eobt1` of 3,905 to 7,443 s and `sd` of 12,543 to 21,014 s.
 
 | next | WINNING_PLAN lever | measure | upload |
 |---|---|---|---|
-| 1 | L3 CatBoost second class, fixed blend | MB7 | needs the `catboost` decision |
-| 2 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
-| 3 | L15 final 12-month refit | MB8 | last |
+| 1 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
+| 2 | L15 final 12-month refit | MB8 | last |
 
 A Discord post (2026-09-23) said: make the outliers of the submission look
 like the outliers of the training set. The 2026 prediction tail at EHAM is
@@ -85,9 +85,8 @@ January and July 2025 out of sample:
 
 Neither rule ships.
 
-Every open lever builds on v65: serve with `predict_v57 --base-model lgbm_r_all_v65
---stepa-normal-rnorm --gate-iso lirf_regime_v64.isotonic.pkl --extra
-models/plan_nm_taxi_rank_v65.parquet`. A base retrain builds on
+Every open lever builds on v67: `python -m src_v3.predict_v67 --weight 0.5` (the
+v65 stack plus the full-year CatBoost member `models/catboost_r_all_v67.cbm`). A base retrain builds on
 `train_v57_base.train_base` with the `plan_nm_taxi` column.
 
 v64 test on held-out months (`models/lirf_regime_v64.meta.json`): log loss of the gate

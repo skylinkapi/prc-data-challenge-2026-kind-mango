@@ -1,0 +1,6 @@
+{
+ "best_iteration": 438,
+ "lgbm_v65_cols_alone": 1635.6385149451348,
+ "catboost_alone": -1358.0895730273376,
+ "catboost_minus_lgbm_control": -2993.728087972472
+}

@@ -6,11 +6,12 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **284.74 s RMSE** (`kind-mango_v65.parquet`,
-  2026-09-23), -14.58 s vs v41. Path from v57 (287.33 s) on 2026-09-23:
-  Step A normal term reads `R_norm` (v63, 287.09 s), out-of-fold isotonic
-  map on the LIRF gate (v64, 285.95 s), planned-taxi column
-  `plan_nm_taxi` in the base (v65, 284.74 s). See `docs/WINNING_PLAN.md`. Path: L3.a/L9/L1 stacked base changes
+- **Current leaderboard best:** **281.87 s RMSE** (`kind-mango_v67.parquet`,
+  2026-09-24), -17.45 s vs v41. Path from v57 (287.33 s): Step A normal
+  term reads `R_norm` (v63, 287.09 s), out-of-fold isotonic map on the LIRF
+  gate (v64, 285.95 s), planned-taxi column `plan_nm_taxi` (v65, 284.74 s),
+  CatBoost second model class blended 50/50 with the LightGBM base outside
+  LIRF (v67, 281.87 s). See `docs/WINNING_PLAN.md`. Path: L3.a/L9/L1 stacked base changes
   (v44-v46, live -0.17 s), L2 12-month refit (v47 = 296.57, -2.57 s),
   fifteenth-pass MS1+MS2 bounds (v48 = 294.24, -2.33 s), fifteenth-pass
   MB3 base retrained on served rows only, LIRF and y>80,000 excluded
@@ -135,6 +136,7 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | **kind-mango_v64** | **285.95** | **-1.14 vs v63 (new best, -13.36 s vs v41)** | WINNING_PLAN L10, finding L3: the v56 gate booster with an isotonic map fit on out-of-fold scores of six month-pair fold boosters (`python -m src_v3.train_p_fb_v64`), not on its own in-sample scores. 25,988 LIRF rows outside Step A move, mean +8.7 s. Run: `python -m src_v3.predict_v57 --stepa-normal-rnorm --gate-iso lirf_regime_v64.isotonic.pkl --pre-ms kind-mango_v64_pre_ms.parquet --out kind-mango_v64.parquet`. |
 | **kind-mango_v65** | **284.74** | **-1.22 vs v64 (new best, -14.58 s vs v41)** | WINNING_PLAN L9, MF5: new base column `plan_nm_taxi` = filed block time `ARVT_1 - EOBT_1` minus its 12-month median per (ADEP, ADES, aircraft type), clean rows, clip +/-3,600 s (`python -m src_v3.build_plan_nm_taxi_v65`; coverage 0.989 train, 0.961 rank). Base retrained on the v57 recipe with 118 columns (`python -m src_v3.train_v65_base`). Run: `python -m src_v3.predict_v57 --base-model lgbm_r_all_v65 --stepa-normal-rnorm --gate-iso lirf_regime_v64.isotonic.pkl --extra models/plan_nm_taxi_rank_v65.parquet --pre-ms kind-mango_v65_pre_ms.parquet --out kind-mango_v65.parquet`. |
 | kind-mango_v66 | 285.07 | +0.33 vs v65 (rejected) | WINNING_PLAN L11, MF1: five METAR columns at EOBT_1 on the v65 base (`python -m src_v3.train_v66_base`; serve with a second `--extra models/weather_eobt_rank.parquet`). The -367 MSE paired price on v45 did not transfer. |
+| **kind-mango_v67** | **281.87** | **-2.87 vs v65 (new best, -17.45 s vs v41)** | WINNING_PLAN L3, MB7: CatBoost (depth 8, RMSE, ordered target statistics on the 10 categorical columns; `catboost` dependency for a second learner class) on the v65 columns and MB3 rows, 7,385 rounds on 12 months (`python -m src_v3.catboost_base`). Base outside LIRF = 0.5 LightGBM mean + 0.5 CatBoost. Priced first on the 2025 hold-out (`python -m src_v3.measure_catboost_blend`, then `measure_lgbm_control`). Run: `python -m src_v3.predict_v67 --weight 0.5`. |
 | kind-mango_v40 | 299.97 | -1.90 | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 
@@ -242,7 +244,7 @@ stays for the record. See `src/predict_v21_final.py`.
 Python 3.13, one virtualenv.
 
 ```bash
-pip install pandas pyarrow numpy scikit-learn lightgbm optuna openpyxl networkx minio
+pip install pandas pyarrow numpy scikit-learn lightgbm optuna openpyxl networkx minio catboost
 
 # 1. Fetch open external data (~60 min, several rate-limited APIs)
 python src/build_eurocontrol_daily.py     # daily ATFM per airport

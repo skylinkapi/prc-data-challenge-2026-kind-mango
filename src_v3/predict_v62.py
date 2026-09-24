@@ -29,15 +29,15 @@ BASE = "lgbm_r_all_v57"
 log = logging.getLogger(__name__)
 
 
-def score_members(dump: pd.DataFrame) -> np.ndarray:
+def score_members(dump: pd.DataFrame, base: str = BASE) -> np.ndarray:
     """Score each base member on the served frame, clipped at 0 as in predict_v30."""
-    feat = (C.ROOT / "models" / f"{BASE}.features.txt").read_text().splitlines()
+    feat = (C.ROOT / "models" / f"{base}.features.txt").read_text().splitlines()
     cats = load_training_categories()
     x = dump[feat].copy()
     for c in CAT_COLS:
         x[c] = pd.Categorical(x[c], categories=cats[c])
     return np.array([
-        np.clip(lgb.Booster(model_file=str(C.ROOT / "models" / f"{BASE}_s{s}.txt"))
+        np.clip(lgb.Booster(model_file=str(C.ROOT / "models" / f"{base}_s{s}.txt"))
                 .predict(x), 0, None)
         for s in DEFAULT_SEEDS])
 

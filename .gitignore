@@ -26,6 +26,7 @@ external/vrs/*.parquet
 # Model artifacts (regeneratable; too big for git)
 models/**/*.txt
 models/**/*.pkl
+models/**/*.cbm
 models/features_cache*
 
 # Submission outputs (produced by predict.py; keep result JSONs)
@@ -84,6 +85,8 @@ models/v33_rank_dump.parquet
 models/calendar_*.parquet
 models/weather_eobt_*.parquet
 models/arr_txi_*.parquet
+models/arr_drift_*.parquet
+models/plan_nm_taxi_*.parquet
 models/v3/cache/*
 models/v3/logs/*
 models/v3/*.parquet
