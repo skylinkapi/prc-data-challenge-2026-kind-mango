@@ -121,3 +121,7 @@ CATBOOST_PARAMS = dict(
     train_dir=str(CACHE / "catboost_info"),
 )
 CATBOOST_BLEND_WEIGHTS = (0.3, 0.5)     # pre-registered in WINNING_PLAN L3
+# Variant B (option B, v70): deeper trees, another seed and half the columns
+# per split round, for diversity against the v67 member.
+CATBOOST_PARAMS_B = {**CATBOOST_PARAMS, "depth": 10, "random_seed": 43, "rsm": 0.5}
+CATBOOST_BY_TAG = {"v67": CATBOOST_PARAMS, "v69": CATBOOST_PARAMS, "v70": CATBOOST_PARAMS_B}

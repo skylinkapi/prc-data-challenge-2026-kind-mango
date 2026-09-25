@@ -57,9 +57,10 @@ def to_pool(frame: pd.DataFrame, feat: list[str], has_label: bool = True) -> Poo
 
 
 def fit(train: pd.DataFrame, feat: list[str], stop: pd.DataFrame | None = None,
-        iterations: int | None = None, max_rounds: int | None = None) -> CatBoostRegressor:
+        iterations: int | None = None, max_rounds: int | None = None,
+        params: dict | None = None) -> CatBoostRegressor:
     """Fit with early stop on `stop` up to `max_rounds`, or for a fixed round count."""
-    params = dict(C.CATBOOST_PARAMS)
+    params = dict(C.CATBOOST_PARAMS if params is None else params)
     if max_rounds is not None:
         params.update(iterations=max_rounds)
     if iterations is not None:
@@ -86,9 +87,10 @@ def main() -> None:
     dep, feat = load_frame()
     n_iter = int(math.ceil(report["best_iteration"] * len(dep) / report["n_fit"]))
     log.info("full-year CatBoost %s: %d rows, %d rounds", args.tag, len(dep), n_iter)
-    fit(dep, feat, iterations=n_iter).save_model(str(model_path))
+    params = C.CATBOOST_BY_TAG[args.tag]
+    fit(dep, feat, iterations=n_iter, params=params).save_model(str(model_path))
     meta_path.write_text(json.dumps({
-        "params": C.CATBOOST_PARAMS, "iterations": n_iter, "n_rows": len(dep),
+        "params": params, "iterations": n_iter, "n_rows": len(dep),
         "features": feat}, indent=1))
 
 
