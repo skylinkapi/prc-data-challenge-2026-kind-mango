@@ -16,7 +16,7 @@ import pandas as pd
 from catboost import CatBoostRegressor
 
 from src_v3 import config as C
-from src_v3.catboost_base import MODEL, predict
+from src_v3.catboost_base import paths, predict
 from src_v3.catboost_r_norm import blend_r_norm
 from src_v3.predict_v57 import serve_v30, write_ms
 from src_v3.predict_v62 import score_members
@@ -32,6 +32,7 @@ def main() -> None:
     ap.add_argument("--weight", type=float, required=True, choices=C.CATBOOST_BLEND_WEIGHTS)
     ap.add_argument("--r-norm-weight", type=float, choices=C.CATBOOST_BLEND_WEIGHTS,
                     help="Blend the LIRF CatBoost member into R_norm at this weight (v68).")
+    ap.add_argument("--catboost-tag", default="v67", help="Version tag of the base CatBoost model.")
     ap.add_argument("--pre-ms", default="kind-mango_v67_pre_ms.parquet")
     ap.add_argument("--out", default="kind-mango_v67.parquet")
     args = ap.parse_args()
@@ -52,9 +53,10 @@ def main() -> None:
         raise AssertionError(f"Member scoring does not match the served base: max gap {gap:.3f} s. "
                              "Check the categorical cast, then rerun.")
 
+    model_path, _, meta_path = paths(args.catboost_tag)
     model = CatBoostRegressor()
-    model.load_model(str(MODEL))
-    feat = json.loads((C.ROOT / "models" / "catboost_r_all_v67.meta.json").read_text())["features"]
+    model.load_model(str(model_path))
+    feat = json.loads(meta_path.read_text())["features"]
     cat = predict(model, dump, feat)
     delta = np.where(is_base, args.weight * (cat - lgb_mean), 0.0)
     log.info("CatBoost minus LightGBM outside LIRF: mean %.1f s, p99 |d| %.0f s",
