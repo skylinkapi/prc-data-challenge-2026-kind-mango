@@ -49,6 +49,7 @@ stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
 | MB7 on the LIRF head: CatBoost blended 0.5 into `R_norm` | v68 | +0.03 | rejected; hold-out -435 MSE on genuine LIRF rows did not transfer, as v49 |
 | Converged base CatBoost (round cap 15,000 instead of 5,000) | v69, not built | hold-out -2,171 against -2,079 MSE at w 0.5 | stopped: the 92 MSE difference is under the 150 MSE bar set before the run; early stop at 6,480 rounds |
 | Second base CatBoost, variant B (depth 10, seed 43, `rsm` 0.5), averaged with the v67 member | v70, not built | hold-out -2,150 against -2,079 MSE | stopped: +71 MSE is under the 150 MSE bar; B alone is weaker than A (-1,946) |
+| MF2 runway-queue structure, backward windows (same-runway and heavy counts at 5 and 10 min, same-direction departures, runway-set age) on the LightGBM half | v71 | -0.015 | not accepted (inside noise); hold-out -524 to -596 MSE at equal rounds did not transfer; OSM crossings and remote flag not built |
 | L7 check: day-level correlation of departure fallback share and arrival schedule-grid share, 2025 | | | passes only at LIRF (0.43) and EDDM (0.34); the other 8 airports sit at 0.02 to 0.19 |
 | Discord tail rules: blend heavy-hold rows toward the 2025 curve of y on `mvt_eobt1`; cap normal rows | not uploaded | hold-out +1,639 / -3 MSE | rejected on the 2025 hold-out (`src_v3/measure_tail_rules.py`); see below |
 | MP9 read every score | | | v44 299.846, v45 296.125, v50 293.816 now read |

@@ -87,6 +87,7 @@ models/weather_eobt_*.parquet
 models/arr_txi_*.parquet
 models/arr_drift_*.parquet
 models/plan_nm_taxi_*.parquet
+models/runway_queue_*.parquet
 models/v3/cache/*
 models/v3/logs/*
 models/v3/*.parquet

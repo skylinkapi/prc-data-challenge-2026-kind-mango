@@ -33,18 +33,21 @@ def main() -> None:
     ap.add_argument("--r-norm-weight", type=float, choices=C.CATBOOST_BLEND_WEIGHTS,
                     help="Blend the LIRF CatBoost member into R_norm at this weight (v68).")
     ap.add_argument("--catboost-tag", default="v67", help="Version tag of the base CatBoost model.")
+    ap.add_argument("--base-model", default=BASE, help="LightGBM base members (v71: lgbm_r_all_v71).")
+    ap.add_argument("--extra", nargs="+", default=list(EXTRA),
+                    help="Parquets of extra ranking columns keyed on MVT_ID_mvt.")
     ap.add_argument("--pre-ms", default="kind-mango_v67_pre_ms.parquet")
     ap.add_argument("--out", default="kind-mango_v67.parquet")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
-    dump_path = C.MODELS / "v65_rank_features.parquet"
-    serve_v30(args.pre_ms, BASE, dump_features=str(dump_path), stepa_normal_rnorm=True,
-              gate_iso=GATE_ISO, extra_files=EXTRA,
+    dump_path = C.MODELS / f"{args.base_model}_rank_features.parquet"
+    serve_v30(args.pre_ms, args.base_model, dump_features=str(dump_path), stepa_normal_rnorm=True,
+              gate_iso=GATE_ISO, extra_files=tuple(args.extra),
               r_norm_post=None if args.r_norm_weight is None else blend_r_norm(args.r_norm_weight))
     dump = pd.read_parquet(dump_path)
     pre = pd.read_parquet(C.ROOT / "submission" / args.pre_ms)
-    lgb_mean = score_members(dump, BASE).mean(axis=0)
+    lgb_mean = score_members(dump, args.base_model).mean(axis=0)
     is_base = (dump["ADEP_mvt"].astype(str) != "LIRF").values
     served = dump[["MVT_ID_mvt"]].merge(pre, on="MVT_ID_mvt", how="left",
                                         validate="1:1")["TAXITIME_SEC_mvt"].values
