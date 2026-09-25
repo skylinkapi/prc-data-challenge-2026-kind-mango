@@ -1,0 +1,104 @@
+{
+ "file": "kind-mango_v68.parquet",
+ "ref": "kind-mango_v67.parquet",
+ "n": 344841,
+ "rows_moved": 26848,
+ "over_7200": 104,
+ "over_80000": 3,
+ "at_zero_clip": 0,
+ "ref_over_7200": 106,
+ "ref_over_80000": 3,
+ "ref_at_zero_clip": 0,
+ "per_airport": {
+  "EDDF": {
+   "n": 36317,
+   "mean_new": 926.5902096231719,
+   "mean_ref": 926.5902096231719,
+   "mean_shift": 0.0,
+   "rows_moved": 0,
+   "mean_abs_diff": 0.0,
+   "max_abs_diff": 0.0
+  },
+  "EDDM": {
+   "n": 25966,
+   "mean_new": 875.522968270097,
+   "mean_ref": 875.522968270097,
+   "mean_shift": 0.0,
+   "rows_moved": 0,
+   "mean_abs_diff": 0.0,
+   "max_abs_diff": 0.0
+  },
+  "EGLL": {
+   "n": 39840,
+   "mean_new": 1358.9512430788343,
+   "mean_ref": 1358.9512430788343,
+   "mean_shift": 0.0,
+   "rows_moved": 0,
+   "mean_abs_diff": 0.0,
+   "max_abs_diff": 0.0
+  },
+  "EHAM": {
+   "n": 38182,
+   "mean_new": 886.699976496674,
+   "mean_ref": 886.699976496674,
+   "mean_shift": 0.0,
+   "rows_moved": 0,
+   "mean_abs_diff": 0.0,
+   "max_abs_diff": 0.0
+  },
+  "LEBL": {
+   "n": 30080,
+   "mean_new": 952.5508559372744,
+   "mean_ref": 952.5508559372744,
+   "mean_shift": 0.0,
+   "rows_moved": 0,
+   "mean_abs_diff": 0.0,
+   "max_abs_diff": 0.0
+  },
+  "LEMD": {
+   "n": 36954,
+   "mean_new": 1027.627659962053,
+   "mean_ref": 1027.627659962053,
+   "mean_shift": 0.0,
+   "rows_moved": 0,
+   "mean_abs_diff": 0.0,
+   "max_abs_diff": 0.0
+  },
+  "LFPG": {
+   "n": 39872,
+   "mean_new": 991.0928151630131,
+   "mean_ref": 991.0928151630131,
+   "mean_shift": 0.0,
+   "rows_moved": 0,
+   "mean_abs_diff": 0.0,
+   "max_abs_diff": 0.0
+  },
+  "LIRF": {
+   "n": 26899,
+   "mean_new": 1284.3868197670397,
+   "mean_ref": 1269.18950721012,
+   "mean_shift": 15.197312556920089,
+   "rows_moved": 26848,
+   "mean_abs_diff": 28.469940006620988,
+   "max_abs_diff": 1485.069338071914
+  },
+  "LSZH": {
+   "n": 23150,
+   "mean_new": 812.9828255065886,
+   "mean_ref": 812.9828255065886,
+   "mean_shift": 0.0,
+   "rows_moved": 0,
+   "mean_abs_diff": 0.0,
+   "max_abs_diff": 0.0
+  },
+  "LTFM": {
+   "n": 47581,
+   "mean_new": 1136.4565409327442,
+   "mean_ref": 1136.4565409327442,
+   "mean_shift": 0.0,
+   "rows_moved": 0,
+   "mean_abs_diff": 0.0,
+   "max_abs_diff": 0.0
+  }
+ }
+}

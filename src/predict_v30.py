@@ -76,7 +76,7 @@ def main(out_name="kind-mango_v30.parquet",
          per_member_base_clip=True, fill_zero_rows_per_airport=False,
          base_model="lgbm_r_all_v26", use_plan_features=False, extra_columns=None,
          r_norm_features="lirf_regime.features.txt", r_norm_clip=R_NORM_CLIP,
-         dump_features=None, stepa_normal_rnorm=False):
+         dump_features=None, stepa_normal_rnorm=False, r_norm_post=None):
     base_seeds = base_seeds or DEFAULT_BASE_SEEDS
     r_norm_files = r_norm_files or DEFAULT_R_NORM_FILES
     p_fb_members = p_fb_members or DEFAULT_P_FB_MEMBERS
@@ -183,6 +183,8 @@ def main(out_name="kind-mango_v30.parquet",
         del b_n; gc.collect()
     r_norm_lirf_raw = np.mean(r_norm_members, axis=0)
     r_norm_lirf = r_norm_lirf_raw if r_norm_clip is None else np.minimum(r_norm_lirf_raw, r_norm_clip)
+    if r_norm_post is not None:
+        r_norm_lirf = r_norm_post(dep_lirf, r_norm_lirf)
     n_clipped = 0 if r_norm_clip is None else (r_norm_lirf_raw > r_norm_clip).sum()
     print(f"  R_norm_LIRF clipped {n_clipped} predictions at {r_norm_clip}s")
     del r_norm_members; gc.collect()

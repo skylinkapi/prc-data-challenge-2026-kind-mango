@@ -46,6 +46,8 @@ stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
 | L9 `plan_nm_taxi` = `ARVT_1 - EOBT_1` minus its (ADEP, ADES, type) median (MF5, fixes C2) | v65 | -1.22 | accepted; base retrained with 118 columns; non-LIRF shifts -1.3 to +2.7 s, max 2,188 s |
 | L11 weather at `EOBT_1` (MF1), five METAR columns on the v65 base | v66 | +0.33 | rejected; one LSZH row on the 8 January 2026 snow day moved 1,257 to 5,536 s |
 | L3 CatBoost second class, 0.5 blend on the base outside LIRF (MB7, fixes M5) | v67 | -2.87 | accepted; hold-out price -2,079 MSE at w 0.5; like-for-like LightGBM control 1,636 MSE worse than v46, CatBoost 1,358 better |
+| MB7 on the LIRF head: CatBoost blended 0.5 into `R_norm` | v68 | +0.03 | rejected; hold-out -435 MSE on genuine LIRF rows did not transfer, as v49 |
+| L7 check: day-level correlation of departure fallback share and arrival schedule-grid share, 2025 | | | passes only at LIRF (0.43) and EDDM (0.34); the other 8 airports sit at 0.02 to 0.19 |
 | Discord tail rules: blend heavy-hold rows toward the 2025 curve of y on `mvt_eobt1`; cap normal rows | not uploaded | hold-out +1,639 / -3 MSE | rejected on the 2025 hold-out (`src_v3/measure_tail_rules.py`); see below |
 | MP9 read every score | | | v44 299.846, v45 296.125, v50 293.816 now read |
 | MX1 organiser ruling | | | resolved 2026-09-18 |
@@ -63,7 +65,7 @@ record, `mvt_eobt1` of 3,905 to 7,443 s and `sd` of 12,543 to 21,014 s.
 
 | next | WINNING_PLAN lever | measure | upload |
 |---|---|---|---|
-| 1 | L7 day-level artefact share | MH3 | only if the 2025 gate passes |
+| 1 | L7 day-level artefact share | MH3 | LIRF and EDDM gate features only; the 2025 check passes there |
 | 2 | L15 final 12-month refit | MB8 | last |
 
 A Discord post (2026-09-23) said: make the outliers of the submission look

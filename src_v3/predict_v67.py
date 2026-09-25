@@ -3,6 +3,7 @@
 Outside LIRF the base term becomes `(1 - w) * LightGBM mean + w * CatBoost`.
 The difference goes onto the v65 pre-MS output, so the LIRF head, Step A
 and ITY340 stay as served. MS1 and MS2 then apply as in v57.
+With `--r-norm-weight`, v68 also blends a LIRF CatBoost member into `R_norm`.
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ from catboost import CatBoostRegressor
 
 from src_v3 import config as C
 from src_v3.catboost_base import MODEL, predict
+from src_v3.catboost_r_norm import blend_r_norm
 from src_v3.predict_v57 import serve_v30, write_ms
 from src_v3.predict_v62 import score_members
 
@@ -28,6 +30,8 @@ log = logging.getLogger(__name__)
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--weight", type=float, required=True, choices=C.CATBOOST_BLEND_WEIGHTS)
+    ap.add_argument("--r-norm-weight", type=float, choices=C.CATBOOST_BLEND_WEIGHTS,
+                    help="Blend the LIRF CatBoost member into R_norm at this weight (v68).")
     ap.add_argument("--pre-ms", default="kind-mango_v67_pre_ms.parquet")
     ap.add_argument("--out", default="kind-mango_v67.parquet")
     args = ap.parse_args()
@@ -35,7 +39,8 @@ def main() -> None:
 
     dump_path = C.MODELS / "v65_rank_features.parquet"
     serve_v30(args.pre_ms, BASE, dump_features=str(dump_path), stepa_normal_rnorm=True,
-              gate_iso=GATE_ISO, extra_files=EXTRA)
+              gate_iso=GATE_ISO, extra_files=EXTRA,
+              r_norm_post=None if args.r_norm_weight is None else blend_r_norm(args.r_norm_weight))
     dump = pd.read_parquet(dump_path)
     pre = pd.read_parquet(C.ROOT / "submission" / args.pre_ms)
     lgb_mean = score_members(dump, BASE).mean(axis=0)

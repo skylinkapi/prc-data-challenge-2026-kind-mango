@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
               stepa_normal_rnorm: bool = False,
               gate_iso: str = "lirf_regime_v56.isotonic.pkl",
-              extra_files: tuple[str, ...] = ()) -> None:
+              extra_files: tuple[str, ...] = (), r_norm_post=None) -> None:
     """Write the pre-MS file of the v57 stack with the given base members."""
     tempo = pd.read_parquet(V2_RANK, columns=["MVT_ID_mvt", *TEMPO_COLS])
     p2575 = pd.read_parquet(C.ROOT / "models" / "tempo_p2575_rank.parquet",
@@ -55,6 +55,7 @@ def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
         p_fb_features="lirf_regime_v23.features.txt",
         dump_features=dump_features,
         stepa_normal_rnorm=stepa_normal_rnorm,
+        r_norm_post=r_norm_post,
     )
 
 
