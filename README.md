@@ -385,6 +385,9 @@ RECAP.md                        # session log for every attempt, submissions and
 For transparency, and so the next replicator does not waste days on the same
 dead-ends:
 
+- **Fallback heads outside LIRF (MH2)** — mixing a calibrated P(|y - sd| < 60) toward `sd`
+  costs +292 MSE on the 2025 hold-out and is worse at all 9 airports
+  (`python -m src_v3.measure_mh2`).
 - **Tail rules that pull predicted outliers toward the 2025 label tail** (Discord
   suggestion, 2026-09-23) — +1,639 MSE on the 2025 hold-out for a 50/50 blend
   with the 2025 curve of y on `mvt_eobt1`; a cap on normal rows moves 3 rows
