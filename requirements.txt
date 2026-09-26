@@ -1,0 +1,14 @@
+# Pinned versions of the v67 pipeline, Python 3.13.3 (Windows 11, 2026-09-26).
+# Install with: pip install -r requirements.txt
+catboost==1.2.10
+holidays==0.104
+lightgbm==4.7.0
+minio==7.2.20
+networkx==3.5
+numpy==2.3.2
+openpyxl==3.1.5
+optuna==4.9.0
+pandas==2.3.1
+pyarrow==22.0.0
+scikit-learn==1.7.2
+scipy==1.16.1

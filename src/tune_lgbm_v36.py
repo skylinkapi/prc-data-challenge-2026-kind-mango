@@ -37,6 +37,7 @@ from train_r_all_v21 import SIGNED_LOG_BASE, SIGNED_LOG_COLS, TEMPERATURE_COLS, 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TRAIN_DIR = os.path.join(ROOT, "training")
 CACHE = os.path.join(ROOT, "models", "v36_tune_cache.parquet")
+NULL_IDS = os.path.join(ROOT, "models", "v36_tune_cache.null_ids.json")
 N_TRIALS = int(os.environ.get("TUNE_TRIALS", "24"))
 HOLDOUT_MONTHS = {1, 7}
 EARLYSTOP_MONTHS = {11, 12}
@@ -47,7 +48,7 @@ def rmse(y, p):
     return float(np.sqrt(np.mean((np.asarray(y) - np.asarray(p)) ** 2)))
 
 
-def build_and_cache():
+def build_and_cache(cache=CACHE):
     t0 = time.time()
     print("Building feature frame (purified v26 stack)...")
     frames = [pd.read_parquet(f) for f in sorted(
@@ -108,11 +109,21 @@ def build_and_cache():
     out = dep[keep].copy()
     for c in CAT_COLS:
         out[c] = out[c].astype("category")
-    out.to_parquet(CACHE)
-    with open(CACHE + ".feat.txt", "w") as f:
+    out.to_parquet(cache)
+    with open(cache + ".feat.txt", "w") as f:
         f.write("\n".join(feat))
+    write_ids(dep["MVT_ID_mvt"], cache)
     print(f"  cached {len(out):,} rows, {len(feat)} features "
           f"({time.time()-t0:.1f}s)")
+
+
+def write_ids(ids, cache):
+    """Write the id side file in cache row order, with the historical null rows (MODEL_ANALYSIS R2)."""
+    import json
+    ids = ids.astype(float).reset_index(drop=True)
+    with open(NULL_IDS) as f:
+        ids.iloc[json.load(f)["rows"]] = np.nan
+    ids.to_frame("MVT_ID_mvt").to_parquet(cache.replace(".parquet", ".ids.parquet"))
 
 
 def load_cached():
@@ -219,9 +230,10 @@ def refit_compare(dep, feat, tuned_params):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("stage", choices=["build", "tune", "compare"])
+    ap.add_argument("--cache", default=CACHE, help="Output path of the build stage.")
     args = ap.parse_args()
     if args.stage == "build":
-        build_and_cache()
+        build_and_cache(args.cache)
         return
     dep, feat = load_cached()
     if args.stage == "tune":

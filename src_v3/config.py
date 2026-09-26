@@ -99,6 +99,9 @@ NIGHT_HOURS_LOCAL = (23, 24, 0, 1, 2, 3, 4, 5)  # night-restriction sweep, MF3
 NUM_THREADS = 4                         # MC4 pins this; -1 was non-deterministic
 DETERMINISTIC = True                    # MC4
 GLOBAL_SEED = 42
+# Tree count of lgbm_p_fb_lirf_v23.txt (lirf_regime_v56.meta.json, v23_iter); the v56
+# gate scales it, so a clean clone needs no v23 booster file.
+P_FB_V23_ROUNDS = 182
 LGB_LINEAR_BASE = dict(
     objective="regression", metric="rmse",
     linear_tree=True, linear_lambda=1.0,   # retuned in MB5

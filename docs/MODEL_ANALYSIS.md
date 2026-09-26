@@ -53,6 +53,9 @@ stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
 | MH2 fallback head outside LIRF: `base + alpha p (sd - base)` with a calibrated classifier for `abs(y - sd) < 60` | v72, not built | hold-out +292 (alpha 1) / +72 (alpha 0.5) MSE | rejected, closed: worse at all 9 airports; outside LIRF these rows are mostly on-time pushbacks that the base already serves |
 | L7 check: day-level correlation of departure fallback share and arrival schedule-grid share, 2025 | | | passes only at LIRF (0.43) and EDDM (0.34); the other 8 airports sit at 0.02 to 0.19 |
 | Discord tail rules: blend heavy-hold rows toward the 2025 curve of y on `mvt_eobt1`; cap normal rows | not uploaded | hold-out +1,639 / -3 MSE | rejected on the 2025 hold-out (`src_v3/measure_tail_rules.py`); see below |
+| MC4 pin library versions | | | `requirements.txt` (Python 3.13.3); fixed thread counts in `config.py` |
+| MC6 parity test for the best file | | | `src_v3/test_v67_parity.py`: v67 rebuilds bit for bit against `submission/kind-mango_v67.parity.json`; `REPRODUCE.md` rewritten for v67 (two tiers) |
+| R2 id side file of the H1 frame | | | `tune_lgbm_v36.py build` now writes `v36_tune_cache.ids.parquet` with the 169 historical null rows (`v36_tune_cache.null_ids.json`); a scratch rebuild matched the historical cache, feature list and ids exactly |
 | MP9 read every score | | | v44 299.846, v45 296.125, v50 293.816 now read |
 | MX1 organiser ruling | | | resolved 2026-09-18 |
 
@@ -102,7 +105,7 @@ mean bias grows from -0.25 to -2.04 points. That bin fails the plan's per-bin te
 
 Not on track A: L1, L2, L5, L6 and L8 read `AOBT_3_flt` or `LOBT_flt`.
 No WINNING_PLAN lever covers MP1 to MP8, MD1, MD3, MD5 to MD10, MB2,
-MB6, MH2, MH4, MF2, MF3 or MC1 to MC7. The stop rule of WINNING_PLAN
+MB6, MH4, MF3 or MC1 to MC3, MC5 and MC7. The stop rule of WINNING_PLAN
 11.4 replaces the stop rule of section 6.
 
 ## 0. Scope, evidence and units

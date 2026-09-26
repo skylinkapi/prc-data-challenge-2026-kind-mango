@@ -37,7 +37,6 @@ from src_v3 import config as C
 
 LIRF_CACHE = C.ROOT / "models" / "lirf_frame_cache.parquet"
 V23_FEATURES = C.ROOT / "models" / "lirf_regime_v23.features.txt"
-V23_BOOSTER = C.ROOT / "models" / "lgbm_p_fb_lirf_v23.txt"
 SCALE = 1.0 / (1.0 - 0.12)   # 1.136
 GATE_PARAMS = {"objective": "binary", "metric": "binary_logloss",
                "learning_rate": 0.05, "num_leaves": 63,
@@ -70,8 +69,7 @@ def load_gate_frame() -> tuple[pd.DataFrame, list[str]]:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    v23 = lgb.Booster(model_file=str(V23_BOOSTER))
-    v23_iter = v23.num_trees()
+    v23_iter = C.P_FB_V23_ROUNDS
     scaled = int(math.ceil(v23_iter * SCALE))
     log.info("v23 gate iters %d -> v56 scaled %d (x %.3f)", v23_iter, scaled, SCALE)
 

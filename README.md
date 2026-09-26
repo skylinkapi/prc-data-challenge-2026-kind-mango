@@ -246,7 +246,7 @@ stays for the record. See `src/predict_v21_final.py`.
 Python 3.13, one virtualenv.
 
 ```bash
-pip install pandas pyarrow numpy scikit-learn lightgbm optuna openpyxl networkx minio catboost
+pip install -r requirements.txt   # pinned versions, Python 3.13
 
 # 1. Fetch open external data (~60 min, several rate-limited APIs)
 python src/build_eurocontrol_daily.py     # daily ATFM per airport
@@ -378,6 +378,7 @@ submission/                     # ranking.parquet, submitting.parquet, kind-mang
 models/                         # trained boosters + encoders + JSON config
 docs/                           # PRC brief + MODEL_ANALYSIS.md (fifteenth pass: audit of v47, measures for the new model) + WINNING_PLAN.md (gap analysis and ranked levers to 11 Oct)
 RECAP.md                        # session log for every attempt, submissions and scores
+requirements.txt                # pinned library versions of the v67 pipeline
 ```
 
 ## Approaches tried and RULED OUT
@@ -437,7 +438,10 @@ dead-ends:
 
 ## Reproduction
 
-See [`REPRODUCE.md`](REPRODUCE.md).
+See [`REPRODUCE.md`](REPRODUCE.md). Tier 1 serves the best file (v67) from the trained
+artefacts; Tier 2 retrains every served artefact. `python -m src_v3.test_v67_parity`
+rebuilds v67 and checks it against the recorded hash in
+`submission/kind-mango_v67.parity.json` (bit parity on 2026-09-26).
 
 ## Acknowledgements
 

@@ -27,6 +27,12 @@ external/vrs/*.parquet
 models/**/*.txt
 models/**/*.pkl
 models/**/*.cbm
+# Feature lists the v67 chain reads (small text; see REPRODUCE.md)
+!models/v36_tune_cache.parquet.feat.txt
+!models/lirf_regime.features.txt
+!models/lirf_regime_v23.features.txt
+!models/lirf_regime_v41.features.txt
+!models/lgbm_r_all_v65.features.txt
 models/features_cache*
 
 # Submission outputs (produced by predict.py; keep result JSONs)
