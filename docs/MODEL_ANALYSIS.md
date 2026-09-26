@@ -1,20 +1,23 @@
-# Model analysis, fifteenth pass: audit of v47 and the measures for the new model
+# Model analysis: progress to v67 and the audit brief for the sixteenth pass
 
-Status on 2026-09-17: live best **296.57 s (v47)**, 111 teams, top score
-263.46 s. This file is the source of truth for the next model. It replaces
-the fourteenth pass. Earlier passes stay in git:
+Status on 2026-09-26: live best **281.87 s (v67)**. Leaderboard top
+**224.88 s**. The gap is 28,876 MSE (79,448 against 50,571). This file is the
+source of truth for the next model.
+
+- The Progress section below tracks every measure of the fifteenth pass
+  and every WINNING_PLAN lever to v71.
+- The sixteenth pass is not yet written. Its brief is `docs/AUDIT_PROMPT.md`.
+  The auditor writes the result below the Progress section.
+- Sections 0 to 9 and the appendix are the fifteenth pass (audit of v47,
+  2026-09-17). They stay as the record of the findings that the measures
+  cite.
+
+Earlier passes stay in git:
 
 - fourteenth pass (levers L1 to L9, plan under 290 s):
   `git show acb157a:docs/MODEL_ANALYSIS.md`
 - twelfth and thirteenth passes (diagnostic tables T1 to T17, v39 debrief):
   `git show b193868:docs/MODEL_ANALYSIS.md`
-
-This pass prices no new lever. It audits the construction of v47 for the
-causes of the remaining error: data integrity, leakage, feature mathematics,
-the model class, the tail rules, the evaluation protocol and the code.
-Section 3 states why the model sits at 296.57 s. Section 4 holds the
-findings. Section 5 is the list of measures for the new model. The file
-holds no code.
 
 ## Progress, 2026-09-23: section 5 measures merged with `WINNING_PLAN.md`
 
@@ -23,6 +26,43 @@ levers L1 to L15; this table maps them onto the measures of section 5.
 Live deltas come from the official API (WINNING_PLAN section 3). The team
 stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
 (section 4.9, MX1).
+
+### Gap to the top, 2026-09-26
+
+Error budget of the served-style base (0.5 v46 + 0.5 CatBoost A) on the
+317,808 non-LIRF rows of the 2025 hold-out, hold-out scale. Source:
+`models/v3/catboost_pair_holdout.parquet`, arithmetic.
+
+| class | rows | MSE | RMSE in class |
+|---|---|---|---|
+| clean | 293,832 | 41,368 | 220 s |
+| 24-h (`y > 80,000`) | 1 | 20,235 | one LFPG row |
+| tail (`7,200 < y <= 80,000`) | 35 | 12,100 | 10,004 of it at LFPG |
+| fallback (`abs(y - sd) < 60`) | 23,841 | 2,836 | 202 s |
+| low (`y < 30`) | 99 | 94 | |
+| total | 317,808 | 76,632 | |
+
+1. The clean class is the only large mass that a model can move. A clean
+   RMSE of 150 s instead of 220 s is worth about 22,100 MSE. Rows with an
+   error above 1,800 s hold only 11 % of the clean MSE.
+2. The 24-h row and the 35 tail rows hold 32,335 MSE; rows with a null
+   flight record hold 31,480 of it. Two LFPG rows (y 84,240 and 58,206 s,
+   `sd` about 2,000 s, no `mvt_eobt1`) hold 29,722 and have no observable:
+   that is a floor. Some other null-record tail rows sit near `sd` (EGLL
+   y 11,167 against `sd` 10,563; LSZH 9,652 against 9,946), the LIRF Step A
+   pattern outside LIRF (audit task D).
+3. On the team rule (track A) the levers left are small: WINNING_PLAN puts
+   the track at 279 to 284 s, and v67 sits inside that range. Five levers
+   ran after v67: two reached an upload and moved the live score by +0.03 s
+   (v68) and -0.015 s (v71); three failed their hold-out bar (v69, v70,
+   MH2).
+4. The WINNING_PLAN range for track B (the scored flight's `AOBT_3_flt`) is
+   254 to 271 s. The five public repos above rank 40 read that field. The
+   rule stays a team decision (section 4.9, MX1).
+
+The sixteenth pass must find new signal for the clean class or price the
+team-rule scenarios. `docs/AUDIT_PROMPT.md` sets the tasks, the hard rules
+and the output format.
 
 ### Done
 
