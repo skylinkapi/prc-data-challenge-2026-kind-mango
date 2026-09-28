@@ -38,13 +38,17 @@ def paths(tag: str) -> tuple[Path, Path, Path]:
             C.ROOT / "models" / f"catboost_r_all_{tag}.meta.json")
 
 
-def load_frame() -> tuple[pd.DataFrame, list[str]]:
-    """v65 training frame on the MB3 rows, and its 118 feature names."""
-    dep = _load_frame_v57().merge(pd.read_parquet(PLAN_NM_TRAIN), on="MVT_ID_mvt",
-                                  how="left", validate="m:1")
+def load_frame(extra: tuple[Path, ...] = ()) -> tuple[pd.DataFrame, list[str]]:
+    """v65 training frame on the MB3 rows plus the `extra` column files, and its feature names."""
+    dep = _load_frame_v57()
+    feat = v47_feature_names()
+    for path in (PLAN_NM_TRAIN, *extra):
+        cols = pd.read_parquet(path)
+        dep = dep.merge(cols, on="MVT_ID_mvt", how="left", validate="m:1")
+        feat += [c for c in cols.columns if c != "MVT_ID_mvt"]
     y = dep["TAXITIME_SEC_mvt"].astype(float)
     dep = dep[(dep["ADEP_mvt"].astype(str) != "LIRF") & (y > 0) & (y <= 80_000)]
-    return dep.reset_index(drop=True), v47_feature_names() + ["plan_nm_taxi"]
+    return dep.reset_index(drop=True), feat
 
 
 def to_pool(frame: pd.DataFrame, feat: list[str], has_label: bool = True) -> Pool:
@@ -72,26 +76,34 @@ def fit(train: pd.DataFrame, feat: list[str], stop: pd.DataFrame | None = None,
 
 
 def predict(model: CatBoostRegressor, frame: pd.DataFrame, feat: list[str],
-            ntree_end: int = 0) -> np.ndarray:
-    """Prediction clipped at 0, as the LightGBM members are served; `ntree_end` 0 uses every tree."""
-    return np.clip(model.predict(to_pool(frame, feat, has_label=False), ntree_end=ntree_end), 0, None)
+            ntree_end: int = 0, clip: bool = True) -> np.ndarray:
+    """Prediction clipped at 0 unless `clip` is False, as the LightGBM members are served; `ntree_end` 0 uses every tree."""
+    raw = model.predict(to_pool(frame, feat, has_label=False), ntree_end=ntree_end)
+    return np.clip(raw, 0, None) if clip else raw
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--tag", default="v67", help="Version tag of the model and hold-out report.")
+    ap.add_argument("--rounds-from", help="Tag of the hold-out report that sets the round count; default is --tag.")
+    ap.add_argument("--extra", nargs="*", default=[],
+                    help="Parquets of extra training columns keyed on MVT_ID_mvt, relative to the repo root.")
+    ap.add_argument("--anchor-col", help="Learn `y - clip(anchor, 0, NM_CLOCK_CLIP_S)` on the rows with this column (v75: mvt_aobt3).")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    model_path, report_path, meta_path = paths(args.tag)
-    report = json.loads(report_path.read_text())
-    dep, feat = load_frame()
+    model_path, _, meta_path = paths(args.tag)
+    report = json.loads(paths(args.rounds_from or args.tag)[1].read_text())
+    dep, feat = load_frame(tuple(C.ROOT / p for p in args.extra))
+    if args.anchor_col:
+        dep = dep[dep[args.anchor_col].notna()].reset_index(drop=True)
+        dep["TAXITIME_SEC_mvt"] = dep["TAXITIME_SEC_mvt"] - dep[args.anchor_col].clip(0, C.NM_CLOCK_CLIP_S)
     n_iter = int(math.ceil(report["best_iteration"] * len(dep) / report["n_fit"]))
     log.info("full-year CatBoost %s: %d rows, %d rounds", args.tag, len(dep), n_iter)
     params = C.CATBOOST_BY_TAG[args.tag]
     fit(dep, feat, iterations=n_iter, params=params).save_model(str(model_path))
     meta_path.write_text(json.dumps({
         "params": params, "iterations": n_iter, "n_rows": len(dep),
-        "features": feat}, indent=1))
+        "features": feat, "anchor": args.anchor_col}, indent=1))
 
 
 if __name__ == "__main__":

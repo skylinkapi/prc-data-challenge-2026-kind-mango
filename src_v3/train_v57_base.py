@@ -44,12 +44,18 @@ def _load_frame_v57() -> pd.DataFrame:
     return dep
 
 
-def train_base(dep: pd.DataFrame, feat: list[str], tag: str, changed: str) -> None:
-    """Fit the three MB3 base members with the v43 parameters and write them as `lgbm_r_all_<tag>`."""
-    with open(TUNED) as f:
-        tuned = json.load(f)["tuned"]
-    with open(V46_REPORT) as f:
-        v46_iters = json.load(f)["v46"]["best_iters"]
+def train_base(dep: pd.DataFrame, feat: list[str], tag: str, changed: str,
+               anchor_col: str | None = None, tuned_path: Path = TUNED) -> None:
+    """Fit the three MB3 base members and write them as `lgbm_r_all_<tag>`.
+
+    With `anchor_col`, the members learn `y - clip(anchor, 0, NM_CLOCK_CLIP_S)` on the rows with an anchor.
+    The parameters come from `tuned_path`. The v43 file takes the v46 round counts; a file with
+    `best_iteration` and `n_fit` (v76) gives one round count for every seed.
+    """
+    study = json.loads(tuned_path.read_text())
+    tuned = study["tuned"]
+    v46_iters = (json.loads(V46_REPORT.read_text())["v46"]["best_iters"] if "best_iteration" not in study
+                 else [study["best_iteration"]] * len(DEFAULT_SEEDS))
     log.info("frame %d rows, features %d", len(dep), len(feat))
 
     adep = dep["ADEP_mvt"].astype(str)
@@ -57,8 +63,12 @@ def train_base(dep: pd.DataFrame, feat: list[str], tag: str, changed: str) -> No
     keep = (adep != "LIRF") & (y > 0) & (y <= 80_000)
     dep = dep[keep].reset_index(drop=True)
     log.info("MB3 filter: %d rows", len(dep))
+    if anchor_col is not None:
+        dep = dep[dep[anchor_col].notna()].reset_index(drop=True)
+        dep["TAXITIME_SEC_mvt"] = dep["TAXITIME_SEC_mvt"] - dep[anchor_col].clip(0, C.NM_CLOCK_CLIP_S)
+        log.info("anchored on %s: %d rows", anchor_col, len(dep))
 
-    n_v46_train = int(0.88 * 10 / 12 * 2_084_659)
+    n_v46_train = study.get("n_fit", int(0.88 * 10 / 12 * 2_084_659))
     scale = len(dep) / n_v46_train
     scaled = [int(math.ceil(i * scale)) for i in v46_iters]
     log.info("v46 iters %s -> %s %s (x %.3f)", v46_iters, tag, scaled, scale)
@@ -84,7 +94,7 @@ def train_base(dep: pd.DataFrame, feat: list[str], tag: str, changed: str) -> No
                 str(C.ROOT / "models" / f"lgbm_r_all_{tag}.encoders.pkl"))
     (C.ROOT / "models" / f"lgbm_r_all_{tag}.meta.json").write_text(json.dumps({
         "tuned": tuned, "v46_iters": v46_iters, "scaled_iters": scaled,
-        "scale_factor": scale, "n_served": len(dep), "changed": changed,
+        "scale_factor": scale, "n_served": len(dep), "changed": changed, "anchor": anchor_col,
     }, indent=1))
     log.info("wrote %s base members", tag)
 

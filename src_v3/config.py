@@ -127,4 +127,42 @@ CATBOOST_BLEND_WEIGHTS = (0.3, 0.5)     # pre-registered in WINNING_PLAN L3
 # Variant B (option B, v70): deeper trees, another seed and half the columns
 # per split round, for diversity against the v67 member.
 CATBOOST_PARAMS_B = {**CATBOOST_PARAMS, "depth": 10, "random_seed": 43, "rsm": 0.5}
-CATBOOST_BY_TAG = {"v67": CATBOOST_PARAMS, "v69": CATBOOST_PARAMS, "v70": CATBOOST_PARAMS_B}
+CATBOOST_BY_TAG = {"v67": CATBOOST_PARAMS, "v69": CATBOOST_PARAMS, "v70": CATBOOST_PARAMS_B,
+                   "v73": CATBOOST_PARAMS, "v75a": CATBOOST_PARAMS,
+                   "v86c": CATBOOST_PARAMS,
+                   "v86ca": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v86ca")}}
+
+# -- NM clocks, WINNING_PLAN L1 and L2 (track B, 2026-09-26) ----------------
+# 99.9 % of 2025 `MVT - AOBT_3` values lie in 27 to 3,600 s; the clip keeps
+# linear leaves inside the training support.
+NM_CLOCK_CLIP_S = 7200
+NM_NEIGHBOUR_WINDOWS_S = (1800, 3600)   # WINNING_PLAN R7: 30 and 60 min
+# Clock bias, v76: median of `y - (MVT - AOBT_3)` per key on clean rows.
+CLOCK_BIAS_MIN_COUNT = 50               # medians on fewer rows carry their own label
+CLOCK_BIAS_CLIP_S = 1800                # 2025 key medians lie in -300 to +70 s (p10/p90)
+# MB5 study on the clock-era base (v76). Trials and threads bound the run to about 3 h.
+TUNE_V76_TRIALS = 24
+TUNE_V76_MAX_ROUNDS = 4000
+TUNE_V76_EARLY_STOP = 60
+TUNE_V76_THREADS = 12
+TUNE_V76_MIN_GAIN_MSE = 150             # hold-out bar before a refit and upload
+BLEND_V77_GRID = tuple(round(0.1 * i, 1) for i in range(11))   # served blend weights searched for v77
+BLEND_V77_SERVED = (0.5, 0.5, 0.5)      # v75: CatBoost share, anchored share in LightGBM, in CatBoost
+TUNE_R_NORM_V78_TRIALS = 40
+# CatBoost variants priced on the hold-out for v80 (MB5 for the CatBoost class, 2026-09-27).
+CATBOOST_VARIANTS_V80 = {
+    "cat_l2": {**CATBOOST_PARAMS, "l2_leaf_reg": 10.0, "thread_count": 8,
+               "train_dir": str(CACHE / "catboost_info_l2")},
+    "cat_lossguide": {**CATBOOST_PARAMS, "grow_policy": "Lossguide", "max_leaves": 613,
+                      "min_data_in_leaf": 515, "depth": 16, "thread_count": 8,
+                      "train_dir": str(CACHE / "catboost_info_lossguide")},
+}
+# XGBoost third learner class (v84): depth-wise histogram trees, native categoricals.
+XGB_PARAMS = dict(objective="reg:squarederror", tree_method="hist", max_depth=8, eta=0.05,
+                  subsample=0.8, colsample_bytree=0.8, min_child_weight=50, reg_lambda=1.0,
+                  max_cat_to_onehot=1, max_bin=256, nthread=12, seed=GLOBAL_SEED)
+XGB_MAX_ROUNDS = 6000
+XGB_EARLY_STOP = 200
+NM_FORWARD_WINDOWS_S = (900, 1800)     # WINNING_PLAN L8: (t, t + 15 min] and (t, t + 30 min]
+NM_FORWARD_EXTRA_WINDOWS_S = (300, 3600)  # v88 candidate: 5 and 60 min
+PER_AIRPORT_THREADS = 6                 # v89: two per-airport refits run side by side

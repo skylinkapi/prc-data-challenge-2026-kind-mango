@@ -1,7 +1,13 @@
 # Model analysis: progress to v67 and the audit brief for the sixteenth pass
 
-Status on 2026-09-26: live best **281.87 s (v67)**. Leaderboard top
-**224.88 s**. The gap is 28,876 MSE (79,448 against 50,571). This file is the
+Status on 2026-09-28: live best **264.34 s (v89)**, per-airport LightGBM
+members mixed 50/50 into both LightGBM terms. v85 264.55 s: forward
+windows of the NM clocks (L8) in both LightGBM bases. Before that, **265.27 s (v76)**, NM clocks of the
+scored flight in both base classes plus an anchored member in each
+(track B), LightGBM parameters from the MB5 study on the clock-era
+columns. v75 266.15 s, v74 266.84 s, v73 270.58 s; before track B,
+281.87 s (v67). Leaderboard top **224.88 s** (2026-09-26). The gap from
+v76 is 19,799 MSE (70,370 against 50,571). This file is the
 source of truth for the next model.
 
 - The Progress section below tracks every measure of the fifteenth pass
@@ -21,11 +27,12 @@ Earlier passes stay in git:
 
 ## Progress, 2026-09-23: section 5 measures merged with `WINNING_PLAN.md`
 
-Live best **281.87 s (v67)**. On 2026-09-23 the rank was 57 of 178 at 287.33 s (v57). `docs/WINNING_PLAN.md` ranks
+Live best **264.34 s (v89)**. On 2026-09-23 the rank was 57 of 178 at 287.33 s (v57). `docs/WINNING_PLAN.md` ranks
 levers L1 to L15; this table maps them onto the measures of section 5.
-Live deltas come from the official API (WINNING_PLAN section 3). The team
-stance stays on track A: no lever reads `AOBT_3_flt` or `LOBT_flt`
-(section 4.9, MX1).
+Live deltas come from the official API (WINNING_PLAN section 3). On
+2026-09-26 the team moved from track A to track B: the base reads
+`AOBT_3_flt` and `LOBT_flt` of the scored flight from v73 on (README
+stance section). Section 4.9 and MX1 record the earlier stance.
 
 ### Gap to the top, 2026-09-26
 
@@ -92,6 +99,27 @@ and the output format.
 | MF2 runway-queue structure, backward windows (same-runway and heavy counts at 5 and 10 min, same-direction departures, runway-set age) on the LightGBM half | v71 | -0.015 | not accepted (inside noise); hold-out -524 to -596 MSE at equal rounds did not transfer; OSM crossings and remote flag not built |
 | MH2 fallback head outside LIRF: `base + alpha p (sd - base)` with a calibrated classifier for `abs(y - sd) < 60` | v72, not built | hold-out +292 (alpha 1) / +72 (alpha 0.5) MSE | rejected, closed: worse at all 9 airports; outside LIRF these rows are mostly on-time pushbacks that the base already serves |
 | L7 check: day-level correlation of departure fallback share and arrival schedule-grid share, 2025 | | | passes only at LIRF (0.43) and EDDM (0.34); the other 8 airports sit at 0.02 to 0.19 |
+| L1 NM clocks of the scored flight in the LightGBM base (track B), MS3 on its members, 0.3 v67 CatBoost | v73 | -11.29 | accepted; hold-out -5,652 MSE against an equal-round control, all 9 airports; L2 neighbour clocks -5,026 (LFPG +733 against L1), not served |
+| Clocks in the CatBoost member, and L5 anchored LightGBM member (`y - clip(MVT - AOBT_3, 0, 7,200)`) at 0.5 inside the LightGBM term | v74 | -3.73 | accepted; L5 hold-out -818 MSE against the clock member at 0.5, all 9 airports |
+| L6 clocks in the LIRF `R_norm` term | not built | hold-out -39 to -118 MSE | closed: under the 150 MSE bar |
+| Anchored CatBoost member at 0.5 inside the CatBoost term | v75 | -0.70 | accepted; no hold-out price, served by analogy with the L5 LightGBM member |
+| Clock bias: median of `y - (MVT - AOBT_3)` per stand, stand-runway and operator | v76, not built | in-sample map +1,531, leave-one-month-out -51 MSE | closed: the categoricals already carry it; in-sample medians leak the label |
+| `ARVT_3` residual; arrival `MVT - ARVT_3` offset per airport-hour | not built | correlation with the clock error 0.005 and -0.04 to 0.09 | closed: no signal |
+| MB5 study on the clock-era LightGBM base (`linear_lambda` 15.1, 613 leaves), both bases refit | v76 | -0.88 | accepted; hold-out -965 MSE against the served-style member, all 9 airports |
+| Per-airport LightGBM members, 50/50 with the global member in both LightGBM terms | v89 | -0.22 | accepted; hold-out mean -657 at all 9 airports; extended forward windows (5, 60 min) closed |
+| L8 forward windows in both CatBoost members too | v87 | +0.31 | rejected; not priced on the hold-out first; lower CatBoost weights also closed |
+| L8 forward windows: NM clocks of departures taking off in the next 15 and 30 min, both LightGBM bases | v85 | -0.72 | accepted; hold-out -604 member, -208 in the blend; queue lengths on top closed (-216 against -208) |
+| Second MB5 study, v76 parameters as trial 0; XGBoost as a fifth member; blend weights with the MB5 members | not built | -539 member (LTFM -449, 5 airports worse); XGBoost +37; weights +63 | closed: the LightGBM parameters sit near the optimum and the member classes are saturated |
+| Arrival artefact link in the LIRF gate (previous arrival at the stand on the schedule grid) | v83 | +0.14 | rejected; hold-out -277 MSE did not transfer (LIRF head, as v49 and v68) |
+| Stand-sequence bound: next arrival in-block at the stand | v81, not built | +301 member, -2 blend | closed |
+| CatBoost with `l2_leaf_reg` 10; CatBoost Lossguide | v80, not built | +54 MSE in the blend; Lossguide too slow | closed: v67 CatBoost parameters stay |
+| MB5 study on the anchored LightGBM target; round count of v76a | v79, not built | same best parameters as v76; 1,202 rounds +124 MSE against 2,284 | closed: v76a is at its optimum |
+| MB5 on the LIRF `R_norm` regressor (`linear_lambda` 44, 387 leaves) | v78, not built | -251 MSE on genuine rows, upper bound | held: LIRF-head model changes have not transferred (v49, v68) |
+| Blend weights of the four clock-era members, grid-fitted per month | v77, not built | cross-fitted -2 MSE | closed: v75 weights at the optimum |
+| Constant-leaf LightGBM as a fifth member | v77, not built | fitted weight 0 | closed: residual correlation 0.983 with the blend |
+| Clocks in the LIRF gate | not built | hold-out mixture +108 MSE | closed: at LIRF `MVT - AOBT_3` is near 900 s on fallback and genuine rows alike |
+| L15 final 12-month refit | not needed | | every served component already fits on 12 months; the target encoders stay at 10 months by the L15 rule |
+| L2 neighbour clocks, backward 30 and 60 min | not built | hold-out +626 MSE against L1; -137 without 7 single-member blow-up rows | closed: under the 150 MSE bar |
 | Discord tail rules: blend heavy-hold rows toward the 2025 curve of y on `mvt_eobt1`; cap normal rows | not uploaded | hold-out +1,639 / -3 MSE | rejected on the 2025 hold-out (`src_v3/measure_tail_rules.py`); see below |
 | MC4 pin library versions | | | `requirements.txt` (Python 3.13.3); fixed thread counts in `config.py` |
 | MC6 parity test for the best file | | | `src_v3/test_v67_parity.py`: v67 rebuilds bit for bit against `submission/kind-mango_v67.parity.json`; `REPRODUCE.md` rewritten for v67 (two tiers) |
@@ -143,7 +171,14 @@ falls from 0.383 to 0.364 for `sd` <= 3,600 s and from 0.140 to 0.122 for 3,600 
 14,400 s. For `sd` > 14,400 s (510 rows) log loss is flat (0.1209 to 0.1216) and the
 mean bias grows from -0.25 to -2.04 points. That bin fails the plan's per-bin test.
 
-Not on track A: L1, L2, L5, L6 and L8 read `AOBT_3_flt` or `LOBT_flt`.
+Track B: L1 (v73), CatBoost clocks and L5 (v74) are served. The anchored
+CatBoost member is served (v75). L2, L6, the gate clocks, the clock bias
+and `ARVT_3` are closed on the hold-out; L15 needs no refit. MB5 is
+served (v76). A second study, an XGBoost class, CatBoost with more L2,
+fitted blend weights, the stand sequence and the LIRF arrival link are
+closed (v77 to v84). No measured signal is left above the 150 MSE bar. On
+the 2025 hold-out, 45 % of the remaining error outside LIRF sits in 36
+tail and 24-h rows that no column in the files predicts.
 No WINNING_PLAN lever covers MP1 to MP8, MD1, MD3, MD5 to MD10, MB2,
 MB6, MH4, MF3 or MC1 to MC3, MC5 and MC7. The stop rule of WINNING_PLAN
 11.4 replaces the stop rule of section 6.

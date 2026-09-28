@@ -33,6 +33,10 @@ models/**/*.cbm
 !models/lirf_regime_v23.features.txt
 !models/lirf_regime_v41.features.txt
 !models/lgbm_r_all_v65.features.txt
+!models/lgbm_r_all_v85.features.txt
+!models/lgbm_r_all_v85a.features.txt
+!models/lgbm_pa_v89.features.txt
+!models/lgbm_pa_v89a.features.txt
 models/features_cache*
 
 # Submission outputs (produced by predict.py; keep result JSONs)
@@ -94,6 +98,12 @@ models/arr_txi_*.parquet
 models/arr_drift_*.parquet
 models/plan_nm_taxi_*.parquet
 models/runway_queue_*.parquet
+models/nm_clocks_*.parquet
+models/nm_neighbours_*.parquet
+models/nm_forward_*.parquet
+models/stand_seq_*.parquet
+models/arr_link_*.parquet
+models/clock_bias_*.parquet
 models/v3/cache/*
 models/v3/logs/*
 models/v3/*.parquet

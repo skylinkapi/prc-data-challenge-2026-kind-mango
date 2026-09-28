@@ -1,0 +1,28 @@
+{
+ "columns": [
+  "mvt_aobt3",
+  "aobt3_eobt1",
+  "aobt3_sched",
+  "mvt_lobt",
+  "lobt_aobt3",
+  "cbias_stand",
+  "cbias_stand_rwy",
+  "cbias_op"
+ ],
+ "bias_minus_clocks": -51.00995699386992,
+ "per_airport": {
+  "EDDF": 59.50838711498578,
+  "EDDM": 20.980009540860443,
+  "EGLL": 22.789346992862882,
+  "EHAM": -9.262346400628717,
+  "LEBL": -29.33871976153405,
+  "LEMD": 14.354838420284995,
+  "LFPG": -179.55339132120915,
+  "LSZH": -33.40102278257808,
+  "LTFM": 82.91294120309671
+ },
+ "rows_over_7200": {
+  "clocks": 16,
+  "bias": 17
+ }
+}

@@ -1,0 +1,42 @@
+{
+ "tuned": {
+  "learning_rate": 0.01582873788399817,
+  "num_leaves": 387,
+  "min_data_in_leaf": 173,
+  "feature_fraction": 0.8898574002740985,
+  "bagging_fraction": 0.8898197875410937,
+  "lambda_l1": 0.011120217767669477,
+  "lambda_l2": 1.8121563200033064,
+  "min_gain_to_split": 1.554477496992956,
+  "linear_lambda": 44.261291578807835,
+  "cat_smooth": 10.690142956495002,
+  "min_data_per_group": 103,
+  "max_cat_threshold": 10,
+  "objective": "regression",
+  "metric": "rmse",
+  "linear_tree": true,
+  "bagging_freq": 5,
+  "verbosity": -1,
+  "num_threads": 4,
+  "deterministic": true,
+  "seed": 42,
+  "bagging_seed": 42,
+  "feature_fraction_seed": 42
+ },
+ "report": {
+  "stop_rmse": {
+   "v41": 240.15623395196258,
+   "best": 238.46813087695926
+  },
+  "best_iteration": {
+   "v41": 274,
+   "best": 554
+  },
+  "genuine_rmse": {
+   "v41": 325.62445730782827,
+   "best": 319.39871778721806
+  },
+  "best_minus_v41_genuine": -251.2990238848705,
+  "n_holdout": 21548
+ }
+}

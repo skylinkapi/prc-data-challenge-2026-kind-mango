@@ -1,0 +1,40 @@
+{
+ "tuned": {
+  "learning_rate": 0.015139301260026163,
+  "num_leaves": 613,
+  "min_data_in_leaf": 515,
+  "feature_fraction": 0.8374043008245924,
+  "bagging_fraction": 0.9085081386743783,
+  "lambda_l1": 0.0019777828512462727,
+  "lambda_l2": 0.02715581955282941,
+  "min_gain_to_split": 0.34760717857538914,
+  "linear_lambda": 15.087613675681679,
+  "cat_smooth": 17.643967683381547,
+  "min_data_per_group": 44,
+  "max_cat_threshold": 9,
+  "objective": "regression",
+  "metric": "rmse",
+  "linear_tree": true,
+  "bagging_freq": 5,
+  "verbosity": -1,
+  "num_threads": 12,
+  "deterministic": true,
+  "seed": 42,
+  "bagging_seed": 42,
+  "feature_fraction_seed": 42
+ },
+ "v46_iters": [
+  2284,
+  2284,
+  2284
+ ],
+ "scaled_iters": [
+  3377,
+  3377,
+  3377
+ ],
+ "scale_factor": 1.4781741184135515,
+ "n_served": 1923953,
+ "changed": "v73 columns, MB5 clock-era parameters",
+ "anchor": null
+}

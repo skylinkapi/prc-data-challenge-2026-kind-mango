@@ -1,0 +1,56 @@
+{
+ "tuned": {
+  "learning_rate": 0.015239469791890994,
+  "num_leaves": 410,
+  "min_data_in_leaf": 556,
+  "feature_fraction": 0.6764072016714363,
+  "bagging_fraction": 0.8839214153691528,
+  "lambda_l1": 0.002128148260762394,
+  "lambda_l2": 0.03564904842176141,
+  "min_gain_to_split": 0.5634267021659046,
+  "linear_lambda": 13.680105894878134,
+  "cat_smooth": 1.1043448957595396,
+  "min_data_per_group": 58,
+  "max_cat_threshold": 8,
+  "objective": "regression",
+  "metric": "rmse",
+  "linear_tree": true,
+  "bagging_freq": 5,
+  "verbosity": -1,
+  "num_threads": 12,
+  "deterministic": true,
+  "seed": 42,
+  "bagging_seed": 42,
+  "feature_fraction_seed": 42
+ },
+ "report": {
+  "stop_rmse": {
+   "v43": 189.79733401254566,
+   "best": 188.8299422769314
+  },
+  "best_iteration": {
+   "v43": 2284,
+   "best": 2861
+  },
+  "best_minus_v43": -539.4813561736527,
+  "per_airport": {
+   "EDDF": 10.568025089962033,
+   "EDDM": 30.083904686240793,
+   "EGLL": -107.48854002838301,
+   "EHAM": 36.71944734610568,
+   "LEBL": 12.580245665543602,
+   "LEMD": -2.8809368375263484,
+   "LFPG": -86.45682517307675,
+   "LSZH": 16.879404160083876,
+   "LTFM": -449.4860810826236
+  },
+  "rows_over_7200": {
+   "v43": 15,
+   "best": 14
+  },
+  "n_trials": 24,
+  "refit": true
+ },
+ "best_iteration": 2861,
+ "n_fit": 1301574
+}

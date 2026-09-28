@@ -1,0 +1,33 @@
+{
+ "columns": [
+  "fw_apt15_mean",
+  "fw_apt15_n",
+  "fw_apt30_mean",
+  "fw_apt30_n",
+  "fw_rwy15_mean",
+  "fw_rwy15_n",
+  "fw_rwy30_mean",
+  "fw_rwy30_n",
+  "q_push_apt",
+  "q_take_apt",
+  "q_push_rwy",
+  "q_take_rwy"
+ ],
+ "member_minus_mb5": -510.34910560182675,
+ "blend_minus_v76": -216.24706241980476,
+ "per_airport": {
+  "EDDF": -148.04076993846797,
+  "EDDM": -1.2033624687413789,
+  "EGLL": 22.662230558298393,
+  "EHAM": 36.07526183310943,
+  "LEBL": -36.5130976014406,
+  "LEMD": -2.2619787674016583,
+  "LFPG": -116.53744994536036,
+  "LSZH": -108.91613790353755,
+  "LTFM": -155.6138013683034
+ },
+ "rows_over_7200": {
+  "new": 16,
+  "mb5": 17
+ }
+}

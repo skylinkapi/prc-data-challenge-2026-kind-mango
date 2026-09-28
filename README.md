@@ -6,8 +6,19 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **281.87 s RMSE** (`kind-mango_v67.parquet`,
-  2026-09-24), -17.45 s vs v41. Path from v57 (287.33 s): Step A normal
+- **Current leaderboard best:** **264.34 s RMSE** (`kind-mango_v89.parquet`,
+  2026-09-28), -17.53 s vs v67. v89 mixes one LightGBM member per airport
+  50/50 into both LightGBM terms of v85. v85 (264.55 s) added forward windows (WINNING_PLAN
+  L8): the NM clocks of the departures that take off in the 15 and 30 min
+  after the row. v76 (265.27 s) refit both LightGBM bases with the
+  parameters of a new Optuna study on the clock-era columns (MB5). v75
+  (266.15 s) added a CatBoost member on the residual from the `AOBT_3`
+  anchor; v74 scored 266.84 s. v73 (270.58 s) added the NM clocks of the
+  scored flight (`MVT - AOBT_3_flt`, `LOBT_flt` deltas) to the LightGBM base
+  (WINNING_PLAN L1, track B). v74 adds the clocks to the CatBoost member and
+  a LightGBM member on the residual from the `AOBT_3` anchor (L5). The team changed its stance on these fields
+  on 2026-09-26; see the Stance section below. Before v73, the best was
+  281.87 s (`kind-mango_v67.parquet`, 2026-09-24). Path from v57 (287.33 s): Step A normal
   term reads `R_norm` (v63, 287.09 s), out-of-fold isotonic map on the LIRF
   gate (v64, 285.95 s), planned-taxi column `plan_nm_taxi` (v65, 284.74 s),
   CatBoost second model class blended 50/50 with the LightGBM base outside
@@ -33,33 +44,39 @@ airport-reported truth.
 **GNU GPLv3.** See `LICENSE`. Prize-eligible per the challenge rules: source
 public, open-data only, documented reproduction path.
 
-## Ethics — features we deliberately did NOT use
+## Stance on `AOBT_3_flt` and `LOBT_flt` (changed 2026-09-26)
 
-The challenge brief forbids "exploiting the ranking process". We stay off two
-inputs that would place us in the top 3 but that we read as excluded:
+From v73 on, the base reads the NM clocks of the scored flight. Up to v72,
+no served file read `AOBT_3_flt` or `LOBT_flt` (v39 read `LOBT_flt`; see
+WINNING_PLAN 3.1). The team lifted that rule on 2026-09-26 and accepts the
+risk of a later organiser ruling.
 
-1. **`AOBT_3_flt` on ranking DEP rows** — present on 98.9 % of ranking rows;
-   `MVT_TIME - AOBT_3_flt` reconstructs the hidden off-block time to within
-   the reporting-offset noise. The brief warns "using them is probably
-   exploiting the ranking process".
-2. **`LOBT_flt`** — equals `AOBT_3_flt` on 4.3 % of rows and is otherwise a
-   planned time, not an actual off-block. Excluded for the same reason.
+Facts that support the change:
 
-Both fields are visible in the training and ranking files. Our submissions never
-read them. The exclusion sets the floor near 300 s on the leaderboard, per the
-analysis in `docs/MODEL_ANALYSIS.md`.
+1. The data page blanks only `BLOCK_TIME_UTC_mvt` and `TAXITIME_SEC_mvt`
+   on ranking DEP rows. `AOBT_3_flt` and `LOBT_flt` are listed flight
+   columns with no restriction.
+2. Organiser rulings on Discord: "any provided value is fair to use as a
+   proxy (or as itself) if it helps" (2026-09-08). For off-block times,
+   "there are no such restrictions" (2026-09-18, MX1).
+3. `AOBT_3_flt` does not reconstruct the label. On 2025 departures,
+   `MVT - AOBT_3` has a median absolute error of 175 s against the label,
+   21 % of rows lie within 60 s, and the raw clock scores RMSE 376 s. On
+   the 584 rows with a label above 7,200 s, the clock median is 1,082 s:
+   it does not see long holds.
+4. The quoted warning in earlier versions of this section came from the
+   team's own brief (`docs/PRC_Data_Challenge_2026_BRIEF.md`), not from an
+   organiser page.
 
-**Organiser ruling (MX1, resolved 2026-09-18).** espinielli, replying to a
-Discord question about `AOBT_3_flt`/`MVT_TIME_UTC_mvt` and ADS-B-derived
-off-block times: "the model is for post-ops, not for tactical use" and
-"there are no such restrictions: if you can find open trajectory data with
-good ground coverage and extract off-block times, we are ok. Practically
-speaking it won't be possible." No formal rule bans either input. We keep
-the exclusion anyway: the organiser separately called ranking
-reverse-engineering something "we despise" (2026-09-11), and their own
-answer relies on poor ADS-B surface coverage at most airports to make the
-exploit impractical, not on a rule against it. See `RECAP.md` Discord
-confirmations (2026-09-18) and `docs/MODEL_ANALYSIS.md` section 4.9 (X1).
+Forward windows (changed 2026-09-28): from v85 the base reads the NM
+clocks of departures that take off after the row (WINNING_PLAN L8). The
+team stance MF6 kept such columns out. The organiser allows features from
+other movements ("what is occupied, what is coming", 2026-09-09).
+
+Risk: on 2026-09-11 the organiser said that reverse engineering of the
+ranking is a practice "we despise" and kept the right to add a phase 2. A
+phase 2 without NM actuals cancels this gain. No submission sets a row
+value from a leaderboard score.
 
 ## What the model is
 
@@ -139,6 +156,13 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | **kind-mango_v67** | **281.87** | **-2.87 vs v65 (new best, -17.45 s vs v41)** | WINNING_PLAN L3, MB7: CatBoost (depth 8, RMSE, ordered target statistics on the 10 categorical columns; `catboost` dependency for a second learner class) on the v65 columns and MB3 rows, 7,385 rounds on 12 months (`python -m src_v3.catboost_base`). Base outside LIRF = 0.5 LightGBM mean + 0.5 CatBoost. Priced first on the 2025 hold-out (`python -m src_v3.measure_catboost_blend`, then `measure_lgbm_control`). Run: `python -m src_v3.predict_v67 --weight 0.5`. |
 | kind-mango_v68 | 281.90 | +0.03 vs v67 (rejected) | CatBoost member blended 50/50 into the LIRF `R_norm` term (`python -m src_v3.catboost_r_norm`, then `python -m src_v3.predict_v67 --weight 0.5 --r-norm-weight 0.5 --out kind-mango_v68.parquet`). Hold-out -435 MSE did not transfer. |
 | kind-mango_v71 | 281.85 | -0.015 vs v67 (inside noise, not accepted) | MF2 runway-queue columns (`python -m src_v3.build_runway_queue_v71`, `python -m src_v3.train_v71_base`) on the LightGBM half of the v67 blend. Hold-out -560 MSE at equal rounds did not transfer. |
+| kind-mango_v73 | 270.58 | -11.29 vs v67 | WINNING_PLAN L1, track B: five NM clock columns of the scored flight (`mvt_aobt3`, `aobt3_eobt1`, `aobt3_sched`, `mvt_lobt`, `lobt_aobt3`; `python -m src_v3.build_nm_clocks_v73`) on the v65 LightGBM base (123 columns, `python -m src_v3.train_v73_base`). Hold-out first (`python -m src_v3.measure_nm_clocks`): -5,652 MSE against an equal-round control, negative at all 9 airports; neighbour clocks (L2) cost 730 MSE at LFPG and stay out. Base outside LIRF = 0.7 LightGBM (member median where the members disagree by more than 3,600 s, MS3) + 0.3 v67 CatBoost. Run: `python -m src_v3.predict_v67 --weight 0.3 --ms3 --base-model lgbm_r_all_v73 --catboost-tag v67 --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet --pre-ms kind-mango_v73_pre_ms.parquet --out kind-mango_v73.parquet`. |
+| kind-mango_v74 | 266.84 | -3.73 vs v73 | v73 plus two members. (1) CatBoost with the five clock columns, 7,385 rounds (`catboost_r_all_v73`). (2) WINNING_PLAN L5: LightGBM on `y - clip(MVT - AOBT_3, 0, 7,200)` with the v73 columns (`python -m src_v3.train_v74_anchor`); it serves `anchor + offset`, and the v73 term where `AOBT_3` is null. Hold-out first (`python -m src_v3.measure_nm_anchor`): 0.5 anchored + 0.5 clock member -818 MSE against the clock member, all 9 airports. Base outside LIRF = 0.5 x (0.5 v73 LightGBM + 0.5 anchored, MS3 on each) + 0.5 CatBoost. Run: `python -m src_v3.catboost_base --tag v73 --rounds-from v67 --extra models/nm_clocks_train_v73.parquet`, then `python -m src_v3.predict_v67 --weight 0.5 --ms3 --base-model lgbm_r_all_v73 --catboost-tag v73 --anchor-model lgbm_r_all_v74a --anchor-weight 0.5 --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet --pre-ms kind-mango_v74_pre_ms.parquet --out kind-mango_v74.parquet`. |
+| kind-mango_v75 | 266.15 | -0.70 vs v74 | v74 plus a CatBoost member on `y - clip(MVT - AOBT_3, 0, 7,200)` (v67 recipe with the clock columns, 7,305 rounds on the 1,903,118 rows with `AOBT_3`), blended 0.5 into the CatBoost term as the anchored LightGBM is blended into the LightGBM term. No hold-out price (a CatBoost hold-out fit takes about 2 h). Run: `python -m src_v3.catboost_base --tag v75a --rounds-from v67 --extra models/nm_clocks_train_v73.parquet --anchor-col mvt_aobt3`, then `python -m src_v3.predict_v67 --weight 0.5 --ms3 --base-model lgbm_r_all_v73 --catboost-tag v73 --catboost-anchor-tag v75a --anchor-model lgbm_r_all_v74a --anchor-weight 0.5 --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet --pre-ms kind-mango_v75_pre_ms.parquet --out kind-mango_v75.parquet`. |
+| kind-mango_v76 | 265.27 | -0.88 vs v75 | MB5: a 24-trial Optuna study (seeded TPE sampler; v73 columns, MB3 rows, fit months 2 to 6 and 8 to 10, early stop on 11 and 12; trial 0 = v43 parameters) picks `linear_lambda` 15.1 (v43: 0.0055), 613 leaves, learning rate 0.015, 2,284 rounds. Hold-out against the served-style clock member (v43 parameters, 2,000 rounds): -965 MSE, all 9 airports (`python -m src_v3.measure_tune_v76`); inside the v75 blend about -240 MSE for the plain member alone. Both LightGBM bases (plain and anchored) refit with these parameters, 3,377 and 3,340 rounds. Run: `python -m src_v3.tune_lgbm_v76`, `python -m src_v3.train_v76_base plain`, `python -m src_v3.train_v76_base anchored`, then `python -m src_v3.predict_v67 --weight 0.5 --ms3 --base-model lgbm_r_all_v76 --catboost-tag v73 --catboost-anchor-tag v75a --anchor-model lgbm_r_all_v76a --anchor-weight 0.5 --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet --pre-ms kind-mango_v76_pre_ms.parquet --out kind-mango_v76.parquet`. |
+| kind-mango_v85 | 264.55 | -0.72 vs v76 | WINNING_PLAN L8, forward windows: mean and count of `MVT - AOBT_3` of the other departures at the airport and on the runway that take off in `(t, t + 15 min]` and `(t, t + 30 min]` (`src_v3/build_nm_forward_v85.py`). Hold-out: the MB5 member -604 MSE, 8 of 9 airports; as the plain LightGBM term of the v76 blend -208 (`python -m src_v3.measure_extra_v81 v85 models/nm_forward_train_v85.parquet`). Both LightGBM bases refit with the 8 columns; CatBoost members as v76. Run: `python -m src_v3.build_nm_forward_v85`, `python -m src_v3.train_v76_base plain --tag v85 --extra models/nm_forward_train_v85.parquet`, `python -m src_v3.train_v76_base anchored --tag v85 --extra models/nm_forward_train_v85.parquet`, then `python -m src_v3.predict_v67 --weight 0.5 --ms3 --base-model lgbm_r_all_v85 --catboost-tag v73 --catboost-anchor-tag v75a --anchor-model lgbm_r_all_v85a --anchor-weight 0.5 --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet models/nm_forward_rank_v85.parquet --pre-ms kind-mango_v85_pre_ms.parquet --out kind-mango_v85.parquet`. |
+| kind-mango_v87 | 264.86 | +0.31 vs v85 (rejected) | Forward-window columns in both CatBoost members too (`catboost_base --tag v86c` and `v86ca`); not priced on the hold-out first. |
+| **kind-mango_v89** | **264.34** | **-0.22 vs v85 (new best, -34.98 s vs v41)** | One LightGBM member per airport (v85 columns, MB5 parameters, one seed), mixed 50/50 with the global member in the plain and the anchored LightGBM terms. Hold-out (`python -m src_v3.measure_per_airport_v89`): alone +1,112 MSE, the 50/50 mean -657 MSE at all 9 airports, about -150 in the blend for the plain term alone. Run: `python -m src_v3.train_per_airport_v89 plain`, `python -m src_v3.train_per_airport_v89 anchored`, then `python -m src_v3.predict_v67 --weight 0.5 --ms3 --base-model lgbm_r_all_v85 --catboost-tag v73 --catboost-anchor-tag v75a --anchor-model lgbm_r_all_v85a --anchor-weight 0.5 --per-airport-tag v89 --per-airport-weight 0.5 --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet models/nm_forward_rank_v85.parquet --pre-ms kind-mango_v89_pre_ms.parquet --out kind-mango_v89.parquet`. |
 | kind-mango_v40 | 299.97 | -1.90 | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 
@@ -452,3 +476,7 @@ rebuilds v67 and checks it against the recorded hash in
 - OpenStreetMap contributors — stand and runway geometry.
 - OPDI project (PRC + OSN) — ADS-B derived flight events.
 - Virtual Radar Server community — StandingData aircraft-type lookup.
+- The idea to use `MVT - AOBT_3_flt` as a taxi-out clock is public in the
+  GPLv3 repos of other teams (for example `Phoenix-Ops-LTD/prc2026-taxiout`
+  and `ChandanHegde07/OpenAir`). v73 reimplements the idea in this
+  pipeline and copies no code.

@@ -1,0 +1,24 @@
+{
+ "log_loss": {
+  "sd<=3600": {
+   "control": 0.3635614714086477,
+   "treatment": 0.36200337509930974
+  },
+  "3600<sd<=14400": {
+   "control": 0.12243869774175883,
+   "treatment": 0.12229665814448892
+  },
+  "sd>14400": {
+   "control": 0.12157787165864294,
+   "treatment": 0.11654657129302964
+  }
+ },
+ "columns": [
+  "prv_arr_grid",
+  "prv_arr_off_sched",
+  "prv_arr_age",
+  "day_arr_grid_share"
+ ],
+ "n_mixture_rows": 26483,
+ "mixture_treatment_minus_control": -277.1444810099315
+}
