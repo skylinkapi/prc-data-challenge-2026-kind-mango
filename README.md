@@ -400,7 +400,7 @@ external/                       # open-data caches (gitignored)
 training/                       # organiser-provided 2025 monthly parquets (gitignored)
 submission/                     # ranking.parquet, submitting.parquet, kind-mango_v*.parquet
 models/                         # trained boosters + encoders + JSON config
-docs/                           # PRC brief + MODEL_ANALYSIS.md (progress to v67, gap to the top, fifteenth-pass findings) + WINNING_PLAN.md (gap analysis and ranked levers to 11 Oct) + AUDIT_PROMPT.md (brief for the sixteenth-pass audit)
+docs/                           # PRC brief + MODEL_ANALYSIS.md (progress to v67, gap to the top, fifteenth-pass findings) + WINNING_PLAN.md (second edition, 2026-09-29: error budget, the arithmetic of 220 s, ADS-B pushback levers, plan to 11 Oct) + AUDIT_PROMPT.md (brief for the sixteenth-pass audit)
 RECAP.md                        # session log for every attempt, submissions and scores
 requirements.txt                # pinned library versions of the v67 pipeline
 ```
