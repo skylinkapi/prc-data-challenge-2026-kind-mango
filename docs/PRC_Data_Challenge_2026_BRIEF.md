@@ -12,7 +12,7 @@ This file is written for coding agents. Prefer these facts over assumptions. Off
 
 ## 1. One-sentence task
 
-Predict **taxi-out time in seconds** (`TAXITIME_SEC_mvt`) for **departing flights** (`PHASE_mvt = "DEP"`) at **11 major European airports**, using open data, then submit a parquet file scored by **RMSE**.
+Predict **taxi-out time in seconds** (`TAXITIME_SEC_mvt`) for **departing flights** (`PHASE_mvt = "DEP"`) at **10 major European airports**, using open data, then submit a parquet file scored by **RMSE**.
 
 ## 2. Goal (why this exists)
 
@@ -83,7 +83,6 @@ Total movements in the published corpus: **4,167,797**.
 | LEMD | MAD | Madrid–Barajas |
 | LFPG | CDG | Paris Charles de Gaulle |
 | LIRF | FCO | Rome Fiumicino |
-| LTAI | AYT | Antalya |
 | LTFM | IST | İstanbul |
 | LSZH | ZRH | Zürich |
 
@@ -176,6 +175,7 @@ Suffix `_flt` = NM flight list.
 1. **Inference-time leakage.** Do not train a model that needs `BLOCK_TIME_UTC_mvt` or the label at test time. Those two fields are blank on ranking DEP rows.
 
 2. **Check `_flt` off-block fields on ranking data.** Organisers only document blanking `BLOCK_TIME_UTC_mvt` and `TAXITIME_SEC_mvt`. `LOBT_flt` and `AOBT_3_flt` may still be present, null, or leaky. Inspect ranking.parquet before using them. If they reconstruct taxi-out almost exactly, using them is probably exploiting the ranking process (explicitly forbidden). Prefer features that would exist **before or without knowing actual off-block**.
+   - Update 2026-09-30: the organiser allows these fields ("any provided value is fair to use", 2026-09-08) and off-block times from open trajectory data ("there are no such restrictions", 2026-09-18). `AOBT_3_flt` does not reconstruct the label (median error 175 s on 2025 rows). The team reads them since 2026-09-26; see the Stance section of `README.md`.
 
 3. **What a realistic model may use**
    - airport, stand, runway, aircraft type / wake
@@ -246,7 +246,7 @@ Leaderboard API (as published on the ranking page):
 
 ## 9. Timeline, prize, licence
 
-- Competition window stated on the site: September 2026 through **end of October 2026, 23:59:59 CET**. Exact start day on the homepage is incompletely rendered (“the of September 2026”); treat October 31 23:59:59 CET as the published close unless Discord/site updates it.
+- Competition window stated on the site: **1 September 2026 to 11 October 2026, 23:59:59 CET** (site source `index.qmd`, read on 2026-09-30; the site has stated 11 October since 2026-08-13). An earlier version of this brief said 31 October. That date was wrong.
 - Combined prize for top 3 teams: **5000 EUR**.
 - Prize-eligible solutions must:
   - use only openly accessible, documented extra datasets

@@ -1,12 +1,15 @@
 # Reproduction guide
 
-This guide rebuilds `submission/kind-mango_v67.parquet`, the team best (live
-281.87 s, 2026-09-24). Two tiers exist:
+This guide rebuilds `submission/kind-mango_v89.parquet`, the team best (live
+264.34 s, 2026-09-28), and `submission/kind-mango_v67.parquet` (live 281.87 s,
+2026-09-24). v89 keeps the LIRF head of v67 and replaces the base outside LIRF
+(section 6). Sections 1 to 5 build the shared parts and v67. Two tiers exist:
 
-- **Tier 1** serves v67 from the trained artefacts in `models/`. It takes
-  about 6 minutes. A parity test checks the result bit for bit.
+- **Tier 1** serves a file from the trained artefacts in `models/`. It takes
+  about 6 minutes for v67. A parity test checks the result bit for bit.
 - **Tier 2** retrains every served artefact from the organiser data and the
-  open data. It takes about 8 hours on a 16-thread CPU with 32 GB RAM.
+  open data. It takes about 8 hours for v67 and about 10 more hours for the
+  v89 base, on a 16-thread CPU with 32 GB RAM.
 
 Run every command from the repository root. Run the long steps one at a
 time: two full-frame fits in parallel exhaust 32 GB of RAM.
@@ -81,7 +84,7 @@ python src/build_tempo_p2575.py                      # tempo quartile columns
 python -m src_v3.build_plan_taxi_res_v57             # plan_taxi_res, 12-month route medians
 python -m src_v3.build_plan_nm_taxi_v65              # plan_nm_taxi
 python -m src_v3.predict_v67 --weight 0.5 --out kind-mango_v67.parquet
-python -m src_v3.test_v67_parity                     # rebuilds v67 and checks the recorded hash
+python -m src_v3.test_parity --tag v67              # rebuilds v67 and checks the recorded hash
 ```
 
 The parity test compares the SHA-256 of the ids and the predictions with
@@ -152,10 +155,80 @@ records, so no step needs an older booster file:
 Linear-leaf LightGBM runs with `deterministic` and 4 threads
 (`src_v3/config.py`). CatBoost runs with 12 threads and a fixed seed.
 
-## 6. Known gaps
+## 6. v89: the base outside LIRF on the NM clocks
+
+v89 serves the LIRF head of section 4 unchanged. Outside LIRF the base is
+`0.5 x LightGBM term + 0.5 x CatBoost term`. Each term is a 50/50 mix of a
+plain member and a member on the residual from the `AOBT_3` anchor. Rows
+without `AOBT_3` get the plain member only. Each LightGBM member is a 50/50
+mix of the 3-seed global model and one model per airport.
+
+### 6.1 Tier 1: serve v89
+
+Run the section 4 frame builds first (`src_v2.cli build`, the tempo, plan and
+`plan_nm_taxi` caches). Then:
+
+```bash
+python -m src_v3.build_nm_clocks_v73                 # clocks of the scored flight, train and rank
+python -m src_v3.build_nm_forward_v85                # forward windows, train and rank (8 served columns)
+python -m src_v3.predict_v67 --weight 0.5 --ms3 --base-model lgbm_r_all_v85 \
+    --catboost-tag v73 --catboost-anchor-tag v75a --anchor-model lgbm_r_all_v85a --anchor-weight 0.5 \
+    --per-airport-tag v89 --per-airport-weight 0.5 \
+    --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet models/nm_forward_rank_v85.parquet \
+    --pre-ms kind-mango_v89_pre_ms.parquet --out kind-mango_v89.parquet
+python -m src_v3.test_parity --tag v89               # rebuilds v89 and checks the recorded hash
+```
+
+The v89 hash is not recorded yet. On the machine that holds the uploaded
+file, run `python -m src_v3.test_parity --tag v89 --record` once, then
+commit `submission/kind-mango_v89.parity.json`.
+
+v89 reads the LIRF artefacts of section 4 and these files:
+
+| artefact | producer (Tier 2) |
+|---|---|
+| `lgbm_r_all_v85_s{42,43,44}.txt`, `lgbm_r_all_v85.features.txt` (tracked), `lgbm_r_all_v85.encoders.pkl` | `python -m src_v3.train_v76_base plain --tag v85 --extra models/nm_forward_train_v85.parquet` |
+| `lgbm_r_all_v85a_s{42,43,44}.txt`, `lgbm_r_all_v85a.features.txt` (tracked), `lgbm_r_all_v85a.encoders.pkl` | `python -m src_v3.train_v76_base anchored --tag v85 --extra models/nm_forward_train_v85.parquet` |
+| `lgbm_pa_v89_<ICAO>.txt` (9 airports), `lgbm_pa_v89.features.txt` (tracked) | `python -m src_v3.train_per_airport_v89 plain` |
+| `lgbm_pa_v89a_<ICAO>.txt` (9 airports), `lgbm_pa_v89a.features.txt` (tracked) | `python -m src_v3.train_per_airport_v89 anchored` |
+| `catboost_r_all_v73.cbm`, `catboost_r_all_v73.meta.json` (tracked) | `python -m src_v3.catboost_base --tag v73 --rounds-from v67 --extra models/nm_clocks_train_v73.parquet` |
+| `catboost_r_all_v75a.cbm`, `catboost_r_all_v75a.meta.json` (tracked) | `python -m src_v3.catboost_base --tag v75a --rounds-from v67 --extra models/nm_clocks_train_v73.parquet --anchor-col mvt_aobt3` |
+| `nm_clocks_rank_v73.parquet`, `nm_forward_rank_v85.parquet` | section 6.1 commands |
+
+### 6.2 Tier 2: retrain the v89 base
+
+Run section 5 steps 1 and 2 and the three LIRF commands of step 3
+(`train_r_norm_v55`, `train_p_fb_v56`, `train_p_fb_v64`). v89 does not
+serve `lgbm_r_all_v65` or `catboost_r_all_v67`. Then run these steps one at a
+time:
+
+```bash
+python -m src_v3.build_nm_clocks_v73
+python -m src_v3.build_nm_forward_v85
+python -m src_v3.train_v76_base plain --tag v85 --extra models/nm_forward_train_v85.parquet      # 3 seeds, 3,377 rounds, about 2.3 h
+python -m src_v3.train_v76_base anchored --tag v85 --extra models/nm_forward_train_v85.parquet   # 3 seeds, 3,340 rounds, about 2.3 h
+python -m src_v3.train_per_airport_v89 plain                                                     # 9 members, about 45 min
+python -m src_v3.train_per_airport_v89 anchored                                                  # 9 members, about 45 min
+python -m src_v3.catboost_base --tag v73 --rounds-from v67 --extra models/nm_clocks_train_v73.parquet                          # 7,385 rounds, about 2.6 h
+python -m src_v3.catboost_base --tag v75a --rounds-from v67 --extra models/nm_clocks_train_v73.parquet --anchor-col mvt_aobt3  # 7,305 rounds, about 2.2 h
+```
+
+The LightGBM trainers read their parameters and round count from the tracked
+study record `models/tune_lgbm_v76.tuned_params.json`, so the 3-hour study
+(`python -m src_v3.tune_lgbm_v76`) is optional. The CatBoost trainers read the
+round count from the tracked v67 hold-out report. The two per-airport fits
+are the exception to the one-fit rule: they use 6 threads each and ran side
+by side on 2026-09-28.
+
+## 7. Known gaps
 
 - The trained artefacts need a release bundle with hashes (MODEL_ANALYSIS
   MC3). Until it exists, Tier 1 needs Tier 2 or a copy from the team machine.
+- No committed v89 parity record exists yet (section 6.1). Nobody has rerun
+  the v89 Tier 2 on a clean clone.
+- Up to 2026-09-30, `build_nm_forward_v85.py` wrote the v86 variant (the 8
+  forward columns plus 4 queue columns) to `nm_forward_*_v86.parquet`, not the
+  v85 files that v85 and v89 read. The default now writes the v85 files.
 - No committed script fetches the METAR CSVs (MC6).
 - `eval_v33_holdout.py --rebuild-lirf` writes the LIRF cache first, then scores the
   v33 stack, which needs boosters that Tier 2 does not build. On a clean clone the
@@ -165,7 +238,7 @@ Linear-leaf LightGBM runs with `deterministic` and 4 threads
   Nobody has rerun Tier 2 end to end on a clean clone, so bit parity of a
   full retrain is not yet shown.
 
-## 7. Upload
+## 8. Upload
 
 ```bash
 python -m src_v2.cli upload kind-mango_v67.parquet

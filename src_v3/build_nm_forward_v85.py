@@ -6,10 +6,15 @@ take-off in `(t, t + W]`. These flights queued with the row, so their
 clocks describe the queue the row was in. The organiser allows features
 from other movements ("what is occupied, what is coming", 2026-09-09);
 the team stance MF6 kept forward windows out until track B.
+
+The default variant v85 writes the 8 served columns. v86 adds the queue
+lengths and v88 the 5 and 60 min windows; both are priced and not served.
 """
 from __future__ import annotations
 
+import argparse
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -18,9 +23,16 @@ from src_v3 import config as C
 from src_v3.build_nm_clocks_v73 import load_dep
 from src_v3.build_nm_neighbours_v73 import GROUPS, window_stats
 
-OUT_TRAIN = C.ROOT / "models" / "nm_forward_train_v86.parquet"
-OUT_RANK = C.ROOT / "models" / "nm_forward_rank_v86.parquet"
 log = logging.getLogger(__name__)
+
+
+def out_paths(variant: str) -> tuple[Path, Path]:
+    """Training and ranking files of one variant."""
+    return (C.ROOT / "models" / f"nm_forward_train_{variant}.parquet",
+            C.ROOT / "models" / f"nm_forward_rank_{variant}.parquet")
+
+
+OUT_TRAIN, OUT_RANK = out_paths("v85")
 
 
 def forward(dep: pd.DataFrame, windows: tuple[int, ...] = C.NM_FORWARD_WINDOWS_S) -> pd.DataFrame:
@@ -60,14 +72,25 @@ def queues(dep: pd.DataFrame) -> pd.DataFrame:
     return out.reset_index(drop=True)
 
 
-def build(dep: pd.DataFrame) -> pd.DataFrame:
-    return forward(dep).merge(queues(dep), on="MVT_ID_mvt", how="left", validate="1:1")
+def build(dep: pd.DataFrame, variant: str = "v85") -> pd.DataFrame:
+    """The columns of one variant keyed on `MVT_ID_mvt`, in the column order its hold-out report lists."""
+    out = forward(dep)
+    if variant == "v86":
+        return out.merge(queues(dep), on="MVT_ID_mvt", how="left", validate="1:1")
+    if variant == "v88":
+        return out.merge(forward(dep, C.NM_FORWARD_EXTRA_WINDOWS_S), on="MVT_ID_mvt", how="left", validate="1:1")
+    return out
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--variant", choices=("v85", "v86", "v88"), default="v85",
+                    help="v85 is served; v86 adds queue lengths, v88 the 5 and 60 min windows.")
+    args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    build(load_dep(sorted(C.TRAIN_DIR.glob("training_*.parquet")))).to_parquet(OUT_TRAIN)
-    build(load_dep([C.RANK])).to_parquet(OUT_RANK)
+    train_path, rank_path = out_paths(args.variant)
+    build(load_dep(sorted(C.TRAIN_DIR.glob("training_*.parquet"))), args.variant).to_parquet(train_path)
+    build(load_dep([C.RANK]), args.variant).to_parquet(rank_path)
 
 
 if __name__ == "__main__":

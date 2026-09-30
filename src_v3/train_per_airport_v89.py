@@ -1,7 +1,8 @@
 """v89: one LightGBM member per airport, for the plain and the anchored term.
 
-The v85 columns, the MB3 rows of all 12 months, the v76 parameters and
-round count scaled by the airport's row ratio, seed 42. Served as a 50/50
+The v85 columns, the MB3 rows of all 12 months, the v76 parameters, seed 42.
+Every airport gets the round count of the global member: the v76 count
+scaled by the full-year row ratio of all airports. Served as a 50/50
 mean with the global v85 members of the same term (`predict_v67
 --per-airport-tag`). Hold-out (`measure_per_airport_v89.py`): alone +1,112
 MSE, the mean with the global member -657 MSE at all 9 airports.
@@ -23,12 +24,12 @@ from train_lgbm_v21 import CAT_COLS
 
 from src_v3 import config as C
 from src_v3.build_nm_clocks_v73 import FEATURES as CLOCKS, OUT_TRAIN as CLOCKS_TRAIN
+from src_v3.build_nm_forward_v85 import OUT_TRAIN as FORWARD_TRAIN
 from src_v3.build_plan_nm_taxi_v65 import OUT_TRAIN as PLAN_NM_TRAIN
 from src_v3.frames import v47_feature_names
 from src_v3.train_v57_base import _load_frame_v57
 from src_v3.tune_lgbm_v76 import OUT as TUNED_V76
 
-FORWARD_TRAIN = C.ROOT / "models" / "nm_forward_train_v85.parquet"
 log = logging.getLogger(__name__)
 
 

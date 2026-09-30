@@ -7,13 +7,14 @@ scored flight in both base classes plus an anchored member in each
 (track B), LightGBM parameters from the MB5 study on the clock-era
 columns. v75 266.15 s, v74 266.84 s, v73 270.58 s; before track B,
 281.87 s (v67). Leaderboard top **224.88 s** (2026-09-26). The gap from
-v76 is 19,799 MSE (70,370 against 50,571). This file is the
+v89 is 19,303 MSE (69,874 against 50,571). This file is the
 source of truth for the next model.
 
 - The Progress section below tracks every measure of the fifteenth pass
   and every WINNING_PLAN lever to v71.
-- The sixteenth pass is not yet written. Its brief is `docs/AUDIT_PROMPT.md`.
-  The auditor writes the result below the Progress section.
+- The sixteenth pass will not run. Its brief (`docs/AUDIT_PROMPT.md`)
+  predates track B. The audit of 2026-09-30 and the plan to the deadline
+  are in `docs/WINNING_PLAN.md` section 0.
 - Sections 0 to 9 and the appendix are the fifteenth pass (audit of v47,
   2026-09-17). They stay as the record of the findings that the measures
   cite.
@@ -122,7 +123,7 @@ and the output format.
 | L2 neighbour clocks, backward 30 and 60 min | not built | hold-out +626 MSE against L1; -137 without 7 single-member blow-up rows | closed: under the 150 MSE bar |
 | Discord tail rules: blend heavy-hold rows toward the 2025 curve of y on `mvt_eobt1`; cap normal rows | not uploaded | hold-out +1,639 / -3 MSE | rejected on the 2025 hold-out (`src_v3/measure_tail_rules.py`); see below |
 | MC4 pin library versions | | | `requirements.txt` (Python 3.13.3); fixed thread counts in `config.py` |
-| MC6 parity test for the best file | | | `src_v3/test_v67_parity.py`: v67 rebuilds bit for bit against `submission/kind-mango_v67.parity.json`; `REPRODUCE.md` rewritten for v67 (two tiers) |
+| MC6 parity test for the best file | | | `src_v3/test_v67_parity.py` (since 2026-09-30 `test_parity.py --tag v67`; `--tag v89` needs a recorded hash): v67 rebuilds bit for bit against `submission/kind-mango_v67.parity.json`; `REPRODUCE.md` rewritten for v67 (two tiers) |
 | R2 id side file of the H1 frame | | | `tune_lgbm_v36.py build` now writes `v36_tune_cache.ids.parquet` with the 169 historical null rows (`v36_tune_cache.null_ids.json`); a scratch rebuild matched the historical cache, feature list and ids exactly |
 | MP9 read every score | | | v44 299.846, v45 296.125, v50 293.816 now read |
 | MX1 organiser ruling | | | resolved 2026-09-18 |
