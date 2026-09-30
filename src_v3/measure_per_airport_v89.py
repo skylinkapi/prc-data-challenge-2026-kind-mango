@@ -22,6 +22,7 @@ from train_lgbm_v21 import CAT_COLS
 
 from src_v3 import config as C
 from src_v3.build_nm_clocks_v73 import OUT_TRAIN as CLOCKS_TRAIN
+from src_v3.build_nm_forward_v85 import OUT_TRAIN as FORWARD_V85
 from src_v3.catboost_base import load_frame
 from src_v3.fit_blend_v77 import blend
 from src_v3.measure_catboost_blend import FIT_MONTHS, holdout_rows
@@ -32,7 +33,6 @@ from src_v3.measure_tail_rules import mse_delta
 from src_v3.tune_lgbm_v76 import OUT as TUNED_V76
 
 GLOBAL_V85 = C.MODELS / "holdout_lgb_v85.parquet"
-FORWARD_V85 = C.ROOT / "models" / "nm_forward_train_v85.parquet"
 log = logging.getLogger(__name__)
 
 

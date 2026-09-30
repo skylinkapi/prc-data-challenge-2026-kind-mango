@@ -1,5 +1,12 @@
 # Audit prompt: sixteenth pass, the path from 281.87 s toward 224.88 s
 
+> **Superseded on 2026-09-30. Do not run this brief.** It describes the v67
+> stack and track A. Hard rule 1 (no `AOBT_3_flt`, no `LOBT_flt`) ended on
+> 2026-09-26: v73 to v89 read both fields (`README.md`, Stance section). The
+> served stack is v89 (`REPRODUCE.md` section 6). The endgame audit and the
+> plan to 11 October are in `docs/WINNING_PLAN.md` section 0. The text below
+> stays as the record.
+
 Give this file to the auditor as the full task. The auditor is a person or
 an AI agent with read access to this repository and the data machine. The
 auditor writes the result as the sixteenth pass of

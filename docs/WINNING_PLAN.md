@@ -1,10 +1,185 @@
 # Plan to the deadline: gap analysis and ranked levers
 
-Status: 2026-09-23, 07:30 UTC. Base commit: `bbd0d62` (`origin/main`).
-Scope: analysis only. This file changes no code and uploads nothing. No
-number in this file comes from a new model run.
+Status: section 0 on 2026-09-30 (base commit `2a4ec1b`, best v89). Sections 1
+to 12 on 2026-09-23, 07:30 UTC (base commit `bbd0d62`, best v57, track A).
+Scope: analysis only. No number in this file comes from a new model run.
 
-## 0. Conclusions
+## 0. Endgame, 30 September to 11 October 2026
+
+The machine of this audit held no organiser data. The egress policy blocked
+the leaderboard API. Every number below comes from a file in the repo, from
+the challenge site source, or from arithmetic.
+
+### 0.1 Facts that set the plan
+
+1. The deadline is **11 October 2026, 23:59:59 CET** (site source
+   `index.qmd`, read on 2026-09-30). `RECAP.md` and the team brief said
+   31 October. Both are now corrected. 12 UTC days remain, today included.
+   The limit is 5 uploads per day.
+2. The rank counts the best RMSE of all uploads (site, `ranking.qmd`). No
+   upload has to be the final one. An upload that regresses costs one slot
+   and no score.
+3. Best: v89, 264.34 s, 69,874 MSE. Top on 2026-09-26: 224.88 s, 50,571 MSE.
+   Gap: 19,303 MSE. At 264 s, 1 s is about 529 MSE.
+4. The model side is saturated. Live deltas since v76: v83 +0.14 s, v85
+   -0.72 s, v87 +0.31 s, v89 -0.22 s. Every other lever priced since v77 is
+   under the 150 MSE bar, or changes the LIRF head, a class that did not
+   transfer live (table 0.4).
+5. The error that is left sits in the clean class and in rows that no
+   column predicts. On the 2025 hold-out outside LIRF, the v76-style blend
+   holds 36,020 MSE on 293,832 clean rows (RMSE 205 s) and 32,186 MSE on 36
+   tail and 24-h rows (`RECAP.md`, row "v84 candidates").
+6. A clean-class gain needs better information on the actual off-block of
+   each flight. The NM clock `MVT - AOBT_3` has a median error of 175 s
+   against the label (`README.md`, Stance, fact 3). The organiser allows
+   off-block times from open trajectory data: "if you can find open
+   trajectory data with good ground coverage and extract off-block times,
+   we are ok" (Discord, 2026-09-18, `RECAP.md`).
+7. OPDI already holds ADS-B off-block events of single flights, but in
+   volume only at LSZH in both years. OPDI taxi records per month
+   (`models/coverage_monitor.json`, key `opdi_taxi_out_counts`; no LTFM
+   entry):
+
+   | airport | Jan 2025 | Jul 2025 | Jan 2026 | Jul 2026 |
+   |---|---|---|---|---|
+   | LSZH | 7,542 | 11,770 | 5,630 | 12,588 |
+   | EDDF | 7 | 615 | 5,582 | 11,388 |
+   | EDDM | 1,762 | 1,547 | 1 | 995 |
+   | LEBL | 6,912 | 458 | 6 | 58 |
+   | EHAM | 174 | 67 | 10 | 65 |
+   | LFPG | 120 | 0 | 0 | 3 |
+   | EGLL | 15 | 3 | 2 | 15 |
+   | LEMD | 0 | 1 | 1 | 64 |
+   | LIRF | 0 | 0 | 0 | 3 |
+
+   The ranking file holds 23,150 LSZH departures, about 11,600 per month.
+   A record count can exceed the departure count, so step 1 measures the
+   share of departures with a linked record. No served column reads the scored flight's own OPDI events. The base
+   dropped its OPDI columns in v26. The LIRF head still reads 18 of them
+   (`models/lirf_regime_v41.features.txt`): event counts at the airport and
+   other flights' taxi times, in windows before the take-off.
+8. The data machine holds out-of-sample predictions of the blend members on
+   January and July 2025 outside LIRF (`models/v3/nm_clocks_holdout.parquet`,
+   `holdout_lgb_v85.parquet`, `holdout_lgb_per_airport_v89.parquet`,
+   `holdout_lgb_anchor_mb5.parquet`, `holdout_cat_plain_v77.parquet`,
+   `holdout_cat_anchor_v77.parquet`). A small second-stage model on these
+   files prices a new column in minutes, without a base refit.
+
+### 0.2 Decisions for the team
+
+1. **D1.** Use off-block times of the scored flight from open ADS-B data
+   (OPDI first, ADSB.lol if step 4 passes)? The organiser allows it (fact 6).
+   It is the same class of input as `AOBT_3_flt`. Record the decision in the
+   README Stance section before the first upload that uses it.
+2. **D2.** Spend at most one day on the ADSB.lol probe (step 4)? ADSB.lol is
+   open data under ODbL 1.0 if the documentation declares it with
+   attribution (Discord, 2026-09-17/18). The size of its daily archives is
+   unmeasured. The organiser expects poor ground coverage at LFPG, LIRF, LEMD
+   and LTFM.
+3. **D3.** Time split between the leaderboard and the JOAS paper. Third
+   place was 238.78 s on 2026-09-23, 12,858 MSE below v89. The trend of 5.1
+   puts it at 230 to 235 s on 11 October, 14,649 to 16,974 MSE below v89.
+   Fact 4 points to one lever that can move the score by more than 1 s: a
+   new source of off-block times (grade D).
+
+### 0.3 Plan
+
+| day (UTC) | work | uploads |
+|---|---|---|
+| Wed 30 Sep | Merge this audit. Record the v89 hash: `python -m src_v3.test_parity --tag v89 --record`, then commit `submission/kind-mango_v89.parity.json`. Read the leaderboard. Decide D1 to D3. | 0 |
+| Thu 1 Oct | Step 1, OPDI probe. Gate G1. | 0 |
+| Fri 2 Oct | G1 passed: steps 2 and 3. G1 failed: close the OPDI branch; step 4 if D2 is yes. | 0 to 1 |
+| Sat 3 Oct | Gate G3 of step 4 by 23:59 UTC. After that, no new data source. | 0 to 1 |
+| Sun 4 to Wed 7 Oct | G3 passed: build the ADSB.lol clock for January and July of 2025 and 2026, then steps 2 and 3 for it. Else: reproducibility (0.5) and the paper. | at most 2 per day |
+| Thu 8 Oct | Last new column. No new feature family after 23:59 UTC (11.4). | at most 2 |
+| Fri 9 to Sat 10 Oct | Full refit of a winning second-stage file (step 3). Parity record, release bundle, `README.md` and `REPRODUCE.md` for the best file. | at most 1 per day |
+| Sun 11 Oct | No new model. Last upload before 21:00 UTC. | 0 to 1 |
+
+Run one full-frame fit at a time. Start long fits as detached processes in
+the evening, so that a closed session does not stop them (v75). Before each
+upload, run `python src/check_submission_2026.py submission/kind-mango_vNN.parquet --ref submission/kind-mango_v89.parquet`
+and apply the label-free gate of 11.3.
+
+**Step 1. OPDI probe, gate G1 (2 to 4 h).**
+
+1. Download the OPDI flight list for January 2025 to July 2026. The files
+   sit on the same OPDI page as the event files (`src/fetch_opdi_events.py`,
+   `BASE`). They give the callsign of each OPDI flight id.
+2. Link each departure to one OPDI flight of
+   `external/opdi/taxi_out_v2.parquet`: the same airport, `CALLSIGN_flt`
+   equal to the OPDI callsign, and `pushback_ts` in `[MVT - 7,200 s, MVT]`.
+   Keep the latest pushback, and one row per OPDI flight. Do not link on the
+   first runway entry: a runway crossing during the taxi also counts as one.
+3. Compute `mvt_opdi = MVT - pushback_ts`. Keep the pushback source (exit
+   parking or entry taxiway).
+4. On 2025 departures, per airport and month, report the coverage, the
+   median of `abs(y - mvt_opdi)` and the share within 60 s. Report the same
+   for `mvt_aobt3` on the same rows.
+5. Write `mvt_opdi` and the source flag keyed on `MVT_ID_mvt` to
+   `models/opdi_own_train_v90.parquet` and `models/opdi_own_rank_v90.parquet`.
+
+G1: at LSZH, coverage of 40 % or more in each of the four months, and a
+median error at most half the median error of `mvt_aobt3` on the same rows.
+If G1 fails, close the OPDI branch.
+
+**Step 2. Price, bar -150 MSE on the hold-out scale.**
+
+- Second-stage price: fit a small model on fact 8 files, with the v89-style
+  blend (as `measure_per_airport_v89.py` builds it), `mvt_opdi`,
+  `mvt_aobt3` and the airport as inputs. Fit on January and score July,
+  then the reverse.
+- Member price: `python -m src_v3.measure_extra_v81 v90 models/opdi_own_train_v90.parquet`.
+
+Accept if both prices are at or below -150 MSE and LSZH is negative in both
+months.
+
+**Step 3. Serve.**
+
+- Fast file: the v89 file plus the second-stage correction on the rows with
+  `mvt_opdi` (no refit, about 10 min). Upload it first.
+- Full file, overnight: refit the plain and anchored LightGBM bases with
+  `--extra` (about 4.6 h) and the per-airport members (about 1.5 h;
+  `train_per_airport_v89.py` needs an `--extra` option first). Upload it
+  only if the fast file landed at or below best minus 0.3 s.
+
+**Step 4. ADSB.lol probe, gate G3 (one day, D2).**
+
+1. Download one day of the ADSB.lol archive, a July 2025 day. Write down
+   its size and the download time.
+2. Keep the ground points within 5 km of the 10 airports. For each
+   departure, the off-block is the first ground movement after the aircraft
+   stood still on the apron; the take-off is the first airborne point.
+3. Link to that day's departures by callsign and take-off time. Measure as
+   in step 1.
+
+G3: coverage of 30 % or more at 3 airports or more, a median error at most
+half that of `mvt_aobt3` on the same rows, and download plus processing
+under 2 h per day of data. The ADSB.lol
+clock needs 124 days (January and July of 2025 and 2026) for steps 2 and 3.
+
+### 0.4 Do not spend compute on these
+
+| lever | evidence | source |
+|---|---|---|
+| more seeds, a second study, CatBoost variants, XGBoost, fitted blend weights | under the 150 MSE bar | `RECAP.md` rows v77, v79, v80, v84 |
+| forward windows in CatBoost | +0.31 s live | v87 |
+| LIRF-head model changes | +0.42, +0.03, +0.14 s live | v49, v68, v83 |
+| per-airport weight other than 0.5 | the hold-out prices at weight 0, 0.5 and 1 (0, -657, +1,112 MSE) put the optimum near 0.39, about 64 MSE better at member level and about 15 MSE in the blend | `models/v3/per_airport_v89.holdout.json`, quadratic fit |
+| queue lengths; 5 and 60 min forward windows | -8 and -53 MSE in the blend against the v85 columns | `models/v3/extra_v86.holdout.json`, `extra_v88.holdout.json` |
+| tail rules, MH2 fallback heads, clock bias | +1,639, +292, -51 MSE | `RECAP.md` rows "tail rules", v72, "v76 audit" |
+
+### 0.5 Work for prize eligibility, whatever the score
+
+1. Record and commit the parity hash of each file that becomes best, on the
+   day it lands (`src_v3/test_parity.py`; v89 has no record yet).
+2. Publish the served artefacts with SHA-256 hashes as a GitHub release
+   (MODEL_ANALYSIS MC3). `REPRODUCE.md` sections 4 and 6.1 list them.
+3. Add each new data source to the README table in the commit that first
+   uses it (OPDI flight list; ADSB.lol with its ODbL attribution).
+4. Keep `REPRODUCE.md` on the best file. Run Tier 2 on a clean clone if a
+   free day remains.
+
+## 0.9 Conclusions of 2026-09-23 (track A, best v57)
 
 1. kind-mango is 57th of 178 teams at 287.334 s (v57). Third place is
    238.783 s (jolly-lobster). The gap is 25,543 MSE. At 287 s, 1 s of RMSE

@@ -6,38 +6,16 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
+- **Deadline:** 11 October 2026, 23:59:59 CET (challenge site source
+  `index.qmd`, read on 2026-09-30). Upload the last file before 21:00 UTC on
+  that day.
 - **Current leaderboard best:** **264.34 s RMSE** (`kind-mango_v89.parquet`,
-  2026-09-28), -17.53 s vs v67. v89 mixes one LightGBM member per airport
-  50/50 into both LightGBM terms of v85. v85 (264.55 s) added forward windows (WINNING_PLAN
-  L8): the NM clocks of the departures that take off in the 15 and 30 min
-  after the row. v76 (265.27 s) refit both LightGBM bases with the
-  parameters of a new Optuna study on the clock-era columns (MB5). v75
-  (266.15 s) added a CatBoost member on the residual from the `AOBT_3`
-  anchor; v74 scored 266.84 s. v73 (270.58 s) added the NM clocks of the
-  scored flight (`MVT - AOBT_3_flt`, `LOBT_flt` deltas) to the LightGBM base
-  (WINNING_PLAN L1, track B). v74 adds the clocks to the CatBoost member and
-  a LightGBM member on the residual from the `AOBT_3` anchor (L5). The team changed its stance on these fields
-  on 2026-09-26; see the Stance section below. Before v73, the best was
-  281.87 s (`kind-mango_v67.parquet`, 2026-09-24). Path from v57 (287.33 s): Step A normal
-  term reads `R_norm` (v63, 287.09 s), out-of-fold isotonic map on the LIRF
-  gate (v64, 285.95 s), planned-taxi column `plan_nm_taxi` (v65, 284.74 s),
-  CatBoost second model class blended 50/50 with the LightGBM base outside
-  LIRF (v67, 281.87 s). See `docs/WINNING_PLAN.md`. Path: L3.a/L9/L1 stacked base changes
-  (v44-v46, live -0.17 s), L2 12-month refit (v47 = 296.57, -2.57 s),
-  fifteenth-pass MS1+MS2 bounds (v48 = 294.24, -2.33 s), fifteenth-pass
-  MB3 base retrained on served rows only, LIRF and y>80,000 excluded
-  (v51 = 288.25, -5.99 s vs v48). MB3 is the biggest single lever of
-  the season: -5.99 s live at zero paired price, because the base's
-  linear leaves were being shaped by LIRF's 16.6 % fallback rate and
-  the 12 24-h rows and extrapolating badly on 2026 out-of-distribution
-  rows. See `docs/MODEL_ANALYSIS.md` fifteenth pass and `RECAP.md` for
-  the full decomposition per ship.
-- **After v33 (status 2026-09-13):** v34 to v37 scored 302.05 to 302.52 and
-  are rejected. v38 failed its hold-out gate. v39, the cold-start rewrite
-  under `src_v2/`, scored 352.19 s live: one LIRF row with `sd = 94,560`
-  lost the ITY340 hedge and holds 62 to 73 % of the regression, and the
-  rewritten base is 4.5 s worse on clean rows than the v33 base on identical
-  hold-out rows. v33 stays best. See `docs/MODEL_ANALYSIS.md` section 4.1.
+  2026-09-28). v89 mixes one LightGBM member per airport 50/50 into both
+  LightGBM terms of v85. From v73 on, the base reads the NM clocks of the
+  scored flight (track B, see the Stance section). Before track B, the best
+  was 281.87 s (v67, 2026-09-24). The results table below gives every step
+  and its live delta.
+- **Plan to the deadline:** `docs/WINNING_PLAN.md` section 0 (2026-09-30).
 
 ## License
 
@@ -80,31 +58,41 @@ value from a leaderboard score.
 
 ## What the model is
 
-The scoring stack (v41, current best) is v33 with the base and the LIRF
-regressor retrained on 13 extra columns. It is documented in
-`docs/MODEL_ANALYSIS.md` sections 4.2 and 4.3. In one line:
+The scoring stack of v89 (current best) has a base outside LIRF and a LIRF
+head. `src_v3/predict_v67.py` serves it. `REPRODUCE.md` section 6 lists
+every artefact and its producer.
 
-**Three-seed LightGBM regressor with `linear_tree` (`R_all_v40`: the v26 recipe
-plus 13 tempo, order, stand-gap and queue columns), plus a LIRF
-regime head (5-member `R_norm_LIRF` mean + calibrated `p_fb` mixture), plus
-the Step A LIRF band lookup, plus the ITY340 offset rule.**
+**Outside LIRF (317,942 rows):** `0.5 x LightGBM term + 0.5 x CatBoost term`.
 
-Per-airport delegation. `src/predict_v33.py` calls `src/predict_v30.py:main`
-with the 5 `R_norm_LIRF` members:
+| term | plain member, weight 0.5 | anchored member, weight 0.5 |
+|---|---|---|
+| LightGBM, 131 columns | 0.5 x 3-seed global model `lgbm_r_all_v85` + 0.5 x one model per airport `lgbm_pa_v89` | `clip(MVT - AOBT_3, 0, 7,200)` plus an offset: 0.5 x `lgbm_r_all_v85a` + 0.5 x `lgbm_pa_v89a` |
+| CatBoost, 123 columns | `catboost_r_all_v73` | `clip(MVT - AOBT_3, 0, 7,200)` plus the offset of `catboost_r_all_v75a` |
 
-| airport | scoring component |
+- The 131 LightGBM columns are the 118 columns of v65, the 5 NM clocks of the
+  scored flight (`build_nm_clocks_v73.py`) and the 8 forward-window clocks
+  (`build_nm_forward_v85.py`). CatBoost reads the first 123 of them.
+- Rows without `AOBT_3_flt` get the plain member of each term.
+- Where the 3 seeds of a global LightGBM model differ by more than 3,600 s,
+  the term reads their median (MS3).
+- All LightGBM models use `linear_tree` and the MB5 parameters of
+  `models/tune_lgbm_v76.tuned_params.json`. Every base model trains on 12
+  months of 2025, without LIRF rows and rows with `y > 80,000` (MB3).
+
+**LIRF (26,899 rows), unchanged since v64:**
+
+| rows | scoring component |
 |---|---|
-| LIRF, `sd > 14,400`, null flight | Step A band table (`p_fb * sd + p_24h * (86,400 + mean_24h_extra) + p_norm * mixture`), exclusive classes since v30 |
-| LIRF, `sd > 70,000`, outside Step A | ITY340 constant `(5/6) * (86,400 + 1,150) + (1/6) * sd` |
-| LIRF, all other rows | `mixture = p_fb_cal * sd + (1 - p_fb_cal) * R_norm_LIRF`, five v41 members, no cap |
-| every other airport | 3-seed mean of `lgbm_r_all_v26_s{42,43,44}` |
+| null flight record, `sd > 14,400` (43 rows) | Step A band table: `p_fb * sd + p_24h * (86,400 + mean_24h_extra) + p_norm * R_norm` |
+| `sd > 70,000`, outside Step A (1 row) | ITY340 constant `(5/6) * (86,400 + 1,150) + (1/6) * sd` |
+| all other rows | `p_fb * sd + (1 - p_fb) * R_norm` |
 
-Both LIRF-head boosters read the LIRF-only encoders in
-`models/lirf_regime.encoders.pkl`. Serving them the all-airport encoders was
-the v30 defect fix. The v33 build swaps `R_norm_LIRF` for a 5-member mean
-(seeds 42-46). The price was 74 MSE of variance reduction. The live score
-confirmed it. `mean_24h_extra` is a per-band value in
-`models/lirf_band_table_v30.json`; the fallback is 1,150 s.
+`R_norm` is the mean of 5 members (`lgbm_r_norm_lirf_v55_s{42..46}`).
+`p_fb` is the v56 gate with the out-of-fold isotonic map of v64. Both read
+the LIRF-only encoders in `models/lirf_regime.encoders.pkl`.
+
+**Post-processing, every row:** MS1 caps per airport outside LIRF and MS2
+floors at the 2025 clean 0.1 % quantile (`src_v3/postprocess.py`).
 
 ## Live leaderboard progression
 
@@ -131,13 +119,13 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v34 to v36 | 302.05-302.09 | +0.18 to +0.22 | hold-out-leak refits and the zero-clip repair; rejected (see RECAP) |
 | kind-mango_v37 | 302.52 | +0.65 | + 5-seed `p_fb` mean; priced 301.62, regressed; rejected (see MODEL_ANALYSIS 4.1) |
 | **kind-mango_v41** | **299.31** | **-0.65** | v40 + `R_norm_LIRF` members with the 13 columns and no 4,431 s cap (`train_r_norm_lirf_v41.py`); paired -415 MSE; see MODEL_ANALYSIS 4.3 |
-| kind-mango_v44 | pending | — | v41 base retrained with 6 new columns: 25th and 75th percentiles of neighbour `mvt_eobt1` at the apt30, apt60 and rwy30 windows (`build_tempo_p2575.py`, `train_r_all_v44.py`). Paired -565 MSE on the base's served rows; gate 300 passed. Uploaded 2026-09-16. |
-| kind-mango_v45 | pending | — | v44 base retrained with `plan_taxi_res` (clipped +/-3600 s), the row's plan-block minus its 2025 route median (`build_plan_taxi_res.py`, `train_r_all_v45.py`). Paired -617 MSE on the base's served rows (-650 on clean); gate 300 passed. Uploaded 2026-09-16. |
-| kind-mango_v46 | 299.14 | -0.17 | v45 features (117 cols) with the L1 retuned base: 30-trial Optuna sweep on `tune_lgbm_v43.py` picked num_leaves 436, min_data 291, lr 0.018, linear_lambda 0.006 (vs deployed 220 / 76 / 0.023 / 1.0). Paired -1,864 MSE served clean cumulative for the L3.a+L9+L1 stack; only -102 MSE landed live. |
+| kind-mango_v44 | 299.85 | +0.53 vs v41 | v41 base retrained with 6 new columns: 25th and 75th percentiles of neighbour `mvt_eobt1` at the apt30, apt60 and rwy30 windows (`build_tempo_p2575.py`, `train_r_all_v44.py`). Paired -565 MSE on the base's served rows; gate 300 passed. Uploaded 2026-09-16. |
+| kind-mango_v45 | 296.13 | -3.72 vs v44 | v44 base retrained with `plan_taxi_res` (clipped +/-3600 s), the row's plan-block minus its 2025 route median (`build_plan_taxi_res.py`, `train_r_all_v45.py`). Paired -617 MSE on the base's served rows (-650 on clean); gate 300 passed. Uploaded 2026-09-16. |
+| kind-mango_v46 | 299.14 | +3.01 vs v45, -0.17 vs v41 | v45 features (117 cols) with the L1 retuned base: 30-trial Optuna sweep on `tune_lgbm_v43.py` picked num_leaves 436, min_data 291, lr 0.018, linear_lambda 0.006 (vs deployed 220 / 76 / 0.023 / 1.0). Paired -1,864 MSE served clean cumulative for the L3.a+L9+L1 stack; only -102 MSE landed live. |
 | **kind-mango_v47** | **296.57** | **-2.57** | **L2: 12-month refit of the v46 recipe (`train_r_all_v47.py`).** 3 seeds on ALL months with the retuned params, iterations scaled by 1/0.88 (v46 iters 609/1799/1015 -> 693/2045/1154). Removed the 2025 hold-out. Live -2.57 s vs v46 shows most of the reachable gain came from training on months 1 and 7 directly, not from feature engineering or hyperparameter tuning. |
 | **kind-mango_v48** | **294.24** | **-2.33** | **Fifteenth-pass Phase 1: MS1 per-airport upper bounds and MS2 clean-floor post-processing on the v47 parquet (`src_v3/build_v48.py`).** 5 non-LIRF extreme rows capped (biggest EDDM 21,465 -> 7,499 s). MP7 label-free gate passed. Zero training cost. Live -2.33 s (about 1,400 MSE) essentially all from the five MS1 clips - MS1 fold price was 0 MSE because the base doesn't extrapolate on 2025 rows, but does on 2026 out-of-distribution rows. |
 | kind-mango_v49 | 294.65 | +0.42 | Fifteenth-pass MD2+MH1 rebuild of the LIRF head without the 56 drifted columns; paired LIRF hold-out -2,405 MSE did not transfer live. Head rebuild lever closed. |
-| kind-mango_v50 | pending | — | Fifteenth-pass Phase 1: MS3 member-disagreement median on top of v48. 17 rows moved (EDDF 3, EDDM 4, EHAM 4, LEBL 1, LFPG 5) where the 3 v47 base members disagreed by more than 3,600 s outside LIRF. 15 remain distinct after MS1's cap. MP7 gate passed. |
+| kind-mango_v50 | 293.82 | -0.42 vs v48 | Fifteenth-pass Phase 1: MS3 member-disagreement median on top of v48. 17 rows moved (EDDF 3, EDDM 4, EHAM 4, LEBL 1, LFPG 5) where the 3 v47 base members disagreed by more than 3,600 s outside LIRF. 15 remain distinct after MS1's cap. MP7 gate passed. |
 | **kind-mango_v51** | **288.25** | **-5.99** | **Fifteenth-pass MB3: base retrained on served rows only** (LIRF and y > 80,000 excluded). Biggest single lever of the season. -5.99 s live at zero paired price - the MB3 base avoids the extreme predictions v47/v48 relied on MS1 to clip. |
 | kind-mango_v52 | 288.36 | +0.11 vs v51 (noise) | MB3 + MB4 (cyclic doy, local hour, holidays, drop numeric month). MB4 does not help on top of MB3; the numeric month wasn't the defect P2 warned about once L2 gave the base all 12 months. |
 | kind-mango_v54 | 324.11 | +35.86 vs v51 (rejected) | MB1 anchored-offset target broke on 2026 delayed rows: pred_y = anchor + small_offset fails when anchor is 10,000+ s but the true taxi is 1,000 s. Lever closed. |
@@ -267,49 +255,28 @@ stays for the record. See `src/predict_v21_final.py`.
 
 ## Quick start
 
-Python 3.13, one virtualenv.
+Python 3.13, one virtualenv. Setup:
 
 ```bash
+git clone https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango.git && cd prc-data-challenge-2026-kind-mango
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt   # pinned versions, Python 3.13
-
-# 1. Fetch open external data (~60 min, several rate-limited APIs)
-python src/build_eurocontrol_daily.py     # daily ATFM per airport
-python src/build_osm_stands.py            # OSM stand centroids
-python src/build_osm_taxi_paths.py        # OSM taxiway graph
-python src/fetch_opdi_events.py           # OPDI ADS-B events (~50 min, 560 MB)
-python src/build_opdi_taxi_v2.py          # OPDI taxi-out record aggregation
-# METAR: no committed fetch script; download Iowa State ASOS CSVs to external/metar/
-
-# 2. Train the base regressor (3 members, linear_tree)
-python src/train_r_all_v26.py
-
-# 3. Train the LIRF regime head, then build the Step A band table
-python src/train_lirf_regime.py           # LIRF feature list and LIRF-only encoders
-python src/train_r_norm_lirf_seeds.py     # 5 R_norm_LIRF members, seeds 42-46
-python src/train_lirf_regime_v23.py       # p_fb gate, fallback-rate maps, calibrator
-python src/build_lirf_band_table_v30.py   # band table with exclusive classes
-
-# 4. Predict on the ranking set
-python src/train_r_all_v40.py             # base with the 13 tempo columns, paired report
-python src/train_r_norm_lirf_v41.py       # LIRF regressor members with the 13 columns, paired report
-python src/predict_v41.py kind-mango_v41.parquet
-
-# 5. Run the harness checks (H1 to H5 of the fourteenth pass)
-python src/build_h1_frame_cache.py        # cached frame with the movement id inside
-python src/eval_v33_holdout.py --stack v41  # score any stack on the 2025 hold-out
-python src/test_v33_parity.py             # rebuild v33 to 0.0 s; also writes the 2026 dump
-python src/check_coverage.py --dump models/v33_rank_dump.parquet
-python src/check_submission_2026.py submission/kind-mango_v41.parquet
-
-# 6. Submit
-python -c "\
-from minio import Minio; \
-c = {l.split('=')[0].strip(): l.split('=',1)[1].strip() for l in open('.osn_credentials.txt') if '=' in l}; \
-Minio('s3.opensky-network.org', access_key=c['access_key'], secret_key=c['secret_key'], secure=True) \
-    .fput_object(c['bucket'], 'kind-mango_v33.parquet', 'submission/kind-mango_v33.parquet')"
 ```
 
-Full reproduction steps are in [`REPRODUCE.md`](REPRODUCE.md).
+Then follow `REPRODUCE.md`:
+
+1. Get the organiser data and the open data (sections 2 and 3).
+2. Build the frames and serve v89 from the trained artefacts (sections 4 and
+   6.1), or retrain every artefact first (sections 5 and 6.2).
+3. Check the file against the recorded hash:
+   `python -m src_v3.test_parity --tag v89`. The v89 record does not exist
+   yet (see Reproduction).
+4. Check a candidate against the best file without labels:
+   `python src/check_submission_2026.py submission/kind-mango_vNN.parquet --ref submission/kind-mango_v89.parquet`.
+5. Upload: `python -m src_v2.cli upload kind-mango_vNN.parquet` (5 uploads per UTC day).
+
+The v33 and v41 pipelines under `src/` stay for the paper trail. Their
+commands are in git history (`git show 2a4ec1b:README.md`).
 
 ### Rewrite (`src_v2/`, v39, live 352.19)
 
@@ -337,7 +304,7 @@ python -m src_v2.cli upload kind-mango_v39.parquet # MinIO upload
 
 ```
 src/
-  # v33 pipeline (current)
+  # v21 to v41 pipeline; predict_v30.py and the features_*.py modules still serve v89
   features_weather.py           # METAR + crosswind + Step 7 temperature block
   features_congestion_v2.py     # arrivals keyed on ADES_mvt, same-runway ARR/DEP counts
   features_congestion.py        # v1 keyed on ADEP_mvt (needed by v21_old booster)
@@ -356,7 +323,7 @@ src/
   train_lirf_regime_v23.py      # LIRF p_fb gate, fallback-rate maps, calibrator
   build_lirf_band_table_v30.py  # Step A band table, exclusive classes
   predict_v30.py                # shared prediction pipeline
-  predict_v33.py                # ranking submission (current best)
+  predict_v33.py                # v33 submission
   price_ensemble.py             # label-free ambiguity price on the ranking set
   eval_v33_holdout.py           # v33 stack scored end to end on the 2025 hold-out (P1)
   train_r_all_v40.py            # tempo columns on the v33 base, paired against a control
@@ -365,7 +332,7 @@ src/
   train_p_fb_lirf_v41.py        # LIRF gate with the tempo columns, paired (rejected)
   features_order_next.py        # forward take-off order column (v42, set aside)
   train_r_all_v42.py            # forward order on the base, paired (set aside)
-  predict_v41.py                # current best
+  predict_v41.py                # v41 submission
 
   # fourteenth-pass harness (H1 to H5)
   build_h1_frame_cache.py       # cached frame with the movement id inside (h1_frame_cache.parquet)
@@ -390,6 +357,25 @@ src/
   eval_v19.py, eval_v20_combined.py, train_drift_meter.py,
   train_fallback_detector.py, train_v18_detectors.py
 
+src_v2/                         # v39 cold-start rewrite (live 352.19); builds the frame caches the served path reads
+  cli.py                        # build, full and upload commands
+  frame.py, features.py         # tempo, order, stand-gap and queue columns (served from v40 on)
+
+src_v3/                         # served path since v48
+  predict_v67.py                # serves v67 to v89: CatBoost blend, anchored and per-airport members
+  predict_v57.py                # serve_v30 wrapper and the MS1/MS2 writer
+  postprocess.py, support.py    # MS1 caps, MS2 floors, MS3 member median, MS4 checks
+  build_nm_clocks_v73.py        # NM clocks of the scored flight
+  build_nm_forward_v85.py       # forward-window clocks (v85 served; v86 and v88 priced)
+  build_plan_nm_taxi_v65.py     # planned-taxi column
+  train_v76_base.py             # global LightGBM bases, plain and anchored
+  train_per_airport_v89.py      # per-airport LightGBM members
+  catboost_base.py              # CatBoost members, plain and anchored
+  tune_lgbm_v76.py              # MB5 study of the LightGBM parameters
+  measure_*.py                  # hold-out price of each lever (reports in models/v3/)
+  test_parity.py                # rebuilds a served file and checks its recorded hash
+  config.py                     # constants with their provenance
+
 external/                       # open-data caches (gitignored)
   metar/       Iowa State ASOS CSVs per ICAO
   eurocontrol/ 5 NM performance Excels + consolidated daily parquet
@@ -400,9 +386,10 @@ external/                       # open-data caches (gitignored)
 training/                       # organiser-provided 2025 monthly parquets (gitignored)
 submission/                     # ranking.parquet, submitting.parquet, kind-mango_v*.parquet
 models/                         # trained boosters + encoders + JSON config
-docs/                           # PRC brief + MODEL_ANALYSIS.md (progress to v67, gap to the top, fifteenth-pass findings) + WINNING_PLAN.md (gap analysis and ranked levers to 11 Oct) + AUDIT_PROMPT.md (brief for the sixteenth-pass audit)
+docs/                           # PRC brief + MODEL_ANALYSIS.md (progress, fifteenth-pass findings) + WINNING_PLAN.md (plan to 11 October in section 0, gap analysis, ranked levers) + AUDIT_PROMPT.md (sixteenth-pass brief, superseded)
 RECAP.md                        # session log for every attempt, submissions and scores
-requirements.txt                # pinned library versions of the v67 pipeline
+REPRODUCE.md                    # reproduction guide for v67 and v89
+requirements.txt                # pinned library versions of the v67 to v89 pipeline
 ```
 
 ## Approaches tried and RULED OUT
@@ -462,10 +449,13 @@ dead-ends:
 
 ## Reproduction
 
-See [`REPRODUCE.md`](REPRODUCE.md). Tier 1 serves the best file (v67) from the trained
-artefacts; Tier 2 retrains every served artefact. `python -m src_v3.test_v67_parity`
-rebuilds v67 and checks it against the recorded hash in
-`submission/kind-mango_v67.parity.json` (bit parity on 2026-09-26).
+See [`REPRODUCE.md`](REPRODUCE.md). Tier 1 serves a file from the trained
+artefacts; Tier 2 retrains every served artefact. Section 6 covers the best
+file (v89). `python -m src_v3.test_parity --tag v67` rebuilds v67 and checks it
+against the recorded hash in `submission/kind-mango_v67.parity.json` (bit
+parity on 2026-09-26). The v89 hash is not recorded yet: run
+`python -m src_v3.test_parity --tag v89 --record` on the machine that holds the
+uploaded file, then commit the record.
 
 ## Acknowledgements
 
