@@ -62,6 +62,11 @@ def score_per_airport(dump: pd.DataFrame, tag: str, clip: bool) -> np.ndarray:
     return np.clip(out, 0, None) if clip else out
 
 
+def score_seeds(dump: pd.DataFrame, tags: list[str], clip: bool) -> np.ndarray:
+    """Mean of the per-airport members over the seed tags (B2); one tag serves v89 unchanged."""
+    return np.mean([score_per_airport(dump, t, clip) for t in tags], axis=0)
+
+
 def mix(term: np.ndarray, per: np.ndarray, weight: float) -> np.ndarray:
     return np.where(np.isnan(per), term, (1 - weight) * term + weight * per)
 
@@ -85,7 +90,8 @@ def main() -> None:
     ap.add_argument("--ms3", action="store_true",
                     help="Serve the LightGBM member median where the members disagree by more than 3,600 s.")
     ap.add_argument("--anchor-model", help="LightGBM members trained on the AOBT_3 residual (v74: lgbm_r_all_v74a).")
-    ap.add_argument("--per-airport-tag", help="Per-airport LightGBM members (v89: v89 and v89a).")
+    ap.add_argument("--per-airport-tag", nargs="+",
+                    help="Per-airport LightGBM members, one tag per seed (v89: v89; v92: v89 v89s43 v89s44).")
     ap.add_argument("--per-airport-weight", type=float, default=0.5)
     ap.add_argument("--catboost-anchor-tag", help="CatBoost trained on the AOBT_3 residual (v75: v75a).")
     ap.add_argument("--anchor-weight", type=float, default=0.5,
@@ -115,13 +121,14 @@ def main() -> None:
         lgb_term, moved = apply_ms3(members, adep)
         log.info("MS3 moved %s", moved)
     if args.per_airport_tag:
-        lgb_term = mix(lgb_term, score_per_airport(dump, args.per_airport_tag, clip=True), args.per_airport_weight)
+        lgb_term = mix(lgb_term, score_seeds(dump, args.per_airport_tag, clip=True), args.per_airport_weight)
     if args.anchor_model:
         offsets = score_members(dump, args.anchor_model, clip=False)
         offset, moved = apply_ms3(offsets, adep) if args.ms3 else (offsets.mean(axis=0), {})
         log.info("anchored members: MS3 moved %s", moved)
         if args.per_airport_tag:
-            offset = mix(offset, score_per_airport(dump, f"{args.per_airport_tag}a", clip=False), args.per_airport_weight)
+            offset = mix(offset, score_seeds(dump, [f"{t}a" for t in args.per_airport_tag], clip=False),
+                         args.per_airport_weight)
         lgb_term = blend_anchor(dump, lgb_term, offset, args.anchor_weight)
     served = dump[["MVT_ID_mvt"]].merge(pre, on="MVT_ID_mvt", how="left",
                                         validate="1:1")["TAXITIME_SEC_mvt"].values

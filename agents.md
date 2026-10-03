@@ -228,3 +228,46 @@ Before you report a task complete, confirm every line:
 - [ ] `README.md` updated in this commit
 - [ ] Prose follows section 8
 - [ ] The diff is the smallest one that solves the task
+
+---
+
+## 11. Model work
+
+These rules apply to every change of the taxi-out model. The current plan is
+`docs/WINNING_PLAN.md`, third edition.
+
+Read these files first, in this order:
+
+1. `docs/WINNING_PLAN.md`, sections 0 to 6: the gap, the ranked levers, the
+   order of work and the stop rules.
+2. `docs/MODEL_ANALYSIS.md`, sixteenth pass: where the error of the best file sits.
+3. `RECAP.md`: one row per upload, with the mechanism and the live result.
+4. `REPRODUCE.md`: the served recipe and the producer of each artefact.
+
+Rules:
+
+1. Price each change on the 2025 hold-out (January and July) before an upload.
+2. Set the acceptance bar before the run. The default bar is -150 MSE on the
+   hold-out scale (344,336 rows).
+3. Compare arms at equal rounds. An early-stopped control can stop short and
+   inflate the price.
+4. Make one change per upload. A bundle hides the part that moved the score.
+5. Accept an upload only if its live score is at or below the best minus 0.3 s.
+6. Check free RAM before you start a second full-frame fit. One fit uses about
+   11 GB; the machine has 32 GB.
+7. Run a fit longer than 30 min as a detached process. Write its log to `logs/`.
+8. Convert organiser timestamps with
+   `(ts - Timestamp(0, tz="UTC")) // Timedelta(seconds=1)`. The columns are
+   `datetime64[us]`.
+9. Name an upload `kind-mango_v<int>.parquet` and write `TAXITIME_SEC_mvt` as
+   float64. The scorer gives no result for other names or types.
+10. Run the label-free gates of `src_v3/auto_release.py` against the best file
+    before each upload.
+11. The limit is 5 uploads per UTC day. The deadline is 2026-10-11, 23:59:59 CET.
+    Upload before 21:00 UTC on that day.
+12. Do not set a row value from a leaderboard score. Do not upload a file that
+    differs from the best on a few rows. Do not read OSN state vectors or Trino.
+13. Record each upload in `RECAP.md`, in the Progress section of
+    `docs/MODEL_ANALYSIS.md` and in `README.md`, in the same commit as the code.
+14. After a change to the base members, rerun `python -m src_v3.measure_budget_v97`
+    on the new hold-out blend. Report its coverage table next to the price.

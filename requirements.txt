@@ -1,4 +1,4 @@
-# Pinned versions of the v67 pipeline, Python 3.13.3 (Windows 11, 2026-09-26).
+# Pinned versions of the v92 pipeline, Python 3.13.3 (Windows 11, 2026-09-30).
 # Install with: pip install -r requirements.txt
 catboost==1.2.10
 holidays==0.104
@@ -12,3 +12,9 @@ pandas==2.3.1
 pyarrow==22.0.0
 scikit-learn==1.7.2
 scipy==1.16.1
+# ADSB.lol downloads with retries (src_v3/fetch_adsb_days.py); minio already pulls it in
+urllib3==2.2.2
+# ADSB.lol trace parsing (src_v3/build_adsb_points.py): a day holds about 60,000 JSON traces
+orjson==3.11.4
+# MLP member priced on the hold-out (src_v3/mlp_member.py); v92 does not serve it.
+# CPU wheel: pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu

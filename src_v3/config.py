@@ -123,14 +123,17 @@ CATBOOST_PARAMS = dict(
     random_seed=GLOBAL_SEED, thread_count=12, verbose=250,
     train_dir=str(CACHE / "catboost_info"),
 )
-CATBOOST_BLEND_WEIGHTS = (0.3, 0.5)     # pre-registered in WINNING_PLAN L3
+CATBOOST_BLEND_WEIGHTS = (0.3, 0.4, 0.5, 0.6)   # 0.3 and 0.5 pre-registered in WINNING_PLAN L3; v98 grid adds 0.4, 0.6
 # Variant B (option B, v70): deeper trees, another seed and half the columns
 # per split round, for diversity against the v67 member.
 CATBOOST_PARAMS_B = {**CATBOOST_PARAMS, "depth": 10, "random_seed": 43, "rsm": 0.5}
 CATBOOST_BY_TAG = {"v67": CATBOOST_PARAMS, "v69": CATBOOST_PARAMS, "v70": CATBOOST_PARAMS_B,
                    "v73": CATBOOST_PARAMS, "v75a": CATBOOST_PARAMS,
                    "v86c": CATBOOST_PARAMS,
-                   "v86ca": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v86ca")}}
+                   "v86ca": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v86ca")},
+                   # v97: own train_dir so the full-year fits run next to the hold-out CatBoost fits
+                   "v97c": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v97c")},
+                   "v97ca": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v97ca")}}
 
 # -- NM clocks, WINNING_PLAN L1 and L2 (track B, 2026-09-26) ----------------
 # 99.9 % of 2025 `MVT - AOBT_3` values lie in 27 to 3,600 s; the clip keeps
@@ -166,3 +169,140 @@ XGB_EARLY_STOP = 200
 NM_FORWARD_WINDOWS_S = (900, 1800)     # WINNING_PLAN L8: (t, t + 15 min] and (t, t + 30 min]
 NM_FORWARD_EXTRA_WINDOWS_S = (300, 3600)  # v88 candidate: 5 and 60 min
 PER_AIRPORT_THREADS = 6                 # v89: two per-airport refits run side by side
+PER_AIRPORT_SEEDS = (42, 43, 44)        # WINNING_PLAN second edition B2; seed 42 is the v89 member
+
+# -- ADS-B pushback clock of the scored flight, WINNING_PLAN A1 and A2 (2026-09-29) --
+ADSB_DIR = ROOT / "external" / "adsblol"
+ADSB_URL = ("https://github.com/adsblol/globe_history_{year}/releases/download/"
+            "v{day}-planes-readsb-prod-0/v{day}-planes-readsb-prod-0.tar.{part}")
+ADSB_REFS_URL = "https://github.com/adsblol/globe_history_{year}.git/info/refs?service=git-upload-pack"
+ADSB_PARTS = ("aa", "ab", "ac", "ad")   # a day splits into 2 GB parts; the last one is short
+ADSB_BOX_DEG = (0.08, 0.12)             # lat, lon half-width of the kept box: about 9 km
+ADSB_MAX_ALT_FT = 5000                  # keeps the climb-out that marks the take-off
+ADSB_WORKERS = 12
+ADSB_GROUND = -1                        # altitude code of a ground point in the points table
+ADSB_LOOKBACK_S = 6 * 3600              # 2025 labels above 6 h are 24-h reporting artefacts, not taxi
+ADSB_AFTER_S = 180                      # ADS-B lift-off lags `MVT` by 10 to 60 s on sample tracks
+ADSB_SEGMENT_GAP_S = 300                # a longer silence ends the taxi segment (parked, transponder off)
+ADSB_MOVING_KT = 1.0
+ADSB_STAND_M = 80                       # WINNING_PLAN 4.3: stationary within 80 m of an OSM stand
+ADSB_GATE_STOP_S = 120                  # WINNING_PLAN 4.3: a stop of 120 s or more at a stand
+ADSB_PARKED_S = 900                     # a stop this long is a parked aircraft, not a runway queue
+OPDI_RWY_BEFORE_S = 900                 # OPDI runway entry at most 15 min before `MVT`
+OPDI_RWY_AFTER_S = 120                  # and at most 2 min after it (5 s event grid, clock skew)
+OPDI_PUSH_MAX_S = 3 * 3600              # stand exits more than 3 h before the runway entry belong to another leg
+# Stack on the served blend, v90. Rounds and leaves stay small: the stack reads few rows per airport.
+STACK_V90_PARAMS = dict(objective="regression", learning_rate=0.03, num_leaves=31, min_data_in_leaf=100,
+                        feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=10.0,
+                        verbose=-1, deterministic=True, num_threads=NUM_THREADS, seed=GLOBAL_SEED)
+STACK_V90_ROUNDS = 600
+STACK_V90_RES_CLIP_S = 3600             # a 24-h artefact must not steer the stack
+STACK_V90_MIN_FOLD_DAYS = 5             # cross-fit by month once each month has this many ADS-B days
+ADSB_RETRIES = 8                        # a DNS failure stopped the first July 2026 run
+ADSB_BACKOFF_S = 15
+ADSB_MAX_BAD_TRACE_SHARE = 0.01        # more corrupt traces than this means a broken archive, not one bad member
+ADSB_CONNECT_TIMEOUT_S, ADSB_READ_TIMEOUT_S = 30, 120   # without a read timeout a stalled stream hangs forever
+WATCH_START, WATCH_END = "2025-01-01", "2025-12-31"     # `watch_adsb_fetch.py`: every released 2025 day
+WATCH_INTERVAL_S = 3600                 # a day takes about 6 min, so one hour without a change is a stall
+WATCH_MAX_HOURS = 48
+ADSB_OWN_M = 100                        # a point this close to the assigned stand counts as at the stand
+STACK_V90_MIN_LOAO_ROWS = 300           # airports with fewer covered hold-out rows get no leave-one-out price
+# METAR fetch (MODEL_ANALYSIS MC6): the IEM ASOS archive, the columns and range of the files that trained the models
+METAR_URL = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
+METAR_COLUMNS = ("tmpf", "dwpf", "relh", "drct", "sknt", "p01i", "alti", "mslp", "vsby", "gust",
+                 "skyc1", "skyc2", "skyc3", "skyl1", "skyl2", "skyl3", "wxcodes", "ice_accretion_1hr",
+                 "peak_wind_gust", "peak_wind_drct", "feel")
+METAR_STATIONS = ("EDDF", "EDDM", "EGLL", "EHAM", "LEBL", "LEMD", "LFPG", "LIRF", "LSZH", "LTFM")
+METAR_REPORT_TYPES = (3, 4)             # routine and special reports
+METAR_START, METAR_END = "2025-01-01", "2026-08-01"
+METAR_RETRIES, METAR_BACKOFF_S, METAR_TIMEOUT_S = 5, 10, 300
+# A4: neighbour pushback clocks; the order puts the clocks nearest the label first (v90, v91 notes)
+PUSH_NB_CLOCKS = ("adsb_own_move", "opdi_stand", "adsb_push", "adsb_move", "opdi_first")
+PUSH_NB_BACK_S = (1800, 3600)
+# Artefacts each served version reads (MC3 manifest, `artefact_manifest.py`); raw data and open data excluded
+SERVED_ARTEFACTS = {92: (
+    "models/lgbm_r_all_v85_s*.txt", "models/lgbm_r_all_v85a_s*.txt", "models/lgbm_r_all_v85*.encoders.pkl",
+    "models/catboost_r_all_v73.cbm", "models/catboost_r_all_v75a.cbm",
+    "models/lgbm_pa_v89_*.txt", "models/lgbm_pa_v89a_*.txt",
+    "models/lgbm_r_norm_lirf_v55_s*.txt", "models/lgbm_p_fb_lirf_v56.txt", "models/lirf_regime_v64.isotonic.pkl",
+    "models/lirf_regime.encoders.pkl", "models/lirf_regime_v23.rate_maps.pkl",
+    "models/tempo_p2575_rank.parquet", "models/plan_taxi_res_rank_v57.parquet", "models/plan_nm_taxi_rank_v65.parquet",
+    "models/nm_clocks_*_v73.parquet", "models/nm_forward_rank_v85.parquet", "models/opdi_own_*_v90.parquet",
+    "models/v2/cache/frame_rank.parquet", "models/v3/blend_v89_holdout.parquet",
+    "external/adsblol/adsb_clock_rank.parquet", "external/adsblol/v92/adsb_clock_train.parquet")}
+SERVED_ARTEFACTS[94] = (*SERVED_ARTEFACTS[92][:-1], "external/adsblol/v94/adsb_clock_train.parquet",
+                        "models/v3/holdout_mlp.parquet", "models/v3/rank_mlp.parquet")
+SERVED_ARTEFACTS[95] = tuple(p.replace("/v94/", "/v95/") for p in SERVED_ARTEFACTS[94])
+# v93 stack study (`tune_stack_v93.py`): more 2025 ADS-B days give the stack about 9 times more rows
+STACK_V93_MLP_WEIGHTS = (0.0, 0.1, 0.2)   # MLP hold-out: -190 at 0.1, -213 at 0.2, -69 at 0.3
+STACK_V93_LEAVES = (31, 63)
+STACK_V93_ROUNDS = (600, 1200)
+# ADS-B specialist (`adsb_specialist.py`): trained on the 2025 months outside the stack's hold-out months
+SPEC_PARAMS = dict(objective="regression", learning_rate=0.03, num_leaves=127, min_data_in_leaf=100,
+                   feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambda_l2=10.0,
+                   verbose=-1, deterministic=True, num_threads=NUM_THREADS, seed=GLOBAL_SEED)
+SPEC_MAX_ROUNDS, SPEC_PATIENCE = 5000, 100
+SPEC_STOP_EVERY = 7                     # every seventh day of the year stops the probe fit
+SPEC_TAG = "v96"                        # specialist files priced by `tune_stack_v96.py`
+# v96 stack study (`tune_stack_v96.py`): the 2025 label sits a median 230 s above the stand bound (tug disconnect)
+STACK_V96_BOUND_OFFSETS_S = (60, 120, 180)
+STACK_V96_BOUND_QUANTILES = (0.05, 0.10, 0.20)
+# Unattended release (`auto_release.py`), 2026-09-30
+AUTO_POLL_S = 300                      # check the download process every 5 min
+AUTO_ROUNDS = (400, 600, 900)          # stack rounds priced after the rebuild; 600 stays unless beaten by the bar
+AUTO_BAR_MSE = 150
+AUTO_MAX_STACK_PRICE = -1500           # sanity: the 21-day stack priced -1,575 MSE; more days must not be worse
+AUTO_MLP_WEIGHT = 0.15                 # v94
+AUTO_BIG_MOVE_S = 3000
+AUTO_MAX_BIG_MOVES = 10                # v92 moved 2 rows by more than 3,000 s, v93 and v94 none
+AUTO_MAX_NEW_7200 = 5
+AUTO_RESULT_POLLS, AUTO_RESULT_WAIT_S = 60, 10
+# v98: serve-time parameters of the v97 members, chosen on the hold-out (`release_v98.py`)
+V98_DEFAULT = (0.5, 0.5, 0.5)           # v97: CatBoost share, anchored share, per-airport share
+V98_CAT_SHARES = (0.3, 0.4, 0.5, 0.6)
+V98_ANCHOR_SHARES = (0.3, 0.5, 0.7)
+V98_PER_AIRPORT_SHARES = (0.3, 0.5, 0.7)
+V98_MLP_WEIGHTS = (0.1, 0.15, 0.2)
+V98_STACK_ROUNDS = (400, 600)
+HOLDOUT_ROWS = 344336                   # hold-out scale of every price
+# v92 recipe, read by the parity test (C1)
+V92_PER_AIRPORT_TAGS = ("v89",)         # B2 seeds were not ready at upload; v92 stacks on the v89 base
+V92_STACK_ARGS = ("--sources", "both", "--stand-bound",
+                  "--adsb-train", "external/adsblol/v92/adsb_clock_train.parquet")  # the 7 training days of v92
+# v94: 21 training days (2025-01-01 to 01-15, 07-01 to 07-05, 07-15) and the MLP member at 0.15, the
+# optimum of the quadratic through its hold-out prices (-190, -213, -69 MSE at 0.1, 0.2, 0.3)
+V94_STACK_ARGS = ("--sources", "both", "--stand-bound", "--mlp-weight", "0.15",
+                  "--adsb-train", "external/adsblol/v94/adsb_clock_train.parquet")
+# v95 (`auto_release.py`, 2026-10-01): all 62 January and July 2025 days, 600 rounds
+V95_STACK_ARGS = ("--sources", "both", "--stand-bound", "--mlp-weight", "0.15",
+                  "--adsb-train", "external/adsblol/v95/adsb_clock_train.parquet", "--rounds", "600")
+# Neural-net member (MLP with embeddings), priced for v92 and later on the hold-out.
+MLP_HIDDEN = (1024, 512, 256)
+MLP_DROPOUT = 0.1
+MLP_EMB_MAX = 16
+MLP_Z_CLIP = 8.0
+MLP_Y_SCALE = 1000.0                    # the net learns y in thousands of seconds
+MLP_LR = 2e-3
+MLP_WEIGHT_DECAY = 1e-5
+MLP_BATCH = 2048
+MLP_EPOCHS = 30
+MLP_THREADS = 8
+MLP_Y_CLIP = 80_000                     # the tree members train on y up to 80,000 s (MB3)
+MLP_BLEND_WEIGHTS = (0.1, 0.2, 0.3)
+MLP_SERVE_EPOCH = 18                    # best stop-month epoch of the 30-epoch measure run (194.81 s)
+MLP_SERVE_SEEDS = (42, 43, 44)
+MLP_BLEND_W = 0.2                       # hold-out -213 MSE, clean rows -240, 8 of 9 airports
+# Error budget of v97 and the LIRF gap (`measure_budget_v97.py`, `measure_lirf_gap.py`), WINNING_PLAN third edition
+RANK_ROWS = 344841                      # live scale of every ranking-file MSE
+BUDGET_CLOCKS = ("adsb_own_move", "adsb_own_last", "adsb_push", "adsb_move", "adsb_seg",
+                 "opdi_stand", "opdi_first", "mvt_aobt3")   # candidate clocks in seconds before `MVT`
+BUDGET_NORMAL_CLASSES = ("clean", "fallback", "low")   # projected onto 2026; tail and 24-h are the remainder
+BUDGET_MIN_CELL_ROWS = 1000             # a smaller airport-coverage cell takes the pooled value of its coverage class
+BUDGET_D0_EDGES_M = (0, 150, 300, 600, 1000, 2000, 4000, 1e9)   # first ADS-B point to the assigned stand
+BUDGET_ERR_EDGES_S = (120, 300, 600, 1200, 1800)    # error concentration of the clean rows
+BUDGET_LONG_SEGMENT_S = 21000           # a ground segment this long reaches the 6 h lookback (`ADSB_LOOKBACK_S`)
+LIRF_SD_BANDS_S = (1800, 3600, 7200, 14400, 70000)  # schedule-delay bands of the LIRF gate cost
+ARTEFACT_MIN_CELL_ROWS = 30             # airline-month cells with fewer departures or arrivals are left out
+ARTEFACT_SMOOTH_K = 10                  # arrivals of prior weight toward the airport share, airline-day share
+ARTEFACT_SHARE_EDGES = (0.05, 0.1, 0.2, 0.4)   # buckets of the airline-day arrival artefact share
+LATE_SD_S = 1800                        # a departure this late against the schedule carries most of the gate cost

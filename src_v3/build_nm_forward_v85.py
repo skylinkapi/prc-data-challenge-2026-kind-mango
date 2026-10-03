@@ -65,9 +65,12 @@ def build(dep: pd.DataFrame) -> pd.DataFrame:
 
 
 def main() -> None:
+    """Write the v86 files (forward windows and queues) and the served v85 files (forward windows only)."""
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    build(load_dep(sorted(C.TRAIN_DIR.glob("training_*.parquet")))).to_parquet(OUT_TRAIN)
-    build(load_dep([C.RANK])).to_parquet(OUT_RANK)
+    for paths, out in ((sorted(C.TRAIN_DIR.glob("training_*.parquet")), OUT_TRAIN), ([C.RANK], OUT_RANK)):
+        f = build(load_dep(paths))
+        f.to_parquet(out)
+        f[[c for c in f if not c.startswith("q_")]].to_parquet(str(out).replace("_v86", "_v85"))
 
 
 if __name__ == "__main__":

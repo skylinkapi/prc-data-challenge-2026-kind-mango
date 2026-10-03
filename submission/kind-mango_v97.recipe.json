@@ -1,0 +1,29 @@
+{
+ "holdout_price": {
+  "blend_v97_minus_v89": -5376.937250190184,
+  "blend_and_stack_v97_minus_v89": -982.9127809421308
+ },
+ "stack_args": [
+  "--sources",
+  "both",
+  "--stand-bound",
+  "--mlp-weight",
+  "0.15",
+  "--rounds",
+  "600",
+  "--adsb-train",
+  "external/adsblol/v97/adsb_clock_train.parquet",
+  "--blend-holdout",
+  "models/v3/blend_v97_holdout.parquet"
+ ],
+ "gates": {
+  "rows": true,
+  "float64": true,
+  "no_nan": true,
+  "lirf_unchanged": true,
+  "over_80000": true,
+  "over_7200": true,
+  "big_moves": true
+ },
+ "score": 247.8875
+}

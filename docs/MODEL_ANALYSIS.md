@@ -1,5 +1,25 @@
-# Model analysis: progress to v67 and the audit brief for the sixteenth pass
+# Model analysis: progress to v98 and the sixteenth pass (error budget of v97)
 
+Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
+rank 31; the leaderboard top is **216.57 s** (API, 09:25 UTC). The
+sixteenth pass below the Progress section measures where the v97 error
+sits. `docs/WINNING_PLAN.md` third edition turns it into the plan toward
+210 s (lever ids G, K, N, Q).
+Status on 2026-10-03, morning: live best **247.89 s (v97)**: every base member refit
+with the OPDI and ADS-B pushback columns of 350 days of 2025, the v95 stack
+on top. v98 (serve-time parameters re-chosen on the hold-out) landed 248.25 s.
+Status on 2026-10-01, evening: live best **249.39 s (v95)**, the v94 recipe
+with the stack on all 62 January and July 2025 ADS-B days. v96 (ADS-B
+specialist column) landed 249.92 s and is rejected. Every section 5
+measure now has a final state (Progress section).
+Status on 2026-09-30, evening: live best **250.51 s (v94)**, v93 (stack on
+21 ADS-B days of 2025, 251.44 s) plus the MLP member at 0.15.
+Status on 2026-09-30: live best **253.82 s (v92)**, the v89 blend plus a
+LightGBM stack that reads the pushback time of the scored flight from
+OPDI (v90, 263.17 s) and ADSB.lol (v91, 259.39 s; v92 on all 62 ranking
+days), floored at the last time at the assigned stand (A5). Lever ids A1
+to C1 refer to the second edition of `docs/WINNING_PLAN.md`; L1 to L15
+refer to the first edition (`git show 2a4ec1b:docs/WINNING_PLAN.md`).
 Status on 2026-09-28: live best **264.34 s (v89)**, per-airport LightGBM
 members mixed 50/50 into both LightGBM terms. v85 264.55 s: forward
 windows of the NM clocks (L8) in both LightGBM bases. Before that, **265.27 s (v76)**, NM clocks of the
@@ -11,9 +31,9 @@ v76 is 19,799 MSE (70,370 against 50,571). This file is the
 source of truth for the next model.
 
 - The Progress section below tracks every measure of the fifteenth pass
-  and every WINNING_PLAN lever to v71.
-- The sixteenth pass is not yet written. Its brief is `docs/AUDIT_PROMPT.md`.
-  The auditor writes the result below the Progress section.
+  and every WINNING_PLAN lever to v98.
+- The sixteenth pass (2026-10-03) follows the Progress section. It runs
+  tasks A, C and D of `docs/AUDIT_PROMPT.md` on v97 instead of v67.
 - Sections 0 to 9 and the appendix are the fifteenth pass (audit of v47,
   2026-09-17). They stay as the record of the findings that the measures
   cite.
@@ -27,7 +47,7 @@ Earlier passes stay in git:
 
 ## Progress, 2026-09-23: section 5 measures merged with `WINNING_PLAN.md`
 
-Live best **264.34 s (v89)**. On 2026-09-23 the rank was 57 of 178 at 287.33 s (v57). `docs/WINNING_PLAN.md` ranks
+Live best **247.89 s (v97)**, team rank 31 on 2026-10-03. On 2026-09-23 the rank was 57 of 178 at 287.33 s (v57). `docs/WINNING_PLAN.md` ranks
 levers L1 to L15; this table maps them onto the measures of section 5.
 Live deltas come from the official API (WINNING_PLAN section 3). On
 2026-09-26 the team moved from track A to track B: the base reads
@@ -121,6 +141,23 @@ and the output format.
 | L15 final 12-month refit | not needed | | every served component already fits on 12 months; the target encoders stay at 10 months by the L15 rule |
 | L2 neighbour clocks, backward 30 and 60 min | not built | hold-out +626 MSE against L1; -137 without 7 single-member blow-up rows | closed: under the 150 MSE bar |
 | Discord tail rules: blend heavy-hold rows toward the 2025 curve of y on `mvt_eobt1`; cap normal rows | not uploaded | hold-out +1,639 / -3 MSE | rejected on the 2025 hold-out (`src_v3/measure_tail_rules.py`); see below |
+| A1 OPDI pushback clock of the scored flight, LightGBM stack on `y - base` | v90 | -1.17 | accepted; hold-out -566 MSE, LSZH carries it |
+| A2 ADSB.lol pushback clocks in the same stack, 24 July days | v91 | -3.78 | accepted; hold-out -937 MSE on 7 days of 2025 |
+| A2 on all 62 ranking days, plus A5 stand bound `min(adsb_own_last, adsb_push)` after MS1 | v92 | -5.57 | accepted; bound hold-out -15.9 MSE, 3.3 % of 2025 labels below it; 1,184 rows lifted |
+| A2 stack on 21 ADS-B days of 2025 (Jan-Jul cross-fit) | v93 | -2.38 | accepted; hold-out stack -1,575 against -937 MSE on 7 days |
+| A2 base retrain: every base member with the OPDI and ADS-B columns (4.5, last step) | v97 | -1.50 | accepted; hold-out blend plus stack -983 MSE against v95's recipe |
+| Serve-time parameters re-chosen on the v97 hold-out members | v98 | +0.36 vs v97 | rejected; hold-out about -120 MSE |
+| ADS-B specialist (4.5 step 1) as a stack column, trained on 291 days outside months 1 and 7 | v96 | +0.53 | rejected; hold-out -302 MSE did not transfer (a derived column, like v66, v71, v83) |
+| v96 study on 62 days: 63 leaves, residual clip 7,200 s, A5 offsets, A4 columns | not built | -92, +19, +29 to +523, +37 MSE | closed: under the bar or worse |
+| A2 stack on all 62 January and July 2025 ADS-B days | v95 | -1.12 | accepted; hold-out stack -4,048 MSE; unattended release |
+| MLP member at 0.15 in the base outside LIRF | v94 | -0.93 | accepted; hold-out about -224 MSE, live -470 |
+| A3 floor at the first moving ADS-B point | not built | hold-out +4,875 to +7,954 MSE | closed: the first point often moves before the reported off-block (EHAM 41 %); the stack already reads it |
+| A4 neighbour pushback clocks, backward 30 and 60 min, forward 15 and 30 min | not built | +2 (columns), +62 (neighbour-only rows) | closed |
+| A6 pushback clock in the LIRF term | not built | | reopened 2026-10-03 as third-edition K2: the 0 % came from one day; over 62 days 29 % of 2026 LIRF departures carry an ADS-B segment (F16.7) |
+| B1 Step A analogue outside LIRF | not built | 0 of 412 null-record rows with `sd > 14,400` sit on `sd` | closed on measurement |
+| B2 3 seeds for the per-airport members | not built | hold-out -5.2 MSE in the blend | closed: under the 150 MSE bar; airports split (EGLL +3.1, LTFM -4.2) |
+| MF3 local hour, MD5 stand and runway scoped to the airport, MD6 drift flags, as residual-stack columns on all hold-out rows | not built | Jan-Jul cross-fit: control stack +535, with the columns +723 to +1,267 MSE | closed: no signal the base misses |
+| C1 reproduction path | | | `test_parity.py` (v67, v92), `fetch_metar.py`, v85 forward files, `REPRODUCE.md` for v92 |
 | MC4 pin library versions | | | `requirements.txt` (Python 3.13.3); fixed thread counts in `config.py` |
 | MC6 parity test for the best file | | | `src_v3/test_v67_parity.py`: v67 rebuilds bit for bit against `submission/kind-mango_v67.parity.json`; `REPRODUCE.md` rewritten for v67 (two tiers) |
 | R2 id side file of the H1 frame | | | `tune_lgbm_v36.py build` now writes `v36_tune_cache.ids.parquet` with the 169 historical null rows (`v36_tune_cache.null_ids.json`); a scratch rebuild matched the historical cache, feature list and ids exactly |
@@ -136,12 +173,64 @@ suit the served rows. L14 (blend of both recipes) needed v61 within
 v61 moved 5 rows of one EHAM day by more than 3,000 s: each has a flight
 record, `mvt_eobt1` of 3,905 to 7,443 s and `sd` of 12,543 to 21,014 s.
 
-### Open, in upload order (track A)
+### Final status of every section 5 measure, 2026-10-01
 
-| next | WINNING_PLAN lever | measure | upload |
-|---|---|---|---|
-| 1 | L7 day-level artefact share | MH3 | LIRF and EDDM gate features only; the 2025 check passes there |
-| 2 | L15 final 12-month refit | MB8 | last |
+No section 5 measure is open. Each one is served, rejected live, closed on
+a hold-out or measurement, or set aside with the reason below. The best
+file is v95 (249.39 s).
+
+| measure | state | evidence or reason |
+|---|---|---|
+| MP1 month-blocked folds | partial | `src_v3/folds.py`; the stack cross-fits January against July. The base members keep the (1, 7) hold-out plus the live reading. |
+| MP2 decide on intervals | replaced | a pre-registered 150 MSE hold-out bar per lever; the null spread of near-null arms is 89 MSE (A4) |
+| MP3 same-run control | served | equal-round controls, `deterministic`, fixed threads |
+| MP4 artefacts inside the fold | partial | out-of-fold gate map (v64); out-of-fold encoders rejected live (v60) |
+| MP5 select on served rows | served | MB3 rows; MB5 study on the served objective (v76) |
+| MP6 arrival mirror | built | `src_v3/arrival_mirror.py`, used as a drift meter |
+| MP7 label-free gates | served | `check_submission_2026.py`; `auto_release.py` blocks an upload on a failed gate |
+| MP8 strict coverage monitor | partial | `src_v3/coverage.py` |
+| MP9 read every score | served | |
+| MP10 one module for the classes | set aside | reports compute classes per script; no score effect |
+| MD1 fallback class per airport | measured, no change | residual grid 2025: spikes at 0 to 6 s and at exactly 60 s (about 2.5 times the neighbours) at 7 airports, flat at EDDF, EHAM, LSZH. The LIRF `< 60` label takes the 46 to 59 s band (2.2 % of LIRF rows) and misses the 60 s spike (0.26 %). A relabel changes the LIRF head only; LIRF-head changes did not transfer (v49, v68, v83). |
+| MD2 drifted columns out of the head | rejected | v49, +0.42 s |
+| MD3 NaN for absent context | set aside | needs four base refits (about 10 h); MB5 raised `linear_lambda` to 15.1, which damps the extrapolation that M2 describes |
+| MD4 out-of-fold encoders | rejected | v60, +2.25 s |
+| MD5 airport-scoped stand and runway | closed | residual stack, Jan-Jul cross-fit: worse than the control |
+| MD6 drift flags | closed | same test |
+| MD7 one taxi-in meter | set aside | arrival drift features rejected live (MF4, v59) |
+| MD8 one tempo pool | set aside | six columns, train-serve pool difference only; no base refit for it |
+| MD9 replace `ades_arr_atfm_delay_today` | set aside | 4 to 10 % row coverage |
+| MD10 month-start context | set aside | at most the first 12 h of 1 July and 1 January; 30 June 2026 is not in the ranking file |
+| MB1 anchored offset on `mvt_eobt1` | rejected | v54, +35.86 s; the `AOBT_3` anchor (L5) is served instead |
+| MB2 conditioned linear leaves | partial | MB5 `linear_lambda` 15.1 (was 0.0056); no standardisation |
+| MB3 served rows | served | v51 |
+| MB4 calendar | rejected | v52; MF3 closed too |
+| MB5 retune per class | served | v76 |
+| MB6 one round count per recipe | set aside | rounds from the MB5 study scaled by the row ratio |
+| MB7 model diversity | served | CatBoost (v67), anchored members (v74, v75), per-airport members (v89), MLP (v94); XGBoost and constant leaves closed |
+| MB8 12-month refit | served | every served component fits 12 months |
+| MH1 rebuilt LIRF head | partial | out-of-fold calibration served (v64); MD2 part rejected |
+| MH2 fallback heads outside LIRF | closed | +292 MSE |
+| MH3 day-level artefact share (L7) | reopened 2026-10-03 at the airline level | 2025 check passes at LIRF only (0.43); the stand-and-day form lost live (v83, +0.14 s). Per airline the 2025 correlation is 0.77 across months and 0.58 within an airline (F16.6); third-edition lever G1 |
+| MH4 smoothed tail table | set aside | the expected gain rests on one 2026 row (`sd` 111,654 s); a file that differs from the best on one row learns from the ranking |
+| MH5 normal term reads `R_norm` | served | v63 |
+| MH6 keep the supported rules | served | ITY340 hedge; MB3 |
+| MH7 hold rule | closed | Discord tail rules +1,639 MSE; the anchored members and the A5 stand bound carry the holds |
+| MF1 weather at pushback | rejected | v66 |
+| MF2 runway queue | inside noise | v71 |
+| MF3 local hour | closed | residual stack test |
+| MF4 drift feature | rejected | v59 |
+| MF5 planned taxi | served | v65 |
+| MF6 backward mirrors | replaced | forward windows served by decision (L8, v85) |
+| MS1 to MS4 | served | v48 onward; the A5 bound overrides MS1 on supported rows (v92) |
+| MC1 one package | set aside | versioned scripts stay for the paper trail |
+| MC2 constant sweep | set aside | |
+| MC3 artefacts with hashes | partial | `models/v9x.manifest.json` (SHA-256); pickles remain |
+| MC4 pinned versions | served | `requirements.txt` |
+| MC5 one-to-one merges | partial | `validate="1:1"` in every new merge |
+| MC6 reproduction path | served | `test_parity.py` (v67, v92, v94, v95), `fetch_metar.py`, `REPRODUCE.md` |
+| MC7 reconcile README and RECAP | served | |
+| MX1 organiser ruling | resolved | 2026-09-18 |
 
 A Discord post (2026-09-23) said: make the outliers of the submission look
 like the outliers of the training set. The 2026 prediction tail at EHAM is
@@ -179,9 +268,213 @@ fitted blend weights, the stand sequence and the LIRF arrival link are
 closed (v77 to v84). No measured signal is left above the 150 MSE bar. On
 the 2025 hold-out, 45 % of the remaining error outside LIRF sits in 36
 tail and 24-h rows that no column in the files predicts.
-No WINNING_PLAN lever covers MP1 to MP8, MD1, MD3, MD5 to MD10, MB2,
-MB6, MH4, MF3 or MC1 to MC3, MC5 and MC7. The stop rule of WINNING_PLAN
-11.4 replaces the stop rule of section 6.
+The stop rule of WINNING_PLAN 11.4 replaces the stop rule of section 6.
+The final status table above gives the state of every measure.
+
+## Sixteenth pass, 2026-10-03: where the error of v97 sits
+
+The brief is `docs/AUDIT_PROMPT.md`, written for v67. This pass runs its
+task A (budget), task C (new signal) and task D (floor) on v97. The plan
+that acts on it is `docs/WINNING_PLAN.md`, third edition; its section 2
+holds the full tables.
+
+### 16.0 How this pass was made
+
+1. Two modules rebuild the v97 hold-out prediction and the v41 LIRF head
+   from saved members. They fit no model and run in about 2 min:
+   - `python -m src_v3.measure_budget_v97` writes `models/v3/budget_v97.holdout.json`;
+   - `python -m src_v3.measure_lirf_gap` writes `models/v3/lirf_gap.holdout.json`.
+2. The leaderboard snapshot comes from the public API
+   (`https://datacomp.opensky-network.org/api/competitions/bb3693e1-26bc-4a9e-8619-4fe78b4eab0c/leaderboard`,
+   paged with `cursor=`), read on 2026-10-03 at 09:25 UTC.
+3. The ADSB.lol feed list comes from the git tags of
+   `adsblol/globe_history_2025` and `_2026`; the archive sizes come from
+   the GitHub release API. Both were read on 2026-10-03.
+4. Grades as in 0.2. A number names its JSON key or is arithmetic.
+
+### 16.1 The served stack (v97)
+
+| component | rows | recipe | source |
+|---|---|---|---|
+| LightGBM term | outside LIRF | plain members (3 seeds, MS3) mixed 50/50 with per-airport members; blended 0.5 with the members on `y - clip(MVT - AOBT_3, 0, 7,200)` | `release_v97.py`, `predict_v67.py` |
+| CatBoost term | outside LIRF | plain member blended 0.5 with the anchored member | same |
+| base | outside LIRF | 0.5 LightGBM term + 0.5 CatBoost term; every tree member reads the NM clocks and the OPDI and ADS-B columns of 350 days of 2025; the LightGBM members also read the v85 forward windows | same |
+| MLP member | outside LIRF | 0.15 of the base; NM clocks and v85 forward windows, no OPDI or ADS-B column | `mlp_member.py` |
+| stack | rows with an OPDI or ADS-B clock outside LIRF | LightGBM on `y - base`, trained on the out-of-sample v97 hold-out blend of 62 days, 600 rounds | `stack_pushback_v90.py`, `submission/kind-mango_v97.recipe.json` |
+| post-processing | every row | MS1, MS2, then the A5 stand bound | `predict_v57.write_ms` |
+| LIRF head | LIRF | v55 `R_norm` (5 seeds), v56 gate with the v64 out-of-fold map, Step A reads `R_norm` (v63), ITY340 hedge | `predict_v57.serve_v30` |
+
+### 16.2 Budget (task A)
+
+Hold-out outside LIRF, hold-out scale (`budget_v97.holdout.json`):
+
+| coverage class | rows | MSE | MSE without the stack | RMSE, s |
+|---|---|---|---|---|
+| clock at the assigned stand | 50,300 | 1,495 | 1,536 | 101.2 |
+| ADS-B ground segment only | 98,683 | 8,740 | 8,565 | 174.6 |
+| OPDI only | 2,460 | 185 | 185 | 160.9 |
+| no clock | 166,346 | 54,825 | 54,825 | 336.9 |
+| total | 317,789 | 65,245 | 65,111 | |
+
+Live scale, projected onto the 2026 coverage mix (`projection_2026`;
+grade C) and with the LIRF term from 16.3 F16.5:
+
+| block | live MSE | share of 61,448 |
+|---|---|---|
+| outside LIRF, no clock | 18,332 | 29.8 % |
+| outside LIRF, segment only | 10,419 | 17.0 % |
+| outside LIRF, stand clock | 2,604 | 4.2 % |
+| outside LIRF, OPDI only | 224 | 0.4 % |
+| LIRF | about 20,460 | 33.3 % |
+| tail and 24-h outside LIRF | about 9,410 | 15.3 % |
+
+### 16.3 Findings
+
+**F16.1. The v95 stack adds nothing on the v97 base.** V, medium.
+- Evidence: hold-out MSE 65,245 with the stack, 65,111 without (`mse`,
+  `mse_no_stack`). The stack gains 41 on stand-clock rows and loses 175 on
+  segment rows (`by_coverage`); EGLL segment rows lose 173
+  (`by_airport_coverage`).
+- Mechanism: since v97 the base members read the same clocks, learned on
+  350 days. The stack relearns them from 62 days.
+- Cost: 134 hold-out MSE. Serving the stack on stand-clock rows only gains
+  175 against v97 (third-edition N1).
+
+**F16.2. Rows with a clock at the assigned stand sit at their floor.** V, high.
+- Evidence: on clean stand-clock rows the served RMSE is 93.8 s; the best
+  single clock per row, chosen with the label, gives 92.4 s
+  (`clocks.own_rows_served_rmse`, `clocks.own_rows_best_clock_rmse`).
+  `adsb_own_move` lies within 60 s of the label on 74.4 % of clean rows.
+- Mechanism: the rest is the gap between the reported off-block and any
+  physical event in the track.
+- Cost: none left to take. These rows hold 2,604 live MSE.
+
+**F16.3. Segment-only rows do not show the pushback.** V, high.
+- Evidence: 89.8 % of clean segment-only rows are first seen already
+  moving; 24.4 % have no OSM position for the stand (`segment_rows`). RMSE
+  by distance of the first point from the assigned stand: 107 to 109 s up
+  to 300 m, 139 s at 300 to 600 m, 168 s at 0.6 to 1 km, 194 s at 1 to
+  2 km, 255 s at 2 to 4 km.
+- Mechanism: the track starts after the aircraft left the stand, so no
+  clock marks the off-block. Why the apron is not seen is not measured.
+- Cost: 10,419 live MSE in the block. A route distance to the stand (K3)
+  and more receivers (K1) are the two ways in.
+
+**F16.4. The January and July 2025 hold-out cannot price ADS-B levers at
+EGLL and LEMD.** V, medium.
+- Evidence: stand-clock share 2025 Jan+Jul against 2026: EGLL 0.037 and
+  0.465, LEMD 0.003 and 0.138; LEMD segment share 0.032 and 0.567
+  (`coverage_share`). EGLL had a stand clock on at most 10 % of
+  departures in any 2025 month; LEMD carries segments on 86 to 95 % of
+  departures from September to December 2025 (`by_month_2025`). EDDF lost
+  stand clocks in 2026 (0.154 to 0.061).
+- Mechanism: ADS-B ground coverage at EGLL and LEMD rose after the
+  hold-out months. The cause is not measured.
+- Cost: decision risk. The v97 gain at these airports is unpriced, and a
+  2025 price misses them. Report prices per airport; use a September to
+  December fold at LEMD.
+
+**F16.5. The fallback gate holds half of the LIRF error.** V, high.
+- Evidence: v41 head on the LIRF hold-out rows: 21,714 MSE; with a
+  perfect gate 11,126 (`bands.mse`, `bands.mse_perfect_gate`). The 330
+  null-record rows with a delay of 1 to 4 h hold 6,152 of it, and 672
+  with a perfect gate. `R_norm` RMSE on genuine rows: 323.4 s. 2026 row
+  counts per band match the hold-out within 15 % in every cell above
+  100 rows (`by_band.rows_2026`).
+- Mechanism: the mixture `p sd + (1 - p) R_norm` pays `p (1 - p) (sd -
+  R_norm)^2` per row; delayed rows with an uncertain gate pay most.
+- Cost: ceiling 10,588 hold-out MSE. Live LIRF about 20,460 (21,714
+  minus the live LIRF gains of v55, v56, v63 and v64, 1,224 MSE,
+  arithmetic). The hold-out band table and rate maps are in-sample, so
+  the live LIRF error can be larger.
+
+**F16.6. At LIRF the departure fallback follows the airline's arrival
+artefact.** V, high.
+- Evidence: per flight prefix and month of 2025, the departure fallback
+  rate against the arrival rate of in-block within 60 s of the schedule:
+  correlation 0.77 across 714 cells, 0.58 within an airline over months
+  (`proxy.LIRF`). At the other nine airports: -0.09 to 0.12. Late LIRF
+  departures (`sd` > 1,800 s): fallback rate 3.5 % when the same
+  airline's same-day arrival share is 0.05 or less, 25.0 % at 0.2 to 0.4,
+  88.8 % above 0.4; AUC 0.674 for the share alone, 0.788 for the static
+  airline rate (`lirf_day_buckets`). RYR arrival share: 0.130 in January
+  and July 2025, 0.267 in July 2026 (`lirf_shift_2026`).
+- Mechanism: the correlation is measured, the cause is not. One reading:
+  the same reporting chain sets the block time of both phases. The
+  ranking file keeps arrival block times, so the 2026 share is known. The
+  served gate reads static 2025 rates.
+- Cost: unmeasured. Lever G1 prices it with the v64 protocol.
+
+**F16.7. LIRF has partial ADS-B coverage.** V, high.
+- Evidence: 7,900 of 26,899 LIRF ranking departures carry an ADS-B
+  segment; 56,991 of 160,704 in 2025; 84 % in July 2025, 0 % from January
+  to April 2025. The first point lies within 300 m of the assigned stand
+  on 14.7 % (2026) and 12.2 % (2025) of those rows (`lirf_adsb`,
+  `by_month_2025`).
+- Mechanism: a departure seen moving at `t` before take-off has a taxi of
+  at least `t`. `R_norm` reads no such column.
+- Cost: unmeasured. Lever K2.
+
+**F16.8. ADSB.lol publishes two feeds that the pipeline does not read.**
+V, medium.
+- Evidence: release tags per day in 2025: `prod-0` 353, `staging-0` 352,
+  `mlatonly-0` 199; in 2026: 288, 262 and 293. On 2026-07-15 the
+  `staging-0` archive is 4.11 GB in 3 parts, `mlatonly-0` 0.18 GB.
+- Mechanism: a feed with other receivers adds ground points.
+- Cost: unmeasured. Lever K1 probes one day first.
+
+**F16.9. A second LIRF artefact: block equals `EOBT_1`.** V, low.
+- Evidence: 12.1 % of genuine LIRF departures have the block within 60 s
+  of `EOBT_1`; the other airports 2.8 to 7.0 %. With `mvt_eobt1` of
+  1,800 to 3,600 s the LIRF share is 3.5 % (`eobt_copies`).
+- Cost: small; test after G1 and K2.
+
+**F16.10. The tail outside LIRF is mostly unobservable, and a long ADS-B
+segment is not a hold.** V, medium.
+- Evidence: tail and 24-h rows hold 32,176 of 65,245 hold-out MSE; LFPG
+  rows with no clock hold 30,177 (`by_airport_class`). 450 hold-out rows
+  have a segment above 21,000 s, 447 of them at EGLL; median label
+  1,434 s, 7 above 7,200 s (`segment_rows.long_segments`).
+- Cost: the LFPG rows are a floor. A rule on segment length would lift
+  normal rows.
+
+**F16.11. The leaderboard moved.** V, decision.
+- Evidence: API, 2026-10-03, 09:25 UTC: 216.57 s (strong-crane), 218.85 s,
+  219.07 s; tenth 229.90 s; kind-mango team rank 31.
+- Consequence: 210 s is 6.6 s below the current top. Rank 3 needs 13,457
+  live MSE (arithmetic).
+
+### 16.4 Floor and reachable gap (task D)
+
+1. Floor: the LFPG rows with no clock and the null-record 24-h rows have
+   no observable. On the hold-out they hold 30,177 MSE; live, the tail
+   remainder is about 9,410 (grade D).
+2. Reachable gap: the third-edition levers sum to -1,100 to -15,100 live
+   MSE (245.7 s to 215.3 s). 210 s needs -17,348. It needs a new
+   observable beyond the list, most likely for the LIRF gate or for LTFM
+   and LFPG, which have no clock on 82,576 2026 rows.
+
+### 16.5 Measures for the next model
+
+| finding | third-edition lever | test before upload |
+|---|---|---|
+| F16.1 | N1 stack on stand-clock rows only | measured: -175 hold-out MSE |
+| F16.6 | G1 arrival artefact shares in the gate | `measure_gate_clocks --extra`, bar -150 |
+| F16.7 | K2 ADS-B columns in `R_norm` | equal-round refit control on LIRF rows, bar -150 |
+| F16.8 | K1 extra ADSB.lol feeds | one-day coverage probe, rule in WINNING_PLAN 4.3 |
+| F16.3 | K3 route-distance clock | member -600, then blend -150 |
+| F16.4 | every ADS-B lever | per-airport prices; a September to December fold at LEMD |
+| F16.2 | none: stop clock work on stand-clock rows | |
+| F16.10 | K4 long-hold rule; no rule on segment length | 2025 price, bar -150, row review |
+
+### 16.6 Corrections to earlier statements
+
+| earlier statement | this pass |
+|---|---|
+| WINNING_PLAN second edition 10, A6: "0 % ADS-B ground coverage at LIRF in 2026" | true for 2026-07-15 only; over 62 days 29 % of LIRF departures carry a segment (F16.7) |
+| Final status table, MH3: closed after v83 | reopened at the airline level (F16.6) |
+| WINNING_PLAN second edition 2.1: clean outside LIRF about 35,800 live MSE (v89) | normal classes outside LIRF about 31,578 for v97 (`projection_2026`) |
+| RECAP v95 to v97: the stack carries the clock gain | on the v97 base the stack costs 134 hold-out MSE (F16.1) |
 
 ## 0. Scope, evidence and units
 

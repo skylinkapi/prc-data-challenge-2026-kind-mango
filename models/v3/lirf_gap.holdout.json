@@ -1,0 +1,412 @@
+{
+ "bands": {
+  "rows": 26528,
+  "mse": 21714,
+  "mse_perfect_gate": 11126,
+  "rule_rows": 46,
+  "rule_mse": 4630,
+  "r_norm_rmse_genuine": 323.4,
+  "by_band": [
+   {
+    "band": "(-inf, 1800.0]",
+    "record": false,
+    "rows": 14,
+    "fallback_rate": 0.143,
+    "gate_mean": 0.266,
+    "mse": 270.269,
+    "mse_perfect_gate": 179.373,
+    "rows_2026": 28
+   },
+   {
+    "band": "(-inf, 1800.0]",
+    "record": true,
+    "rows": 14897,
+    "fallback_rate": 0.275,
+    "gate_mean": 0.289,
+    "mse": 1693.643,
+    "mse_perfect_gate": 1258.165,
+    "rows_2026": 15349
+   },
+   {
+    "band": "(14400.0, 70000.0]",
+    "record": false,
+    "rows": 42,
+    "fallback_rate": 0.857,
+    "gate_mean": 0.683,
+    "mse": 4628.025,
+    "mse_perfect_gate": 4628.025,
+    "rows_2026": 41
+   },
+   {
+    "band": "(14400.0, 70000.0]",
+    "record": true,
+    "rows": 111,
+    "fallback_rate": 0.0,
+    "gate_mean": 0.008,
+    "mse": 206.603,
+    "mse_perfect_gate": 155.914,
+    "rows_2026": 94
+   },
+   {
+    "band": "(1800.0, 3600.0]",
+    "record": false,
+    "rows": 8,
+    "fallback_rate": 0.5,
+    "gate_mean": 0.513,
+    "mse": 155.132,
+    "mse_perfect_gate": 160.291,
+    "rows_2026": 7
+   },
+   {
+    "band": "(1800.0, 3600.0]",
+    "record": true,
+    "rows": 7443,
+    "fallback_rate": 0.085,
+    "gate_mean": 0.095,
+    "mse": 3303.618,
+    "mse_perfect_gate": 1800.375,
+    "rows_2026": 7330
+   },
+   {
+    "band": "(3600.0, 7200.0]",
+    "record": false,
+    "rows": 194,
+    "fallback_rate": 0.227,
+    "gate_mean": 0.34,
+    "mse": 1736.831,
+    "mse_perfect_gate": 362.253,
+    "rows_2026": 167
+   },
+   {
+    "band": "(3600.0, 7200.0]",
+    "record": true,
+    "rows": 3047,
+    "fallback_rate": 0.065,
+    "gate_mean": 0.068,
+    "mse": 4653.065,
+    "mse_perfect_gate": 1761.93,
+    "rows_2026": 3077
+   },
+   {
+    "band": "(70000.0, inf]",
+    "record": false,
+    "rows": 3,
+    "fallback_rate": 0.0,
+    "gate_mean": 0.645,
+    "mse": 1.508,
+    "mse_perfect_gate": 1.508,
+    "rows_2026": 2
+   },
+   {
+    "band": "(70000.0, inf]",
+    "record": true,
+    "rows": 1,
+    "fallback_rate": 1.0,
+    "gate_mean": 0.515,
+    "mse": 0.605,
+    "mse_perfect_gate": 0.605,
+    "rows_2026": 1
+   },
+   {
+    "band": "(7200.0, 14400.0]",
+    "record": false,
+    "rows": 136,
+    "fallback_rate": 0.353,
+    "gate_mean": 0.494,
+    "mse": 4415.438,
+    "mse_perfect_gate": 310.02,
+    "rows_2026": 138
+   },
+   {
+    "band": "(7200.0, 14400.0]",
+    "record": true,
+    "rows": 632,
+    "fallback_rate": 0.017,
+    "gate_mean": 0.017,
+    "mse": 649.414,
+    "mse_perfect_gate": 507.239,
+    "rows_2026": 665
+   }
+  ]
+ },
+ "proxy": {
+  "EDDF": {
+   "pre": {
+    "cells": 1011,
+    "corr_across": 0.12,
+    "corr_within_airline": 0.05
+   },
+   "op": {
+    "cells": 786,
+    "corr_across": 0.09,
+    "corr_within_airline": 0.03
+   }
+  },
+  "EDDM": {
+   "pre": {
+    "cells": 632,
+    "corr_across": 0.04,
+    "corr_within_airline": -0.04
+   },
+   "op": {
+    "cells": 621,
+    "corr_across": 0.09,
+    "corr_within_airline": 0.0
+   }
+  },
+  "EGLL": {
+   "pre": {
+    "cells": 737,
+    "corr_across": 0.0,
+    "corr_within_airline": 0.05
+   },
+   "op": {
+    "cells": 715,
+    "corr_across": 0.02,
+    "corr_within_airline": 0.08
+   }
+  },
+  "EHAM": {
+   "pre": {
+    "cells": 918,
+    "corr_across": -0.02,
+    "corr_within_airline": 0.0
+   },
+   "op": {
+    "cells": 751,
+    "corr_across": -0.0,
+    "corr_within_airline": -0.02
+   }
+  },
+  "LEBL": {
+   "pre": {
+    "cells": 656,
+    "corr_across": 0.01,
+    "corr_within_airline": -0.01
+   },
+   "op": {
+    "cells": 654,
+    "corr_across": 0.0,
+    "corr_within_airline": -0.02
+   }
+  },
+  "LEMD": {
+   "pre": {
+    "cells": 677,
+    "corr_across": -0.03,
+    "corr_within_airline": -0.09
+   },
+   "op": {
+    "cells": 697,
+    "corr_across": -0.0,
+    "corr_within_airline": -0.08
+   }
+  },
+  "LFPG": {
+   "pre": {
+    "cells": 996,
+    "corr_across": -0.02,
+    "corr_within_airline": 0.02
+   },
+   "op": {
+    "cells": 949,
+    "corr_across": -0.02,
+    "corr_within_airline": 0.03
+   }
+  },
+  "LIRF": {
+   "pre": {
+    "cells": 714,
+    "corr_across": 0.77,
+    "corr_within_airline": 0.58
+   },
+   "op": {
+    "cells": 718,
+    "corr_across": 0.72,
+    "corr_within_airline": 0.57
+   }
+  },
+  "LSZH": {
+   "pre": {
+    "cells": 587,
+    "corr_across": 0.02,
+    "corr_within_airline": 0.04
+   },
+   "op": {
+    "cells": 568,
+    "corr_across": 0.03,
+    "corr_within_airline": 0.07
+   }
+  },
+  "LTFM": {
+   "pre": {
+    "cells": 747,
+    "corr_across": 0.09,
+    "corr_within_airline": 0.07
+   },
+   "op": {
+    "cells": 692,
+    "corr_across": 0.1,
+    "corr_within_airline": 0.1
+   }
+  }
+ },
+ "lirf_day_buckets": {
+  "rows": 60773,
+  "fallback_rate": 0.089,
+  "auc_static_airline_rate": 0.788,
+  "auc_airline_day_share": 0.674,
+  "by_bucket": {
+   "(-0.01, 0.05]": {
+    "rows": 6100,
+    "fallback_rate": 0.035
+   },
+   "(0.05, 0.1]": {
+    "rows": 25415,
+    "fallback_rate": 0.052
+   },
+   "(0.1, 0.2]": {
+    "rows": 23987,
+    "fallback_rate": 0.105
+   },
+   "(0.2, 0.4]": {
+    "rows": 5182,
+    "fallback_rate": 0.25
+   },
+   "(0.4, 1.0]": {
+    "rows": 89,
+    "fallback_rate": 0.888
+   }
+  }
+ },
+ "lirf_shift_2026": {
+  "arr_by_month_2025": {
+   "1": 0.11,
+   "7": 0.105
+  },
+  "arr_by_month_2026": {
+   "1": 0.108,
+   "7": 0.123
+  },
+  "by_prefix": {
+   "ITY": {
+    "departures_2026": 7481,
+    "dep_fallback_2025": 0.159,
+    "arr_2025_jan_jul": 0.059,
+    "arr_2026_jan": 0.061,
+    "arr_2026_jul": 0.043
+   },
+   "RYR": {
+    "departures_2026": 3188,
+    "dep_fallback_2025": 0.191,
+    "arr_2025_jan_jul": 0.13,
+    "arr_2026_jan": 0.136,
+    "arr_2026_jul": 0.267
+   },
+   "WMT": {
+    "departures_2026": 2711,
+    "dep_fallback_2025": 0.26,
+    "arr_2025_jan_jul": 0.204,
+    "arr_2026_jan": 0.185,
+    "arr_2026_jul": 0.186
+   },
+   "AEZ": {
+    "departures_2026": 1573,
+    "dep_fallback_2025": 0.477,
+    "arr_2025_jan_jul": 0.143,
+    "arr_2026_jan": 0.194,
+    "arr_2026_jul": 0.132
+   },
+   "EJU": {
+    "departures_2026": 825,
+    "dep_fallback_2025": 0.07,
+    "arr_2025_jan_jul": 0.051,
+    "arr_2026_jan": 0.054,
+    "arr_2026_jul": 0.029
+   },
+   "WZZ": {
+    "departures_2026": 509,
+    "dep_fallback_2025": 0.227,
+    "arr_2025_jan_jul": 0.058,
+    "arr_2026_jan": 0.049,
+    "arr_2026_jul": 0.084
+   },
+   "VLG": {
+    "departures_2026": 504,
+    "dep_fallback_2025": 0.138,
+    "arr_2025_jan_jul": 0.134,
+    "arr_2026_jan": 0.113,
+    "arr_2026_jul": 0.051
+   },
+   "DLH": {
+    "departures_2026": 469,
+    "dep_fallback_2025": 0.114,
+    "arr_2025_jan_jul": 0.087,
+    "arr_2026_jan": 0.079,
+    "arr_2026_jul": 0.053
+   },
+   "BAW": {
+    "departures_2026": 426,
+    "dep_fallback_2025": 0.073,
+    "arr_2025_jan_jul": 0.05,
+    "arr_2026_jan": 0.032,
+    "arr_2026_jul": 0.058
+   },
+   "IBE": {
+    "departures_2026": 382,
+    "dep_fallback_2025": 0.121,
+    "arr_2025_jan_jul": 0.084,
+    "arr_2026_jan": 0.065,
+    "arr_2026_jul": 0.057
+   }
+  }
+ },
+ "eobt_copies": {
+  "share_by_airport": {
+   "EDDF": 0.043,
+   "EDDM": 0.063,
+   "EGLL": 0.07,
+   "EHAM": 0.04,
+   "LEBL": 0.064,
+   "LEMD": 0.061,
+   "LFPG": 0.051,
+   "LIRF": 0.121,
+   "LSZH": 0.028,
+   "LTFM": 0.041
+  },
+  "lirf_by_mvt_eobt1": {
+   "(-inf, 900.0]": {
+    "rows": 26289,
+    "share": 0.219
+   },
+   "(1800.0, 3600.0]": {
+    "rows": 21439,
+    "share": 0.035
+   },
+   "(3600.0, 7200.0]": {
+    "rows": 785,
+    "share": 0.034
+   },
+   "(7200.0, inf]": {
+    "rows": 7,
+    "share": 0.286
+   },
+   "(900.0, 1800.0]": {
+    "rows": 78112,
+    "share": 0.113
+   }
+  }
+ },
+ "lirf_adsb": {
+  "2025": {
+   "departures": 160704,
+   "with_segment": 56991,
+   "first_point_within_300m_of_stand": 0.122
+  },
+  "2026": {
+   "departures": 26899,
+   "with_segment": 7900,
+   "first_point_within_300m_of_stand": 0.147
+  }
+ }
+}

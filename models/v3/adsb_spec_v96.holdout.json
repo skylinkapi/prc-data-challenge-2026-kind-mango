@@ -1,0 +1,7 @@
+{
+ "train_rows": 339400,
+ "train_days": 291,
+ "rounds": 3546,
+ "holdout_rows": 151465,
+ "holdout_rmse": 180.1751170365412
+}

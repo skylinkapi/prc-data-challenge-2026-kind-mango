@@ -1,0 +1,1380 @@
+{
+ "rows": 317789,
+ "mse": 65245,
+ "mse_no_stack": 65111,
+ "by_class": [
+  {
+   "cls": "24h",
+   "rows": 1,
+   "mse": 20245.3,
+   "mse_no_stack": 20245.3,
+   "rmse": 83493.7
+  },
+  {
+   "cls": "clean",
+   "rows": 292319,
+   "mse": 30529.7,
+   "mse_no_stack": 30407.5,
+   "rmse": 189.6
+  },
+  {
+   "cls": "fallback",
+   "rows": 25339,
+   "mse": 2450.2,
+   "mse_no_stack": 2447.1,
+   "rmse": 182.5
+  },
+  {
+   "cls": "low",
+   "rows": 96,
+   "mse": 89.1,
+   "mse_no_stack": 89.7,
+   "rmse": 565.4
+  },
+  {
+   "cls": "tail",
+   "rows": 34,
+   "mse": 11930.5,
+   "mse_no_stack": 11921.2,
+   "rmse": 10992.1
+  }
+ ],
+ "by_coverage": [
+  {
+   "cov": "adsb_own",
+   "rows": 50300,
+   "mse": 1495.0,
+   "mse_no_stack": 1536.2,
+   "rmse": 101.2
+  },
+  {
+   "cov": "adsb_seg",
+   "rows": 98683,
+   "mse": 8740.0,
+   "mse_no_stack": 8565.2,
+   "rmse": 174.6
+  },
+  {
+   "cov": "none",
+   "rows": 166346,
+   "mse": 54824.8,
+   "mse_no_stack": 54824.8,
+   "rmse": 336.9
+  },
+  {
+   "cov": "opdi_only",
+   "rows": 2460,
+   "mse": 185.0,
+   "mse_no_stack": 184.8,
+   "rmse": 160.9
+  }
+ ],
+ "by_airport_class": [
+  {
+   "apt": "EDDF",
+   "cls": "clean",
+   "rows": 34404,
+   "mse": 2231.9,
+   "mse_no_stack": 2272.5,
+   "rmse": 149.5
+  },
+  {
+   "apt": "EDDF",
+   "cls": "fallback",
+   "rows": 2415,
+   "mse": 91.7,
+   "mse_no_stack": 91.4,
+   "rmse": 114.4
+  },
+  {
+   "apt": "EDDM",
+   "cls": "clean",
+   "rows": 24569,
+   "mse": 1499.8,
+   "mse_no_stack": 1496.0,
+   "rmse": 145.0
+  },
+  {
+   "apt": "EDDM",
+   "cls": "fallback",
+   "rows": 2522,
+   "mse": 68.9,
+   "mse_no_stack": 74.4,
+   "rmse": 97.0
+  },
+  {
+   "apt": "EGLL",
+   "cls": "clean",
+   "rows": 36737,
+   "mse": 5899.7,
+   "mse_no_stack": 5752.7,
+   "rmse": 235.2
+  },
+  {
+   "apt": "EGLL",
+   "cls": "fallback",
+   "rows": 3450,
+   "mse": 332.2,
+   "mse_no_stack": 320.4,
+   "rmse": 182.1
+  },
+  {
+   "apt": "EGLL",
+   "cls": "low",
+   "rows": 3,
+   "mse": 10.4,
+   "mse_no_stack": 10.4,
+   "rmse": 1092.7
+  },
+  {
+   "apt": "EGLL",
+   "cls": "tail",
+   "rows": 19,
+   "mse": 997.0,
+   "mse_no_stack": 984.6,
+   "rmse": 4250.7
+  },
+  {
+   "apt": "EHAM",
+   "cls": "clean",
+   "rows": 38569,
+   "mse": 1828.0,
+   "mse_no_stack": 1850.9,
+   "rmse": 127.8
+  },
+  {
+   "apt": "EHAM",
+   "cls": "fallback",
+   "rows": 2370,
+   "mse": 48.7,
+   "mse_no_stack": 50.5,
+   "rmse": 84.1
+  },
+  {
+   "apt": "EHAM",
+   "cls": "low",
+   "rows": 7,
+   "mse": 3.8,
+   "mse_no_stack": 3.7,
+   "rmse": 430.2
+  },
+  {
+   "apt": "EHAM",
+   "cls": "tail",
+   "rows": 2,
+   "mse": 471.6,
+   "mse_no_stack": 471.6,
+   "rmse": 9010.3
+  },
+  {
+   "apt": "LEBL",
+   "cls": "clean",
+   "rows": 26020,
+   "mse": 2201.3,
+   "mse_no_stack": 2174.0,
+   "rmse": 170.7
+  },
+  {
+   "apt": "LEBL",
+   "cls": "fallback",
+   "rows": 2962,
+   "mse": 937.7,
+   "mse_no_stack": 934.3,
+   "rmse": 330.2
+  },
+  {
+   "apt": "LEBL",
+   "cls": "low",
+   "rows": 3,
+   "mse": 8.3,
+   "mse_no_stack": 8.1,
+   "rmse": 973.9
+  },
+  {
+   "apt": "LEMD",
+   "cls": "clean",
+   "rows": 32489,
+   "mse": 2760.6,
+   "mse_no_stack": 2758.5,
+   "rmse": 171.0
+  },
+  {
+   "apt": "LEMD",
+   "cls": "fallback",
+   "rows": 2839,
+   "mse": 191.0,
+   "mse_no_stack": 191.1,
+   "rmse": 152.2
+  },
+  {
+   "apt": "LFPG",
+   "cls": "24h",
+   "rows": 1,
+   "mse": 20245.3,
+   "mse_no_stack": 20245.3,
+   "rmse": 83493.7
+  },
+  {
+   "apt": "LFPG",
+   "cls": "clean",
+   "rows": 36794,
+   "mse": 6157.4,
+   "mse_no_stack": 6143.9,
+   "rmse": 240.1
+  },
+  {
+   "apt": "LFPG",
+   "cls": "fallback",
+   "rows": 2773,
+   "mse": 284.7,
+   "mse_no_stack": 284.3,
+   "rmse": 188.0
+  },
+  {
+   "apt": "LFPG",
+   "cls": "low",
+   "rows": 9,
+   "mse": 33.5,
+   "mse_no_stack": 33.5,
+   "rmse": 1131.4
+  },
+  {
+   "apt": "LFPG",
+   "cls": "tail",
+   "rows": 8,
+   "mse": 9931.8,
+   "mse_no_stack": 9931.8,
+   "rmse": 20675.6
+  },
+  {
+   "apt": "LSZH",
+   "cls": "clean",
+   "rows": 20993,
+   "mse": 922.9,
+   "mse_no_stack": 930.9,
+   "rmse": 123.0
+  },
+  {
+   "apt": "LSZH",
+   "cls": "fallback",
+   "rows": 1216,
+   "mse": 59.6,
+   "mse_no_stack": 65.0,
+   "rmse": 129.9
+  },
+  {
+   "apt": "LSZH",
+   "cls": "low",
+   "rows": 74,
+   "mse": 33.3,
+   "mse_no_stack": 34.0,
+   "rmse": 393.3
+  },
+  {
+   "apt": "LSZH",
+   "cls": "tail",
+   "rows": 4,
+   "mse": 419.2,
+   "mse_no_stack": 422.2,
+   "rmse": 6007.0
+  },
+  {
+   "apt": "LTFM",
+   "cls": "clean",
+   "rows": 41744,
+   "mse": 7028.0,
+   "mse_no_stack": 7028.0,
+   "rmse": 240.8
+  },
+  {
+   "apt": "LTFM",
+   "cls": "fallback",
+   "rows": 4792,
+   "mse": 435.7,
+   "mse_no_stack": 435.7,
+   "rmse": 176.9
+  },
+  {
+   "apt": "LTFM",
+   "cls": "tail",
+   "rows": 1,
+   "mse": 111.0,
+   "mse_no_stack": 111.0,
+   "rmse": 6183.6
+  }
+ ],
+ "by_airport_coverage": [
+  {
+   "apt": "EDDF",
+   "cov": "adsb_own",
+   "rows": 5681,
+   "mse": 88.0,
+   "mse_no_stack": 100.8,
+   "rmse": 73.0
+  },
+  {
+   "apt": "EDDF",
+   "cov": "adsb_seg",
+   "rows": 26336,
+   "mse": 1342.7,
+   "mse_no_stack": 1370.4,
+   "rmse": 132.5
+  },
+  {
+   "apt": "EDDF",
+   "cov": "none",
+   "rows": 4790,
+   "mse": 891.5,
+   "mse_no_stack": 891.5,
+   "rmse": 253.2
+  },
+  {
+   "apt": "EDDF",
+   "cov": "opdi_only",
+   "rows": 12,
+   "mse": 1.4,
+   "mse_no_stack": 1.2,
+   "rmse": 198.4
+  },
+  {
+   "apt": "EDDM",
+   "cov": "adsb_own",
+   "rows": 6875,
+   "mse": 86.8,
+   "mse_no_stack": 102.7,
+   "rmse": 65.9
+  },
+  {
+   "apt": "EDDM",
+   "cov": "adsb_seg",
+   "rows": 9734,
+   "mse": 511.2,
+   "mse_no_stack": 497.2,
+   "rmse": 134.5
+  },
+  {
+   "apt": "EDDM",
+   "cov": "none",
+   "rows": 10377,
+   "mse": 966.7,
+   "mse_no_stack": 966.7,
+   "rmse": 179.1
+  },
+  {
+   "apt": "EDDM",
+   "cov": "opdi_only",
+   "rows": 105,
+   "mse": 4.0,
+   "mse_no_stack": 3.8,
+   "rmse": 115.1
+  },
+  {
+   "apt": "EGLL",
+   "cov": "adsb_own",
+   "rows": 1475,
+   "mse": 69.6,
+   "mse_no_stack": 71.5,
+   "rmse": 127.5
+  },
+  {
+   "apt": "EGLL",
+   "cov": "adsb_seg",
+   "rows": 11484,
+   "mse": 2986.8,
+   "mse_no_stack": 2813.7,
+   "rmse": 299.3
+  },
+  {
+   "apt": "EGLL",
+   "cov": "none",
+   "rows": 27249,
+   "mse": 4182.8,
+   "mse_no_stack": 4182.8,
+   "rmse": 229.9
+  },
+  {
+   "apt": "EGLL",
+   "cov": "opdi_only",
+   "rows": 1,
+   "mse": 0.1,
+   "mse_no_stack": 0.1,
+   "rmse": 201.2
+  },
+  {
+   "apt": "EHAM",
+   "cov": "adsb_own",
+   "rows": 20538,
+   "mse": 488.3,
+   "mse_no_stack": 513.5,
+   "rmse": 90.5
+  },
+  {
+   "apt": "EHAM",
+   "cov": "adsb_seg",
+   "rows": 19004,
+   "mse": 1019.6,
+   "mse_no_stack": 1019.1,
+   "rmse": 135.9
+  },
+  {
+   "apt": "EHAM",
+   "cov": "none",
+   "rows": 1404,
+   "mse": 844.0,
+   "mse_no_stack": 844.0,
+   "rmse": 455.0
+  },
+  {
+   "apt": "EHAM",
+   "cov": "opdi_only",
+   "rows": 2,
+   "mse": 0.2,
+   "mse_no_stack": 0.1,
+   "rmse": 168.5
+  },
+  {
+   "apt": "LEBL",
+   "cov": "adsb_own",
+   "rows": 8194,
+   "mse": 621.4,
+   "mse_no_stack": 615.4,
+   "rmse": 161.6
+  },
+  {
+   "apt": "LEBL",
+   "cov": "adsb_seg",
+   "rows": 17746,
+   "mse": 1972.6,
+   "mse_no_stack": 1948.0,
+   "rmse": 195.6
+  },
+  {
+   "apt": "LEBL",
+   "cov": "none",
+   "rows": 3026,
+   "mse": 549.9,
+   "mse_no_stack": 549.9,
+   "rmse": 250.1
+  },
+  {
+   "apt": "LEBL",
+   "cov": "opdi_only",
+   "rows": 19,
+   "mse": 3.4,
+   "mse_no_stack": 3.2,
+   "rmse": 248.7
+  },
+  {
+   "apt": "LEMD",
+   "cov": "adsb_own",
+   "rows": 118,
+   "mse": 3.9,
+   "mse_no_stack": 4.6,
+   "rmse": 106.6
+  },
+  {
+   "apt": "LEMD",
+   "cov": "adsb_seg",
+   "rows": 1124,
+   "mse": 86.5,
+   "mse_no_stack": 83.9,
+   "rmse": 162.8
+  },
+  {
+   "apt": "LEMD",
+   "cov": "none",
+   "rows": 34086,
+   "mse": 2861.2,
+   "mse_no_stack": 2861.2,
+   "rmse": 170.0
+  },
+  {
+   "apt": "LFPG",
+   "cov": "adsb_own",
+   "rows": 4,
+   "mse": 0.0,
+   "mse_no_stack": 0.1,
+   "rmse": 48.8
+  },
+  {
+   "apt": "LFPG",
+   "cov": "adsb_seg",
+   "rows": 1819,
+   "mse": 334.8,
+   "mse_no_stack": 321.5,
+   "rmse": 251.7
+  },
+  {
+   "apt": "LFPG",
+   "cov": "none",
+   "rows": 37724,
+   "mse": 36305.8,
+   "mse_no_stack": 36305.8,
+   "rmse": 575.7
+  },
+  {
+   "apt": "LFPG",
+   "cov": "opdi_only",
+   "rows": 38,
+   "mse": 12.1,
+   "mse_no_stack": 11.3,
+   "rmse": 330.6
+  },
+  {
+   "apt": "LSZH",
+   "cov": "adsb_own",
+   "rows": 7415,
+   "mse": 136.9,
+   "mse_no_stack": 127.6,
+   "rmse": 79.7
+  },
+  {
+   "apt": "LSZH",
+   "cov": "adsb_seg",
+   "rows": 11436,
+   "mse": 486.0,
+   "mse_no_stack": 511.4,
+   "rmse": 121.0
+  },
+  {
+   "apt": "LSZH",
+   "cov": "none",
+   "rows": 1153,
+   "mse": 648.2,
+   "mse_no_stack": 648.2,
+   "rmse": 440.0
+  },
+  {
+   "apt": "LSZH",
+   "cov": "opdi_only",
+   "rows": 2283,
+   "mse": 163.9,
+   "mse_no_stack": 165.0,
+   "rmse": 157.2
+  },
+  {
+   "apt": "LTFM",
+   "cov": "none",
+   "rows": 46537,
+   "mse": 7574.8,
+   "mse_no_stack": 7574.8,
+   "rmse": 236.7
+  }
+ ],
+ "clean_concentration": {
+  "120": {
+   "rows": 0.316,
+   "mse": 0.94
+  },
+  "300": {
+   "rows": 0.0747,
+   "mse": 0.69
+  },
+  "600": {
+   "rows": 0.0134,
+   "mse": 0.411
+  },
+  "1200": {
+   "rows": 0.0021,
+   "mse": 0.209
+  },
+  "1800": {
+   "rows": 0.0007,
+   "mse": 0.124
+  }
+ },
+ "clocks": {
+  "adsb_own_move": {
+   "rows": 45846,
+   "within_60s": 0.744,
+   "served_rmse": 93.1
+  },
+  "adsb_own_last": {
+   "rows": 46535,
+   "within_60s": 0.423,
+   "served_rmse": 93.8
+  },
+  "adsb_push": {
+   "rows": 26110,
+   "within_60s": 0.32,
+   "served_rmse": 107.6
+  },
+  "adsb_move": {
+   "rows": 136959,
+   "within_60s": 0.35,
+   "served_rmse": 135.1
+  },
+  "adsb_seg": {
+   "rows": 137776,
+   "within_60s": 0.287,
+   "served_rmse": 142.6
+  },
+  "opdi_stand": {
+   "rows": 11569,
+   "within_60s": 0.562,
+   "served_rmse": 97.1
+  },
+  "opdi_first": {
+   "rows": 16650,
+   "within_60s": 0.44,
+   "served_rmse": 101.5
+  },
+  "mvt_aobt3": {
+   "rows": 287596,
+   "within_60s": 0.231,
+   "served_rmse": 182.3
+  },
+  "own_rows_best_clock_rmse": 92.4,
+  "own_rows_served_rmse": 93.8
+ },
+ "segment_rows": {
+  "rows": 91241,
+  "first_point_moving": 0.898,
+  "assigned_stand_unknown": 0.244,
+  "rmse_by_first_point_distance_m": {
+   "(0.0, 150.0]": {
+    "rows": 5796,
+    "rmse": 109.4
+   },
+   "(150.0, 300.0]": {
+    "rows": 11812,
+    "rmse": 106.8
+   },
+   "(300.0, 600.0]": {
+    "rows": 16418,
+    "rmse": 139.3
+   },
+   "(600.0, 1000.0]": {
+    "rows": 12109,
+    "rmse": 167.7
+   },
+   "(1000.0, 2000.0]": {
+    "rows": 14249,
+    "rmse": 193.7
+   },
+   "(2000.0, 4000.0]": {
+    "rows": 8058,
+    "rmse": 255.4
+   },
+   "(4000.0, 1000000000.0]": {
+    "rows": 495,
+    "rmse": 298.6
+   }
+  },
+  "long_segments": {
+   "rows": 450,
+   "by_airport": {
+    "EGLL": 447,
+    "LFPG": 1,
+    "EHAM": 1,
+    "LSZH": 1
+   },
+   "label_median": 1433.5,
+   "label_above_7200": 7
+  }
+ },
+ "coverage_share": {
+  "holdout_2025": {
+   "EDDF": {
+    "adsb_own": 0.154,
+    "adsb_seg": 0.715,
+    "none": 0.13,
+    "opdi_only": 0.0
+   },
+   "EDDM": {
+    "adsb_own": 0.254,
+    "adsb_seg": 0.359,
+    "none": 0.383,
+    "opdi_only": 0.004
+   },
+   "EGLL": {
+    "adsb_own": 0.037,
+    "adsb_seg": 0.286,
+    "none": 0.678,
+    "opdi_only": 0.0
+   },
+   "EHAM": {
+    "adsb_own": 0.502,
+    "adsb_seg": 0.464,
+    "none": 0.034,
+    "opdi_only": 0.0
+   },
+   "LEBL": {
+    "adsb_own": 0.283,
+    "adsb_seg": 0.612,
+    "none": 0.104,
+    "opdi_only": 0.001
+   },
+   "LEMD": {
+    "adsb_own": 0.003,
+    "adsb_seg": 0.032,
+    "none": 0.965,
+    "opdi_only": 0.0
+   },
+   "LFPG": {
+    "adsb_own": 0.0,
+    "adsb_seg": 0.046,
+    "none": 0.953,
+    "opdi_only": 0.001
+   },
+   "LSZH": {
+    "adsb_own": 0.333,
+    "adsb_seg": 0.513,
+    "none": 0.052,
+    "opdi_only": 0.102
+   },
+   "LTFM": {
+    "adsb_own": 0.0,
+    "adsb_seg": 0.0,
+    "none": 1.0,
+    "opdi_only": 0.0
+   }
+  },
+  "rank_2026": {
+   "EDDF": {
+    "adsb_own": 0.061,
+    "adsb_seg": 0.619,
+    "none": 0.272,
+    "opdi_only": 0.048
+   },
+   "EDDM": {
+    "adsb_own": 0.396,
+    "adsb_seg": 0.567,
+    "none": 0.038,
+    "opdi_only": 0.0
+   },
+   "EGLL": {
+    "adsb_own": 0.465,
+    "adsb_seg": 0.391,
+    "none": 0.144,
+    "opdi_only": 0.0
+   },
+   "EHAM": {
+    "adsb_own": 0.519,
+    "adsb_seg": 0.432,
+    "none": 0.049,
+    "opdi_only": 0.0
+   },
+   "LEBL": {
+    "adsb_own": 0.346,
+    "adsb_seg": 0.568,
+    "none": 0.086,
+    "opdi_only": 0.0
+   },
+   "LEMD": {
+    "adsb_own": 0.138,
+    "adsb_seg": 0.567,
+    "none": 0.294,
+    "opdi_only": 0.0
+   },
+   "LFPG": {
+    "adsb_own": 0.001,
+    "adsb_seg": 0.121,
+    "none": 0.878,
+    "opdi_only": 0.0
+   },
+   "LSZH": {
+    "adsb_own": 0.364,
+    "adsb_seg": 0.521,
+    "none": 0.06,
+    "opdi_only": 0.055
+   },
+   "LTFM": {
+    "adsb_own": 0.0,
+    "adsb_seg": 0.0,
+    "none": 1.0,
+    "opdi_only": 0.0
+   }
+  },
+  "rows_2026": {
+   "EDDF": {
+    "adsb_own": 2211,
+    "adsb_seg": 22478,
+    "none": 9876,
+    "opdi_only": 1752
+   },
+   "EDDM": {
+    "adsb_own": 10270,
+    "adsb_seg": 14718,
+    "none": 978,
+    "opdi_only": 0
+   },
+   "EGLL": {
+    "adsb_own": 18523,
+    "adsb_seg": 15594,
+    "none": 5722,
+    "opdi_only": 1
+   },
+   "EHAM": {
+    "adsb_own": 19803,
+    "adsb_seg": 16505,
+    "none": 1874,
+    "opdi_only": 0
+   },
+   "LEBL": {
+    "adsb_own": 10419,
+    "adsb_seg": 17078,
+    "none": 2581,
+    "opdi_only": 2
+   },
+   "LEMD": {
+    "adsb_own": 5116,
+    "adsb_seg": 20943,
+    "none": 10878,
+    "opdi_only": 17
+   },
+   "LFPG": {
+    "adsb_own": 32,
+    "adsb_seg": 4828,
+    "none": 35011,
+    "opdi_only": 1
+   },
+   "LSZH": {
+    "adsb_own": 8430,
+    "adsb_seg": 12070,
+    "none": 1384,
+    "opdi_only": 1266
+   },
+   "LTFM": {
+    "adsb_own": 0,
+    "adsb_seg": 16,
+    "none": 47565,
+    "opdi_only": 0
+   }
+  },
+  "by_month_2025": {
+   "segment": {
+    "EDDF": {
+     "1": 0.86,
+     "2": 0.94,
+     "3": 0.96,
+     "4": 0.95,
+     "5": 0.82,
+     "6": 0.59,
+     "7": 0.88,
+     "8": 0.89,
+     "9": 0.91,
+     "10": 0.89,
+     "11": 0.93,
+     "12": 0.91
+    },
+    "EDDM": {
+     "1": 0.97,
+     "2": 0.9,
+     "3": 0.9,
+     "4": 0.83,
+     "5": 0.8,
+     "6": 0.34,
+     "7": 0.36,
+     "8": 0.8,
+     "9": 0.86,
+     "10": 0.94,
+     "11": 0.97,
+     "12": 0.94
+    },
+    "EGLL": {
+     "1": 0.47,
+     "2": 0.43,
+     "3": 0.28,
+     "4": 0.14,
+     "5": 0.06,
+     "6": 0.09,
+     "7": 0.18,
+     "8": 0.23,
+     "9": 0.25,
+     "10": 0.32,
+     "11": 0.42,
+     "12": 0.48
+    },
+    "EHAM": {
+     "1": 0.97,
+     "2": 0.98,
+     "3": 0.98,
+     "4": 0.89,
+     "5": 0.83,
+     "6": 0.61,
+     "7": 0.96,
+     "8": 0.96,
+     "9": 0.96,
+     "10": 0.95,
+     "11": 0.97,
+     "12": 0.93
+    },
+    "LEBL": {
+     "1": 0.97,
+     "2": 0.98,
+     "3": 0.98,
+     "4": 0.98,
+     "5": 0.85,
+     "6": 0.6,
+     "7": 0.84,
+     "8": 0.92,
+     "9": 0.86,
+     "10": 0.87,
+     "11": 0.93,
+     "12": 0.92
+    },
+    "LEMD": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.76,
+     "4": 0.96,
+     "5": 0.85,
+     "6": 0.62,
+     "7": 0.07,
+     "8": 0.09,
+     "9": 0.86,
+     "10": 0.93,
+     "11": 0.95,
+     "12": 0.94
+    },
+    "LFPG": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0,
+     "5": 0.0,
+     "6": 0.02,
+     "7": 0.08,
+     "8": 0.07,
+     "9": 0.09,
+     "10": 0.14,
+     "11": 0.28,
+     "12": 0.12
+    },
+    "LIRF": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0,
+     "5": 0.09,
+     "6": 0.55,
+     "7": 0.84,
+     "8": 0.81,
+     "9": 0.24,
+     "10": 0.46,
+     "11": 0.4,
+     "12": 0.64
+    },
+    "LSZH": {
+     "1": 0.88,
+     "2": 0.89,
+     "3": 0.87,
+     "4": 0.87,
+     "5": 0.76,
+     "6": 0.53,
+     "7": 0.82,
+     "8": 0.83,
+     "9": 0.84,
+     "10": 0.86,
+     "11": 0.88,
+     "12": 0.88
+    },
+    "LTFM": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0,
+     "5": 0.0,
+     "6": 0.0,
+     "7": 0.0,
+     "8": 0.0,
+     "9": 0.0,
+     "10": 0.0,
+     "11": 0.0,
+     "12": 0.0
+    }
+   },
+   "own": {
+    "EDDF": {
+     "1": 0.13,
+     "2": 0.2,
+     "3": 0.21,
+     "4": 0.19,
+     "5": 0.15,
+     "6": 0.11,
+     "7": 0.17,
+     "8": 0.18,
+     "9": 0.4,
+     "10": 0.25,
+     "11": 0.5,
+     "12": 0.44
+    },
+    "EDDM": {
+     "1": 0.41,
+     "2": 0.38,
+     "3": 0.4,
+     "4": 0.33,
+     "5": 0.27,
+     "6": 0.12,
+     "7": 0.14,
+     "8": 0.29,
+     "9": 0.31,
+     "10": 0.39,
+     "11": 0.43,
+     "12": 0.42
+    },
+    "EGLL": {
+     "1": 0.07,
+     "2": 0.09,
+     "3": 0.05,
+     "4": 0.02,
+     "5": 0.0,
+     "6": 0.0,
+     "7": 0.0,
+     "8": 0.01,
+     "9": 0.0,
+     "10": 0.03,
+     "11": 0.1,
+     "12": 0.08
+    },
+    "EHAM": {
+     "1": 0.45,
+     "2": 0.45,
+     "3": 0.45,
+     "4": 0.24,
+     "5": 0.37,
+     "6": 0.34,
+     "7": 0.54,
+     "8": 0.53,
+     "9": 0.53,
+     "10": 0.54,
+     "11": 0.52,
+     "12": 0.48
+    },
+    "LEBL": {
+     "1": 0.27,
+     "2": 0.28,
+     "3": 0.24,
+     "4": 0.31,
+     "5": 0.28,
+     "6": 0.3,
+     "7": 0.29,
+     "8": 0.42,
+     "9": 0.27,
+     "10": 0.3,
+     "11": 0.36,
+     "12": 0.34
+    },
+    "LEMD": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.19,
+     "4": 0.25,
+     "5": 0.2,
+     "6": 0.12,
+     "7": 0.01,
+     "8": 0.0,
+     "9": 0.15,
+     "10": 0.21,
+     "11": 0.18,
+     "12": 0.25
+    },
+    "LFPG": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0,
+     "5": 0.0,
+     "6": 0.0,
+     "7": 0.0,
+     "8": 0.0,
+     "9": 0.0,
+     "10": 0.0,
+     "11": 0.0,
+     "12": 0.0
+    },
+    "LIRF": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0,
+     "5": 0.0,
+     "6": 0.05,
+     "7": 0.03,
+     "8": 0.03,
+     "9": 0.0,
+     "10": 0.02,
+     "11": 0.03,
+     "12": 0.06
+    },
+    "LSZH": {
+     "1": 0.39,
+     "2": 0.39,
+     "3": 0.37,
+     "4": 0.35,
+     "5": 0.28,
+     "6": 0.18,
+     "7": 0.29,
+     "8": 0.29,
+     "9": 0.3,
+     "10": 0.33,
+     "11": 0.35,
+     "12": 0.46
+    },
+    "LTFM": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0,
+     "5": 0.0,
+     "6": 0.0,
+     "7": 0.0,
+     "8": 0.0,
+     "9": 0.0,
+     "10": 0.0,
+     "11": 0.0,
+     "12": 0.0
+    }
+   }
+  }
+ },
+ "projection_2026": {
+  "cells": [
+   {
+    "apt": "EDDF",
+    "cov": "adsb_own",
+    "rows_2026": 2211,
+    "source": "cell",
+    "live_mse": 34.2
+   },
+   {
+    "apt": "EDDF",
+    "cov": "adsb_seg",
+    "rows_2026": 22478,
+    "source": "cell",
+    "live_mse": 1144.3
+   },
+   {
+    "apt": "EDDF",
+    "cov": "none",
+    "rows_2026": 9876,
+    "source": "cell",
+    "live_mse": 1835.4
+   },
+   {
+    "apt": "EDDF",
+    "cov": "opdi_only",
+    "rows_2026": 1752,
+    "source": "pooled",
+    "live_mse": 131.6
+   },
+   {
+    "apt": "EDDM",
+    "cov": "adsb_own",
+    "rows_2026": 10270,
+    "source": "cell",
+    "live_mse": 129.5
+   },
+   {
+    "apt": "EDDM",
+    "cov": "adsb_seg",
+    "rows_2026": 14718,
+    "source": "cell",
+    "live_mse": 771.8
+   },
+   {
+    "apt": "EDDM",
+    "cov": "none",
+    "rows_2026": 978,
+    "source": "cell",
+    "live_mse": 91.0
+   },
+   {
+    "apt": "EGLL",
+    "cov": "adsb_own",
+    "rows_2026": 18523,
+    "source": "cell",
+    "live_mse": 872.9
+   },
+   {
+    "apt": "EGLL",
+    "cov": "adsb_seg",
+    "rows_2026": 15594,
+    "source": "cell",
+    "live_mse": 2793.3
+   },
+   {
+    "apt": "EGLL",
+    "cov": "none",
+    "rows_2026": 5722,
+    "source": "cell",
+    "live_mse": 863.0
+   },
+   {
+    "apt": "EGLL",
+    "cov": "opdi_only",
+    "rows_2026": 1,
+    "source": "pooled",
+    "live_mse": 0.1
+   },
+   {
+    "apt": "EHAM",
+    "cov": "adsb_own",
+    "rows_2026": 19803,
+    "source": "cell",
+    "live_mse": 470.1
+   },
+   {
+    "apt": "EHAM",
+    "cov": "adsb_seg",
+    "rows_2026": 16505,
+    "source": "cell",
+    "live_mse": 884.2
+   },
+   {
+    "apt": "EHAM",
+    "cov": "none",
+    "rows_2026": 1874,
+    "source": "cell",
+    "live_mse": 497.2
+   },
+   {
+    "apt": "LEBL",
+    "cov": "adsb_own",
+    "rows_2026": 10419,
+    "source": "cell",
+    "live_mse": 789.0
+   },
+   {
+    "apt": "LEBL",
+    "cov": "adsb_seg",
+    "rows_2026": 17078,
+    "source": "cell",
+    "live_mse": 1895.6
+   },
+   {
+    "apt": "LEBL",
+    "cov": "none",
+    "rows_2026": 2581,
+    "source": "cell",
+    "live_mse": 468.3
+   },
+   {
+    "apt": "LEBL",
+    "cov": "opdi_only",
+    "rows_2026": 2,
+    "source": "pooled",
+    "live_mse": 0.2
+   },
+   {
+    "apt": "LEMD",
+    "cov": "adsb_own",
+    "rows_2026": 5116,
+    "source": "pooled",
+    "live_mse": 151.8
+   },
+   {
+    "apt": "LEMD",
+    "cov": "adsb_seg",
+    "rows_2026": 20943,
+    "source": "cell",
+    "live_mse": 1609.2
+   },
+   {
+    "apt": "LEMD",
+    "cov": "none",
+    "rows_2026": 10878,
+    "source": "cell",
+    "live_mse": 911.8
+   },
+   {
+    "apt": "LEMD",
+    "cov": "opdi_only",
+    "rows_2026": 17,
+    "source": "pooled",
+    "live_mse": 1.3
+   },
+   {
+    "apt": "LFPG",
+    "cov": "adsb_own",
+    "rows_2026": 32,
+    "source": "pooled",
+    "live_mse": 0.9
+   },
+   {
+    "apt": "LFPG",
+    "cov": "adsb_seg",
+    "rows_2026": 4828,
+    "source": "cell",
+    "live_mse": 887.3
+   },
+   {
+    "apt": "LFPG",
+    "cov": "none",
+    "rows_2026": 35011,
+    "source": "cell",
+    "live_mse": 5681.0
+   },
+   {
+    "apt": "LFPG",
+    "cov": "opdi_only",
+    "rows_2026": 1,
+    "source": "pooled",
+    "live_mse": 0.1
+   },
+   {
+    "apt": "LSZH",
+    "cov": "adsb_own",
+    "rows_2026": 8430,
+    "source": "cell",
+    "live_mse": 155.4
+   },
+   {
+    "apt": "LSZH",
+    "cov": "adsb_seg",
+    "rows_2026": 12070,
+    "source": "cell",
+    "live_mse": 431.9
+   },
+   {
+    "apt": "LSZH",
+    "cov": "none",
+    "rows_2026": 1384,
+    "source": "cell",
+    "live_mse": 366.5
+   },
+   {
+    "apt": "LSZH",
+    "cov": "opdi_only",
+    "rows_2026": 1266,
+    "source": "cell",
+    "live_mse": 90.7
+   },
+   {
+    "apt": "LTFM",
+    "cov": "adsb_seg",
+    "rows_2026": 16,
+    "source": "pooled",
+    "live_mse": 1.3
+   },
+   {
+    "apt": "LTFM",
+    "cov": "none",
+    "rows_2026": 47565,
+    "source": "cell",
+    "live_mse": 7617.6
+   }
+  ],
+  "by_coverage": {
+   "adsb_own": 2604.0,
+   "adsb_seg": 10419.0,
+   "none": 18332.0,
+   "opdi_only": 224.0
+  },
+  "by_airport": {
+   "EDDF": 3146.0,
+   "EDDM": 992.0,
+   "EGLL": 4529.0,
+   "EHAM": 1852.0,
+   "LEBL": 3153.0,
+   "LEMD": 2674.0,
+   "LFPG": 6569.0,
+   "LSZH": 1044.0,
+   "LTFM": 7619.0
+  },
+  "normal_classes": 31578,
+  "live_mse_v97": 61448,
+  "remainder_lirf_and_tail": 29870
+ }
+}

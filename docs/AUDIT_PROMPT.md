@@ -1,5 +1,11 @@
 # Audit prompt: sixteenth pass, the path from 281.87 s toward 224.88 s
 
+Status, 2026-10-03: done. `docs/MODEL_ANALYSIS.md` holds the sixteenth
+pass; it ran tasks A, C and D on v97 (247.89 s), not on v67. The plan that
+follows from it is `docs/WINNING_PLAN.md`, third edition. Rule 1 of
+section 3 no longer holds: the team reads `AOBT_3_flt` and `LOBT_flt` since
+v73 (track B, `README.md` stance section).
+
 Give this file to the auditor as the full task. The auditor is a person or
 an AI agent with read access to this repository and the data machine. The
 auditor writes the result as the sixteenth pass of

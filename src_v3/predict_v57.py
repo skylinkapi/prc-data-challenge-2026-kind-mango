@@ -61,8 +61,11 @@ def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
     )
 
 
-def write_ms(pre: pd.DataFrame, out: str) -> None:
-    """Apply MS1 and MS2 to a pre-MS frame, check MS4 and write the submission."""
+def write_ms(pre: pd.DataFrame, out: str, lower: pd.DataFrame | None = None) -> None:
+    """Apply MS1 and MS2 to a pre-MS frame, check MS4 and write the submission.
+
+    `lower` (`MVT_ID_mvt`, `lower`) is an observed lower bound applied after MS1 and MS2, so it overrides the caps.
+    """
     v2 = pd.read_parquet(V2_RANK, columns=["MVT_ID_mvt", "ADEP_mvt",
                                             "flt_null", "mvt_eobt1"])
     template = pd.read_parquet(C.SUB_TMPL, columns=["MVT_ID_mvt"])
@@ -75,6 +78,10 @@ def write_ms(pre: pd.DataFrame, out: str) -> None:
     mvt_eobt1 = m["mvt_eobt1"].fillna(0).astype(float).values
     pred, _ = apply_ms1(m["y"].values.astype(float), adep, flt_null, mvt_eobt1, support)
     pred, _ = apply_ms2(pred, adep, support)
+    if lower is not None:
+        bound = m[["MVT_ID_mvt"]].merge(lower, on="MVT_ID_mvt", how="left", validate="1:1")["lower"].values
+        log.info("lower bound lifts %d rows", int((bound > pred).sum()))
+        pred = np.fmax(pred, bound)
     assert_ms4(pred, template["MVT_ID_mvt"].values, m["MVT_ID_mvt"].values)
     pd.DataFrame({"MVT_ID_mvt": template["MVT_ID_mvt"].values,
                   "TAXITIME_SEC_mvt": pred.astype(np.float64)}

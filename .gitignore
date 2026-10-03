@@ -21,6 +21,7 @@ external/osm/*.parquet
 external/osm/raw_taxi/
 external/airports/*.csv
 external/opdi/**
+external/adsblol/**
 external/vrs/*.parquet
 
 # Model artifacts (regeneratable; too big for git)
@@ -107,3 +108,7 @@ models/clock_bias_*.parquet
 models/v3/cache/*
 models/v3/logs/*
 models/v3/*.parquet
+
+# Run logs and derived pushback tables (rebuilt by src_v3/build_opdi_own.py)
+logs/
+models/opdi_own_*.parquet

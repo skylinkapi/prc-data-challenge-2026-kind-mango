@@ -6,8 +6,23 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **264.34 s RMSE** (`kind-mango_v89.parquet`,
-  2026-09-28), -17.53 s vs v67. v89 mixes one LightGBM member per airport
+- **Current leaderboard best:** **247.89 s RMSE** (`kind-mango_v97.parquet`,
+  2026-10-03), -1.50 s vs v95; team rank 31. The leaderboard top is 216.57 s
+  (API, 2026-10-03). **Next:** `docs/WINNING_PLAN.md` third edition, the path
+  from 247.89 s toward 210 s. `python -m src_v3.measure_budget_v97` and
+  `python -m src_v3.measure_lirf_gap` measure where the v97 error sits
+  (`docs/MODEL_ANALYSIS.md` sixteenth pass). v97 refits every base member (global, anchored
+  and per-airport LightGBM, plain and anchored CatBoost) with the OPDI and
+  ADS-B pushback columns of 350 days of 2025, then serves the v95 stack on top.
+  v95 (249.39 s) trains the pushback stack on all 62
+  January and July 2025 days of ADSB.lol data; `src_v3/auto_release.py`
+  built, gated and uploaded it unattended. v94 (250.51 s) blends the MLP member into the base at
+  0.15 outside LIRF. v93 (251.44 s) trains the pushback stack on 21 ADSB.lol
+  days of 2025 instead of 7. v92 (253.82 s) serves the v91 stack on all 62 ranking
+  days of ADSB.lol data and floors each row at the last time the aircraft
+  was at its assigned stand (WINNING_PLAN second edition, A5). v91 (259.39 s) adds the ADSB.lol pushback clock of the
+  scored flight to the stack (WINNING_PLAN A2), on 24 of 62 ranking days. v90 (263.17 s) stacks the OPDI pushback clock of the
+  scored flight on v89 (WINNING_PLAN A1, second edition). v89 (264.34 s) mixes one LightGBM member per airport
   50/50 into both LightGBM terms of v85. v85 (264.55 s) added forward windows (WINNING_PLAN
   L8): the NM clocks of the departures that take off in the 15 and 30 min
   after the row. v76 (265.27 s) refit both LightGBM bases with the
@@ -72,6 +87,15 @@ Forward windows (changed 2026-09-28): from v85 the base reads the NM
 clocks of departures that take off after the row (WINNING_PLAN L8). The
 team stance MF6 kept such columns out. The organiser allows features from
 other movements ("what is occupied, what is coming", 2026-09-09).
+
+Pushback clocks from open trajectory data (changed 2026-09-29): from v90
+the served file reads the pushback time of the scored flight from OPDI
+flight events, and from v91 also from ADSB.lol traces. The organiser
+allowed this on 2026-09-18: "if you can find open trajectory data with good
+ground coverage and extract off-block times, we are ok" (`RECAP.md`
+Discord confirmations). Raw OSN state vectors and Trino stay out.
+The clocks are not the label: after a bias, 57 to 86 % of the linked
+rows lie within 60 s, and a stack model learns when to trust them.
 
 Risk: on 2026-09-11 the organiser said that reverse engineering of the
 ranking is a practice "we despise" and kept the right to add a phase 2. A
@@ -163,6 +187,15 @@ Only `kind-mango_v*.parquet` uploads are shown. All are scored on the same
 | kind-mango_v85 | 264.55 | -0.72 vs v76 | WINNING_PLAN L8, forward windows: mean and count of `MVT - AOBT_3` of the other departures at the airport and on the runway that take off in `(t, t + 15 min]` and `(t, t + 30 min]` (`src_v3/build_nm_forward_v85.py`). Hold-out: the MB5 member -604 MSE, 8 of 9 airports; as the plain LightGBM term of the v76 blend -208 (`python -m src_v3.measure_extra_v81 v85 models/nm_forward_train_v85.parquet`). Both LightGBM bases refit with the 8 columns; CatBoost members as v76. Run: `python -m src_v3.build_nm_forward_v85`, `python -m src_v3.train_v76_base plain --tag v85 --extra models/nm_forward_train_v85.parquet`, `python -m src_v3.train_v76_base anchored --tag v85 --extra models/nm_forward_train_v85.parquet`, then `python -m src_v3.predict_v67 --weight 0.5 --ms3 --base-model lgbm_r_all_v85 --catboost-tag v73 --catboost-anchor-tag v75a --anchor-model lgbm_r_all_v85a --anchor-weight 0.5 --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet models/nm_forward_rank_v85.parquet --pre-ms kind-mango_v85_pre_ms.parquet --out kind-mango_v85.parquet`. |
 | kind-mango_v87 | 264.86 | +0.31 vs v85 (rejected) | Forward-window columns in both CatBoost members too (`catboost_base --tag v86c` and `v86ca`); not priced on the hold-out first. |
 | **kind-mango_v89** | **264.34** | **-0.22 vs v85 (new best, -34.98 s vs v41)** | One LightGBM member per airport (v85 columns, MB5 parameters, one seed), mixed 50/50 with the global member in the plain and the anchored LightGBM terms. Hold-out (`python -m src_v3.measure_per_airport_v89`): alone +1,112 MSE, the 50/50 mean -657 MSE at all 9 airports, about -150 in the blend for the plain term alone. Run: `python -m src_v3.train_per_airport_v89 plain`, `python -m src_v3.train_per_airport_v89 anchored`, then `python -m src_v3.predict_v67 --weight 0.5 --ms3 --base-model lgbm_r_all_v85 --catboost-tag v73 --catboost-anchor-tag v75a --anchor-model lgbm_r_all_v85a --anchor-weight 0.5 --per-airport-tag v89 --per-airport-weight 0.5 --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet models/nm_forward_rank_v85.parquet --pre-ms kind-mango_v89_pre_ms.parquet --out kind-mango_v89.parquet`. |
+| **kind-mango_v90** | **263.17** | **-1.17 vs v89 (new best)** | WINNING_PLAN A1: the OPDI pushback clock of the scored flight. `src_v3/build_opdi_own.py` links a departure to its OPDI flight by airport, `CALLSIGN_flt` and the runway entry closest to `MVT`, and writes three clocks (first, last and own-stand exit before the runway entry). A LightGBM stack on `y - base` (`src_v3/stack_pushback_v90.py`) reads the clocks, `MVT - AOBT_3` and the airport; rows without a clock keep v89. Hold-out, month cross-fit on the out-of-sample v89-style blend: -566 MSE, LSZH RMSE 167.9 to 126.0 s on 15,431 rows. It moves 21,498 ranking rows (LSZH 14,269, EDDF 7,124). Run: `python -m src_v3.build_opdi_own`, then `python -m src_v3.stack_pushback_v90 serve --sources opdi --out kind-mango_v90.parquet`. |
+| **kind-mango_v91** | **259.39** | **-3.78 vs v90 (new best)** | WINNING_PLAN A2: the ADSB.lol pushback clock of the scored flight, added to the v90 stack. `src_v3/fetch_adsb_days.py` downloads a `globe_history` day (about 4 GB), `src_v3/build_adsb_points.py` keeps the points near the 10 airports below 5,000 ft, and `src_v3/build_adsb_clock.py` links a departure to its aircraft by callsign, cuts the last ground segment before take-off and writes candidate clocks (first point, first move, first move near the assigned stand, first move after a long stop) with their quality columns. Hold-out (7 days of 2025, day-parity cross-fit): -937 MSE; covered-row RMSE EHAM 141 to 105 s, EDDF 182 to 151 s. Served on 24 of the 31 July 2026 days (148,836 rows); moves 97,793 rows. Run: `python -m src_v3.fetch_adsb_days --start 2026-07-01 --end 2026-07-31`, `python -m src_v3.build_adsb_clock`, then `python -m src_v3.stack_pushback_v90 serve --sources both --out kind-mango_v91.parquet`. |
+| kind-mango_v98 | 248.25 | +0.36 vs v97 (rejected) | v97 members with serve-time parameters chosen on the hold-out (`src_v3/release_v98.py`): CatBoost share 0.4, anchored 0.5, per-airport 0.7 (blend -65 MSE, better in January and July), MLP 0.1 and 400 stack rounds (-58 MSE). About -120 MSE on the hold-out; did not transfer. |
+| **kind-mango_v97** | **247.89** | **-1.50 vs v95 (new best)** | WINNING_PLAN second edition 4.5, last step: every base member refit with the OPDI and ADS-B pushback columns (`opdi_own_train_v90`, `adsb_clock_train` on 350 days of 2025; 95.7 % of training rows on loaded days). Hold-out (`python -m src_v3.measure_adsb_base_v97 fit <member>`, then `price`): one LightGBM member -4,848 MSE against v85; v97 blend -5,377 against the v89 blend; blend plus stack -983 MSE against v95's recipe. Full-year members: `train_v76_base plain|anchored --tag v97`, `train_per_airport_v89 plain|anchored --tag v97`, `catboost_base --tag v97c|v97ca` (all with `--extra models/nm_forward_train_v85.parquet` or the clock table, plus the two pushback tables). Served and uploaded by `src_v3/release_v97.py`; stack trained on `blend_v97_holdout`. Gates vs v95: LIRF unchanged, rows above 7,200 s 107, no row moved by more than 3,000 s. |
+| kind-mango_v96 | 249.92 | +0.53 vs v95 (rejected) | v95 plus one stack column: an ADS-B specialist (`src_v3/adsb_specialist.py --tag v96`), a LightGBM on the OPDI, ADS-B and NM clocks trained on 339,400 clock rows of 291 days outside months 1 and 7 (hold-out RMSE 180.2 s without a base). Study (`python -m src_v3.tune_stack_v96`): -302 MSE against v95 on the 2025 hold-out; the price did not transfer. The same study closed 63 leaves (-92), a residual clip of 7,200 s (+19), A5 offsets (+29 to +523) and A4 columns (+37). |
+| **kind-mango_v95** | **249.39** | **-1.12 vs v94 (new best)** | The v94 recipe with the stack trained on all 62 January and July 2025 ADSB.lol days (v94: 21). `python -m src_v3.auto_release --version 95 --wait-pid <download pid>` waited for the downloads, rebuilt the clock tables, priced the stack rounds (400: -4,101, 600: -4,048, 900: -3,982 MSE; 600 kept, the 53 MSE difference is under the 150 MSE bar), served, passed the label-free gates against v94 (LIRF unchanged, rows above 7,200 s 106, no row moved by more than 3,000 s) and uploaded at 01:00 local. Record: `submission/kind-mango_v95.recipe.json`; parity `python -m src_v3.test_parity --version 95`. |
+| **kind-mango_v94** | **250.51** | **-0.93 vs v93 (new best)** | v93 with the MLP member (`src_v3/mlp_member.py`: embeddings, 1024-512-256, three seeds) blended into the base outside LIRF at 0.15, on the hold-out rows that train the stack and on the ranking rows. 0.15 is the optimum of the quadratic through the hold-out prices -190, -213 and -69 MSE at 0.1, 0.2 and 0.3. Study (`python -m src_v3.tune_stack_v93`): the MLP gain adds to the stack gain (-1,819 against -1,603 at 0.2). Moves 317,018 rows, max 722 s; rows above 7,200 s 105. Live -470 MSE against a hold-out price of about -224. Run: `python -m src_v3.stack_pushback_v90 serve --sources both --stand-bound --mlp-weight 0.15 --adsb-train external/adsblol/v94/adsb_clock_train.parquet --base kind-mango_v89.parquet --out kind-mango_v94.parquet`; parity `python -m src_v3.test_parity --version 94`. |
+| **kind-mango_v93** | **251.44** | **-2.38 vs v92 (new best)** | The v92 recipe with the stack trained on 21 ADSB.lol days of 2025 (2025-01-01 to 01-15, 07-01 to 07-05, 07-15; 60,750 stack rows) instead of 7; the stack now cross-fits January against July. Study: stack -1,575 MSE against -937 on 7 days; 1,200 rounds worse than 600; 63 leaves and the A4 neighbour columns within 30 MSE (not adopted). EGLL mean +28.7 s against v92. Live -1,198 MSE against a hold-out difference of about -640. Download fix: some days ship as one unsplit `.tar`; days without a `prod-0` release (2025-05-28 to 06-10) are skipped. |
+| **kind-mango_v92** | **253.82** | **-5.57 vs v91 (new best)** | The v91 stack served on all 62 ranking days: `python -m src_v3.build_adsb_clock` read the points of every January and July 2026 day (v91: 24 July days); 60 % of ranking departures carry an ADS-B clock. WINNING_PLAN second edition A5: after MS1 and MS2, each row outside LIRF is floored at `min(adsb_own_last, adsb_push)`, the last point within 100 m of the assigned stand, or the first move after a later stop of 120 s or more at another stand (a tow). On 2025 labels 3.3 % of rows sit below this bound, 0.17 % by more than 300 s; hold-out -15.9 MSE on 155 lifted rows. Served: 202,073 rows moved by the stack, 1,184 lifted by the bound (2 rows by more than 3,000 s, both EDDM rows at the stand until 5,379 and 5,653 s before take-off). Label-free check vs v91: LIRF unchanged, rows above 7,200 s 106 (v91 106). Closed the same day: A3 (first-point lower bound, +4,875 MSE or worse), A4 (neighbour pushback clocks, +2 and +62 MSE), B1 (no Step A pattern outside LIRF). Run: `python -m src_v3.stack_pushback_v90 serve --sources both --stand-bound --base kind-mango_v89.parquet --out kind-mango_v92.parquet`; parity `python -m src_v3.test_parity --version 92`. |
 | kind-mango_v40 | 299.97 | -1.90 | v33 stack + 13 tempo, order, stand-gap and queue columns on the base (`train_r_all_v40.py`); paired hold-out CLEAN -2.67 s; see MODEL_ANALYSIS 4.2 |
 | kind-mango_v39 | 352.19 | +50.32 | twelfth-audit rewrite from a cold start, `src_v2/`; hold-out CLEAN 264 (beat v33's 266) but FULL regressed on live; base lost 37 v33 columns; rejected (see MODEL_ANALYSIS 4.1) |
 
@@ -258,12 +291,13 @@ stays for the record. See `src/predict_v21_final.py`.
 | Source | Data | Licence |
 |---|---|---|
 | PRC / OpenSky Network | Movements at 10 EU airports (2025 train, 2026 ranking) | Challenge data licence |
-| Iowa State ASOS | METAR reports, hourly, per station | Public domain |
+| Iowa State ASOS | METAR reports, routine and special, per station; `python -m src_v3.fetch_metar` | Public domain |
 | OurAirports | Runway coordinates, headings, lengths | Public domain |
 | OSM Overpass | `aeroway=parking_position`, `taxiway`, `runway` | ODbL |
 | Eurocontrol NM | Daily ATC pre-dep delay, ATFM slot adherence, airport traffic | Open (non-commercial-use clause; challenge use confirmed by organiser, 2026-09-17) |
 | OPDI (PRC + OSN) | Flight events (entry-runway, entry-taxiway, exit-parking, …) | Open (CC-BY 4.0, confirmed by organiser) |
 | VRS StandingData | Aircraft-type metadata | Open |
+| ADSB.lol `globe_history` | Daily ADS-B traces; `src_v3/fetch_adsb_days.py` keeps the low points near the 10 airports and deletes the raw archive. Used for the pushback clock of the scored flight (v91 on). Data (c) ADSB.lol contributors. | ODbL 1.0. The derived tables stay out of git (share-alike). |
 
 ## Quick start
 
@@ -278,7 +312,7 @@ python src/build_osm_stands.py            # OSM stand centroids
 python src/build_osm_taxi_paths.py        # OSM taxiway graph
 python src/fetch_opdi_events.py           # OPDI ADS-B events (~50 min, 560 MB)
 python src/build_opdi_taxi_v2.py          # OPDI taxi-out record aggregation
-# METAR: no committed fetch script; download Iowa State ASOS CSVs to external/metar/
+python -m src_v3.fetch_metar              # Iowa State ASOS METAR CSVs (~2 min)
 
 # 2. Train the base regressor (3 members, linear_tree)
 python src/train_r_all_v26.py
@@ -390,6 +424,13 @@ src/
   eval_v19.py, eval_v20_combined.py, train_drift_meter.py,
   train_fallback_detector.py, train_v18_detectors.py
 
+src_v3/                         # current pipeline (v48 on), constants in config.py
+  predict_v67.py                # base outside LIRF and the LIRF head; release_v97.py builds the best file
+  stack_pushback_v90.py         # OPDI and ADS-B pushback stack and the A5 stand bound
+  build_adsb_clock.py, build_opdi_own.py   # pushback clocks of the scored flight
+  measure_budget_v97.py         # v97 error budget per class, airport and ADS-B coverage; 2026 projection
+  measure_lirf_gap.py           # LIRF gate ceiling and the arrival-artefact signal (WINNING_PLAN third edition)
+
 external/                       # open-data caches (gitignored)
   metar/       Iowa State ASOS CSVs per ICAO
   eurocontrol/ 5 NM performance Excels + consolidated daily parquet
@@ -400,9 +441,9 @@ external/                       # open-data caches (gitignored)
 training/                       # organiser-provided 2025 monthly parquets (gitignored)
 submission/                     # ranking.parquet, submitting.parquet, kind-mango_v*.parquet
 models/                         # trained boosters + encoders + JSON config
-docs/                           # PRC brief + MODEL_ANALYSIS.md (progress to v67, gap to the top, fifteenth-pass findings) + WINNING_PLAN.md (gap analysis and ranked levers to 11 Oct) + AUDIT_PROMPT.md (brief for the sixteenth-pass audit)
+docs/                           # PRC brief + MODEL_ANALYSIS.md (progress to v98, sixteenth pass: error budget of v97, fifteenth-pass findings) + WINNING_PLAN.md (third edition, 2026-10-03: ranked levers from 247.89 s toward 210 s, plan to 11 Oct; second edition in Appendix B) + AUDIT_PROMPT.md (brief of the sixteenth pass)
 RECAP.md                        # session log for every attempt, submissions and scores
-requirements.txt                # pinned library versions of the v67 pipeline
+requirements.txt                # pinned library versions of the v92 pipeline
 ```
 
 ## Approaches tried and RULED OUT
@@ -410,6 +451,28 @@ requirements.txt                # pinned library versions of the v67 pipeline
 For transparency, and so the next replicator does not waste days on the same
 dead-ends:
 
+- **ADS-B specialist as a stack column (v96)** — -302 MSE on the 2025 hold-out,
+  +0.53 s live. Derived columns did not transfer this season (v66, v71, v83, v96);
+  new row-level observables did (v73, v90 to v95).
+- **Lower bound from the first ADS-B ground point (WINNING_PLAN A3)** — the rule
+  `max(pred, MVT - first moving point + k)` costs +4,875 to +7,954 MSE on the
+  2025 hold-out for every `k`. The first point often moves before the reported
+  off-block (41 % of EHAM rows), and where the stack predicts below the bound
+  the label also sits below it on 69 % of rows. The stack already reads the
+  first-point columns. The stand bound of A5 replaces it.
+- **Neighbour pushback clocks (A4)** — the mean and count of other departures'
+  OPDI and ADS-B pushback taxi over the v85 windows: +2 MSE as stack columns,
+  +62 MSE when rows with neighbours but no own clock join the stack
+  (`python -m src_v3.stack_pushback_v90 price --neighbours cols|rows`).
+- **Three seeds for the per-airport members (B2)** — -5.2 MSE inside the v89-style
+  blend on the 2025 hold-out, airports split both ways
+  (`python -m src_v3.measure_per_airport_v89 --seed 43`, then `--seed 44`).
+- **Local hour, airport-scoped stand and runway, drift flags (MF3, MD5, MD6)** — as
+  columns of a residual stack on all hold-out rows, cross-fitted January against
+  July: +723 to +1,267 MSE against +535 for the same stack without them.
+- **Step A analogue outside LIRF (B1)** — outside LIRF, 0 of 412 rows of 2025
+  with a null flight record and `sd > 14,400` sit within 60 s of `sd`
+  (1 of 4,313 above 7,200 s). A rule would move 278 rows of 2026 with no support.
 - **Fallback heads outside LIRF (MH2)** — mixing a calibrated P(|y - sd| < 60) toward `sd`
   costs +292 MSE on the 2025 hold-out and is worse at all 9 airports
   (`python -m src_v3.measure_mh2`).
@@ -462,10 +525,11 @@ dead-ends:
 
 ## Reproduction
 
-See [`REPRODUCE.md`](REPRODUCE.md). Tier 1 serves the best file (v67) from the trained
-artefacts; Tier 2 retrains every served artefact. `python -m src_v3.test_v67_parity`
-rebuilds v67 and checks it against the recorded hash in
-`submission/kind-mango_v67.parity.json` (bit parity on 2026-09-26).
+See [`REPRODUCE.md`](REPRODUCE.md). Tier 1 serves v92 from the trained artefacts;
+Tier 2 retrains every served artefact, and step 3 of the guide fetches the
+open data, ADSB.lol days included. `python -m src_v3.test_parity --version 92`
+rebuilds v92 and checks it against the recorded hash in
+`submission/kind-mango_v92.parity.json`; `--version 67` does the same for v67.
 
 ## Acknowledgements
 
