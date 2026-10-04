@@ -1,0 +1,70 @@
+{
+ "day": "2026-07-15",
+ "feeds": [
+  "staging-0",
+  "mlatonly-0"
+ ],
+ "points_union": 1824081,
+ "by_airport": {
+  "EDDF": {
+   "prod_segment": 0.757,
+   "prod_own": 0.065,
+   "union_segment": 0.758,
+   "union_own": 0.065
+  },
+  "EDDM": {
+   "prod_segment": 0.96,
+   "prod_own": 0.408,
+   "union_segment": 0.964,
+   "union_own": 0.408
+  },
+  "EGLL": {
+   "prod_segment": 0.964,
+   "prod_own": 0.69,
+   "union_segment": 0.97,
+   "union_own": 0.694
+  },
+  "EHAM": {
+   "prod_segment": 0.957,
+   "prod_own": 0.555,
+   "union_segment": 0.959,
+   "union_own": 0.556
+  },
+  "LEBL": {
+   "prod_segment": 0.934,
+   "prod_own": 0.496,
+   "union_segment": 0.934,
+   "union_own": 0.496
+  },
+  "LEMD": {
+   "prod_segment": 0.085,
+   "prod_own": 0.002,
+   "union_segment": 0.086,
+   "union_own": 0.002
+  },
+  "LFPG": {
+   "prod_segment": 0.096,
+   "prod_own": 0.001,
+   "union_segment": 0.096,
+   "union_own": 0.001
+  },
+  "LIRF": {
+   "prod_segment": 0.0,
+   "prod_own": 0.0,
+   "union_segment": 0.0,
+   "union_own": 0.0
+  },
+  "LSZH": {
+   "prod_segment": 0.853,
+   "prod_own": 0.26,
+   "union_segment": 0.853,
+   "union_own": 0.26
+  },
+  "LTFM": {
+   "prod_segment": 0.001,
+   "prod_own": 0.0,
+   "union_segment": 0.001,
+   "union_own": 0.0
+  }
+ }
+}

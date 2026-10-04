@@ -1,6 +1,6 @@
 # Model analysis: progress to v98 and the sixteenth pass (error budget of v97)
 
-Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
+Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
 rank 31; the leaderboard top is **216.57 s** (API, 09:25 UTC). The
 sixteenth pass below the Progress section measures where the v97 error
 sits. `docs/WINNING_PLAN.md` third edition turns it into the plan toward
@@ -147,6 +147,15 @@ and the output format.
 | A2 stack on 21 ADS-B days of 2025 (Jan-Jul cross-fit) | v93 | -2.38 | accepted; hold-out stack -1,575 against -937 MSE on 7 days |
 | A2 base retrain: every base member with the OPDI and ADS-B columns (4.5, last step) | v97 | -1.50 | accepted; hold-out blend plus stack -983 MSE against v95's recipe |
 | Serve-time parameters re-chosen on the v97 hold-out members | v98 | +0.36 vs v97 | rejected; hold-out about -120 MSE |
+| N1 stack on stand-clock rows only | v99 | +0.32 | rejected; hold-out -175 MSE; the stack helps segment rows live |
+| K2 ADS-B columns in the LIRF `R_norm` | v100 | +0.12 | rejected; hold-out -267 MSE on genuine rows |
+| G1 airline arrival artefact shares in the LIRF gate | v101 | -0.20 | accepted; hold-out -52 MSE |
+| G1 plus the v83 stand link in the gate | v102 | -0.55 | accepted; hold-out -323 MSE |
+| 63-leaf stack | v103 | +0.20 | rejected |
+| gate g3: plus operator arrival shares | v104 | -0.19 | accepted; hold-out -235 MSE |
+| N4 MLP on the v97 columns at 0.2 | v105 | -0.48 | accepted, best 246.48 s; hold-out -64 MSE |
+| gate g4: plus exact-copy and stand-day shares | v107 | +0.21 | rejected; hold-out -379 MSE |
+| K1 extra ADSB.lol feeds, K3 route distance, K4 long holds, N5 pseudo-labels, N2 study | not uploaded or pending | | K1 +0.6 points coverage, K3 -28, K4 0 of 4 rows, N5 +7 MSE; N2 refit uploads as v108 |
 | ADS-B specialist (4.5 step 1) as a stack column, trained on 291 days outside months 1 and 7 | v96 | +0.53 | rejected; hold-out -302 MSE did not transfer (a derived column, like v66, v71, v83) |
 | v96 study on 62 days: 63 leaves, residual clip 7,200 s, A5 offsets, A4 columns | not built | -92, +19, +29 to +523, +37 MSE | closed: under the bar or worse |
 | A2 stack on all 62 January and July 2025 ADS-B days | v95 | -1.12 | accepted; hold-out stack -4,048 MSE; unattended release |

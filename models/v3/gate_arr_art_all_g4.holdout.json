@@ -1,0 +1,33 @@
+{
+ "log_loss": {
+  "sd<=3600": {
+   "control": 0.3635614714086477,
+   "treatment": 0.35994776264479117
+  },
+  "3600<sd<=14400": {
+   "control": 0.12243869774175883,
+   "treatment": 0.12085165549076955
+  },
+  "sd>14400": {
+   "control": 0.12157787165864294,
+   "treatment": 0.12108887204458492
+  }
+ },
+ "columns": [
+  "art_pre_day",
+  "art_pre_day_n",
+  "art_pre_month",
+  "art_day",
+  "prv_arr_grid",
+  "prv_arr_off_sched",
+  "prv_arr_age",
+  "day_arr_grid_share",
+  "art_op_day",
+  "art_op_month",
+  "art5_pre_day",
+  "art5_op_day",
+  "art_stand_day"
+ ],
+ "n_mixture_rows": 26483,
+ "mixture_treatment_minus_control": -379.09567268502065
+}

@@ -6,7 +6,9 @@ through a signed log and a z-score fitted on the training rows; a missing
 value becomes 0 plus a flag. Each categorical column gets an embedding;
 a category unseen in training maps to index 0. `measure` fits on the fit
 months, early-stops on months 11 and 12, scores the hold-out months 1 and 7
-and prices the member in the saved v89-style blend.
+and prices the member in the saved v89-style blend. `--columns v97` adds the
+OPDI and ADS-B columns of the v97 members and prices against the v97 blend
+(third-edition N4); its files carry the suffix `_v97`.
 """
 from __future__ import annotations
 
@@ -22,19 +24,30 @@ import torch
 from torch import nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from train_lgbm_v21 import CAT_COLS
-
 from src_v3 import config as C
 from src_v3.build_nm_clocks_v73 import OUT_TRAIN as CLOCKS_TRAIN
+from src_v3.build_opdi_own import OUT_TRAIN as OPDI_TRAIN
 from src_v3.catboost_base import load_frame
 from src_v3.measure_catboost_blend import FIT_MONTHS, STOP_MONTHS, holdout_rows
 from src_v3.measure_tail_rules import mse_delta
+from train_lgbm_v21 import CAT_COLS
 
 FORWARD_V85 = C.ROOT / "models" / "nm_forward_train_v85.parquet"
-BLEND_HOLDOUT = C.MODELS / "blend_v89_holdout.parquet"
+COLUMN_SETS = {   # extra column files, hold-out blend, ranking feature dump
+    "v85": ((CLOCKS_TRAIN, FORWARD_V85), C.MODELS / "blend_v89_holdout.parquet",
+            C.MODELS / "lgbm_r_all_v85_rank_features.parquet"),
+    "v97": ((CLOCKS_TRAIN, FORWARD_V85, OPDI_TRAIN, C.ADSB_DIR / "v97" / "adsb_clock_train.parquet"),
+            C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet")}
+BLEND_HOLDOUT = COLUMN_SETS["v85"][1]
 PRED_OUT = C.MODELS / "holdout_mlp.parquet"
-RANK_DUMP = C.MODELS / "lgbm_r_all_v85_rank_features.parquet"
 RANK_OUT = C.MODELS / "rank_mlp.parquet"
+
+
+def out_paths(columns: str) -> tuple[Path, Path, Path]:
+    """Hold-out predictions, ranking predictions and price report of a column set; v85 keeps the v94 names."""
+    sfx = "" if columns == "v85" else f"_{columns}"
+    return (C.MODELS / f"holdout_mlp{sfx}.parquet", C.MODELS / f"rank_mlp{sfx}.parquet",
+            C.MODELS / f"mlp_member{sfx}.holdout.json")
 log = logging.getLogger(__name__)
 
 
@@ -120,16 +133,18 @@ def train(prep: Prep, fit_rows: pd.DataFrame, stop_rows: pd.DataFrame | None, se
     return net
 
 
-def measure() -> None:
-    dep, feat = load_frame((CLOCKS_TRAIN, FORWARD_V85))
+def measure(columns: str) -> None:
+    extra, blend_path, _ = COLUMN_SETS[columns]
+    pred_out, _, report_out = out_paths(columns)
+    dep, feat = load_frame(extra)
     prep = Prep(dep[dep["month"].isin(FIT_MONTHS)], feat)
     net = train(prep, dep[dep["month"].isin(FIT_MONTHS)], dep[dep["month"].isin(STOP_MONTHS)])
     del dep
     h, _ = holdout_rows()
-    for path in (CLOCKS_TRAIN, FORWARD_V85):
+    for path in extra:
         h = h.merge(pd.read_parquet(path), on="MVT_ID_mvt", how="left", validate="m:1")
     pred = predict(net, *prep(h))
-    ref = pd.read_parquet(BLEND_HOLDOUT)
+    ref = pd.read_parquet(blend_path)
     if not np.array_equal(ref["y"].values, h["TAXITIME_SEC_mvt"].values.astype(float)):
         raise AssertionError("The hold-out frame and the saved blend are not in the same row order. "
                              "Rebuild the blend with stack_pushback_v90, then rerun.")
@@ -139,21 +154,22 @@ def measure() -> None:
               "corr_residuals": float(np.corrcoef(pred - y, base - y)[0, 1]),
               "weights": {str(w): mse_delta((1 - w) * base + w * pred, base, y) for w in C.MLP_BLEND_WEIGHTS}}
     log.info("%s", json.dumps(report, indent=1))
-    (C.MODELS / "mlp_member.holdout.json").write_text(json.dumps(report, indent=1))
-    pd.DataFrame({"MVT_ID_mvt": ref["MVT_ID_mvt"].values, "pred": pred}).to_parquet(PRED_OUT)
+    report_out.write_text(json.dumps(report, indent=1))
+    pd.DataFrame({"MVT_ID_mvt": ref["MVT_ID_mvt"].values, "pred": pred}).to_parquet(pred_out)
 
 
-def serve() -> None:
-    """Fit on every served training row with `MLP_SERVE_SEEDS` seeds; score the v85 ranking feature dump."""
-    dep, feat = load_frame((CLOCKS_TRAIN, FORWARD_V85))
-    rank = pd.read_parquet(RANK_DUMP)
+def serve(columns: str) -> None:
+    """Fit on every served training row with `MLP_SERVE_SEEDS` seeds; score the ranking feature dump of the column set."""
+    extra, _, rank_dump = COLUMN_SETS[columns]
+    dep, feat = load_frame(extra)
+    rank = pd.read_parquet(rank_dump)
     missing = sorted(set(feat) - set(rank.columns))
     if missing:
         raise KeyError(f"The ranking dump has no column {missing[:5]}. Rerun predict_v67 for v89 to rebuild it.")
     prep = Prep(dep, feat)
     x = prep(rank)
     pred = np.mean([predict(train(prep, dep, None, seed), *x) for seed in C.MLP_SERVE_SEEDS], axis=0)
-    pd.DataFrame({"MVT_ID_mvt": rank["MVT_ID_mvt"].values, "pred": pred}).to_parquet(RANK_OUT)
+    pd.DataFrame({"MVT_ID_mvt": rank["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out_paths(columns)[1])
     log.info("ranking rows %d, mean %.1f s", len(pred), pred.mean())
 
 
@@ -161,7 +177,9 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("mode", choices=("measure", "serve"))
-    measure() if ap.parse_args().mode == "measure" else serve()
+    ap.add_argument("--columns", choices=sorted(COLUMN_SETS), default="v85")
+    args = ap.parse_args()
+    measure(args.columns) if args.mode == "measure" else serve(args.columns)
 
 
 if __name__ == "__main__":

@@ -52,7 +52,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s",
                         handlers=[logging.FileHandler(C.ROOT / "logs" / "adsb_watchdog.log"), logging.StreamHandler()])
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)
-    days = released([d.strftime("%Y.%m.%d") for d in pd.date_range(C.WATCH_START, C.WATCH_END)])
+    days = released([d.strftime("%Y.%m.%d") for d in pd.date_range(C.WATCH_START, C.WATCH_END)], C.ADSB_FEEDS[0])
     last = None
     for _ in range(C.WATCH_MAX_HOURS):
         missing = [d for d in days if not (POINTS / f"{d}.parquet").exists()]

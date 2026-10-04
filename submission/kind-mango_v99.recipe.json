@@ -1,0 +1,31 @@
+{
+ "lever": "third edition N1",
+ "holdout_price_vs_v97": -175.2,
+ "stack_args": [
+  "--sources",
+  "both",
+  "--stand-bound",
+  "--mlp-weight",
+  "0.15",
+  "--rounds",
+  "600",
+  "--adsb-train",
+  "external/adsblol/v97/adsb_clock_train.parquet",
+  "--blend-holdout",
+  "models/v3/blend_v97_holdout.parquet",
+  "--stack-rows",
+  "own",
+  "--base",
+  "kind-mango_v97_base.parquet"
+ ],
+ "gates": {
+  "rows": true,
+  "float64": true,
+  "no_nan": true,
+  "lirf_unchanged": true,
+  "over_80000": true,
+  "over_7200": true,
+  "big_moves": true
+ },
+ "score": 248.2091
+}

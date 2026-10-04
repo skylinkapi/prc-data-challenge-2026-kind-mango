@@ -174,7 +174,8 @@ PER_AIRPORT_SEEDS = (42, 43, 44)        # WINNING_PLAN second edition B2; seed 4
 # -- ADS-B pushback clock of the scored flight, WINNING_PLAN A1 and A2 (2026-09-29) --
 ADSB_DIR = ROOT / "external" / "adsblol"
 ADSB_URL = ("https://github.com/adsblol/globe_history_{year}/releases/download/"
-            "v{day}-planes-readsb-prod-0/v{day}-planes-readsb-prod-0.tar.{part}")
+            "v{day}-planes-readsb-{feed}/v{day}-planes-readsb-{feed}.tar.{part}")
+ADSB_FEEDS = ("prod-0", "staging-0", "mlatonly-0")   # daily feeds of ADSB.lol; prod-0 trained v91 to v97 (third edition K1)
 ADSB_REFS_URL = "https://github.com/adsblol/globe_history_{year}.git/info/refs?service=git-upload-pack"
 ADSB_PARTS = ("aa", "ab", "ac", "ad")   # a day splits into 2 GB parts; the last one is short
 ADSB_BOX_DEG = (0.08, 0.12)             # lat, lon half-width of the kept box: about 9 km
@@ -306,3 +307,7 @@ ARTEFACT_MIN_CELL_ROWS = 30             # airline-month cells with fewer departu
 ARTEFACT_SMOOTH_K = 10                  # arrivals of prior weight toward the airport share, airline-day share
 ARTEFACT_SHARE_EDGES = (0.05, 0.1, 0.2, 0.4)   # buckets of the airline-day arrival artefact share
 LATE_SD_S = 1800                        # a departure this late against the schedule carries most of the gate cost
+# Route-distance clock (`build_route_clock.py`, third-edition K3)
+ROUTE_SNAP_M = 400                      # snap radius of `build_osm_taxi_paths.snap_to_graph`
+ROUTE_CUTOFF_M = 12000                  # longer routes than the largest airport span are not taxi routes
+ADSB_TAXI_SPEED_MS = 7.0                # about 14 kt, a typical taxi speed; the trees learn the airport scale

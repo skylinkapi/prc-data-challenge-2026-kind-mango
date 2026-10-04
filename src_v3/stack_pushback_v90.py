@@ -11,7 +11,9 @@ row, moves the v89 file and applies MS1 and MS2 again. With
 `--neighbours` adds the A4 columns of `build_pushback_neighbours.py`;
 `--stand-bound` floors the served file at the A5 stand bound after MS1
 and MS2; `--base` names the served file that the stack moves (v92: the
-v89 recipe with three per-airport seeds, B2).
+v89 recipe with three per-airport seeds, B2). `--stack-rows own` moves only
+rows with a clock at the assigned stand: on the v97 base the stack gains
+41 MSE there and loses 175 on segment rows (third-edition N1).
 """
 from __future__ import annotations
 
@@ -33,7 +35,8 @@ from src_v3.fit_blend_v77 import blend
 from src_v3.measure_member_v77 import out_path
 from src_v3.measure_nm_clocks import PRED_OUT
 from src_v3.measure_tail_rules import mse_delta
-from src_v3.mlp_member import PRED_OUT as MLP_HOLDOUT, RANK_OUT as MLP_RANK
+from src_v3.mlp_member import PRED_OUT as MLP_HOLDOUT
+from src_v3.mlp_member import out_paths as mlp_paths
 from src_v3.predict_v57 import write_ms
 
 BLEND_HOLDOUT = C.MODELS / "blend_v89_holdout.parquet"
@@ -156,14 +159,15 @@ def mix_mlp(base: pd.DataFrame, mlp_path, weight: float, is_lirf: np.ndarray) ->
 
 def serve(train: pd.DataFrame, rank_paths: tuple, args: argparse.Namespace) -> None:
     feat = features(train)
-    booster = fit(train[train["has_clock"]], feat, rounds=args.rounds)
+    booster = fit(train[train["has_clock"]], feat, {**C.STACK_V90_PARAMS, "num_leaves": args.leaves}, rounds=args.rounds)
     served = pd.read_parquet(C.ROOT / "submission" / args.base).rename(columns={"TAXITIME_SEC_mvt": "base"})
     adep = served[["MVT_ID_mvt"]].merge(load_dep([C.RANK])[["MVT_ID_mvt", "ADEP_mvt"]], on="MVT_ID_mvt", how="left")
-    served = mix_mlp(served, MLP_RANK, args.mlp_weight, (adep["ADEP_mvt"].astype(str) == "LIRF").values)
+    served = mix_mlp(served, mlp_paths(args.mlp_columns)[1], args.mlp_weight, (adep["ADEP_mvt"].astype(str) == "LIRF").values)
     f = frame(served, rank_paths, load_dep([C.RANK], ["CALLSIGN_flt"]), args.neighbours == "rows")
-    move = np.where(f["has_clock"], booster.predict(f[feat]), 0.0)
-    log.info("moved %d rows; mean move %.1f s; p99 |move| %.0f s", int(f["has_clock"].sum()),
-             move[f["has_clock"]].mean(), np.quantile(np.abs(move[f["has_clock"]]), 0.99))
+    rows = f["has_clock"] & (f[["adsb_own_move", "adsb_own_last"]].notna().any(axis=1) if args.stack_rows == "own" else True)
+    move = np.where(rows, booster.predict(f[feat]), 0.0)
+    log.info("moved %d rows; mean move %.1f s; p99 |move| %.0f s", int(rows.sum()),
+             move[rows].mean(), np.quantile(np.abs(move[rows]), 0.99))
     lower = pd.DataFrame({"MVT_ID_mvt": f["MVT_ID_mvt"], "lower": stand_bound(f)}) if args.stand_bound else None
     write_ms(pd.DataFrame({"MVT_ID_mvt": f["MVT_ID_mvt"], "TAXITIME_SEC_mvt": np.clip(f["base"] + move, 0, None)}),
              args.out, lower)
@@ -176,12 +180,16 @@ def main() -> None:
     ap.add_argument("--out", default="kind-mango_v90.parquet")
     ap.add_argument("--sources", choices=("opdi", "adsb", "both"), default="both")
     ap.add_argument("--mlp-weight", type=float, default=0.0, help="MLP share of the base outside LIRF.")
+    ap.add_argument("--mlp-columns", default="v85", help="Column set of the MLP member files (N4: v97).")
     ap.add_argument("--neighbours", choices=("none", "cols", "rows"), default="none",
                     help="A4: neighbour pushback columns; `rows` also stacks rows with neighbours but no own clock.")
     ap.add_argument("--base", default="kind-mango_v89.parquet", help="Served file that the stack moves.")
     ap.add_argument("--stand-bound", action="store_true", help="A5: floor at the last time at the stand, after MS1.")
+    ap.add_argument("--stack-rows", choices=("all", "own"), default="all",
+                    help="Clock rows the stack moves; `own` keeps only rows with a clock at the assigned stand (N1).")
     ap.add_argument("--adsb-train", default=str(ADSB_TRAIN), help="ADS-B clock table of the 2025 training days.")
     ap.add_argument("--rounds", type=int, default=C.STACK_V90_ROUNDS, help="Boosting rounds of the stack.")
+    ap.add_argument("--leaves", type=int, default=C.STACK_V90_PARAMS["num_leaves"], help="Leaves of the stack trees.")
     ap.add_argument("--spec", help="Tag of the ADS-B specialist files to add as a column (v96: v96).")
     ap.add_argument("--blend-holdout", default=str(BLEND_HOLDOUT),
                     help="Out-of-sample hold-out blend the stack learns from; it must match `--base` (v97: blend_v97_holdout).")
@@ -197,7 +205,7 @@ def main() -> None:
         holdout_blend().to_parquet(BLEND_HOLDOUT)
     rows = pd.read_parquet(args.blend_holdout)
     if args.mlp_weight:  # the MLP hold-out file shares the row order of the blend (checked in mlp_member)
-        rows["base"] = (1 - args.mlp_weight) * rows["base"] + args.mlp_weight * pd.read_parquet(MLP_HOLDOUT)["pred"].values
+        rows["base"] = (1 - args.mlp_weight) * rows["base"] + args.mlp_weight * pd.read_parquet(mlp_paths(args.mlp_columns)[0])["pred"].values
     rows = rows.dropna(subset=["MVT_ID_mvt"])  # 19 hold-out rows carry no id
     train = frame(rows, (NM_TRAIN, *[t for t, _ in use]),
                   load_dep(sorted(C.TRAIN_DIR.glob("training_2025-0[17]-*.parquet")), ["CALLSIGN_flt"]),

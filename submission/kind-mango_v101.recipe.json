@@ -1,0 +1,12 @@
+{
+ "lever": "third edition G1",
+ "holdout_price": -52.3,
+ "gate": [
+  "lgbm_p_fb_lirf_g1.txt",
+  "lirf_regime_g1.isotonic.pkl",
+  "lirf_regime_g1.features.txt"
+ ],
+ "predict_v67_args": "v97 flags plus --gate-booster/--gate-iso/--gate-features g1 and --extra ... models/arr_art_rank_g1.parquet",
+ "stack_args": "v97 stack args with --base kind-mango_v101_base.parquet",
+ "score": 247.6927
+}

@@ -7,6 +7,8 @@ ADS-B), and writes its hold-out prediction. Members run as separate
 processes. `price` builds the v97 hold-out blend from the five members,
 cross-fits the v95 stack on it, and compares blend plus stack with the
 v89 blend plus the same stack, outside LIRF, on the hold-out scale.
+`fit --tag T --extra F...` writes `holdout_<member>_T.parquet` with more
+column files (third-edition K3); `measure_member_swap.py` prices it.
 """
 from __future__ import annotations
 
@@ -43,8 +45,8 @@ MEMBERS = ("lgb", "lgb_anchor", "lgb_per_airport", "cat", "cat_anchor")
 log = logging.getLogger(__name__)
 
 
-def out_path(member: str) -> Path:
-    return C.MODELS / f"holdout_{member}_v97.parquet"
+def out_path(member: str, tag: str = "v97") -> Path:
+    return C.MODELS / f"holdout_{member}_{tag}.parquet"
 
 
 def anchor(frame: pd.DataFrame) -> np.ndarray:
@@ -58,9 +60,9 @@ def lgb_fit(train: pd.DataFrame, feat: list[str]) -> lgb.Booster:
     return lgb.train({**study["tuned"], "num_threads": C.NUM_THREADS}, dt, num_boost_round=study["best_iteration"])
 
 
-def fit_member(member: str) -> np.ndarray:
+def fit_member(member: str, more: tuple = ()) -> np.ndarray:
     """Hold-out prediction of one member, in the row order of `PRED_OUT`; anchored members fall back to the plain one."""
-    extra = CAT_EXTRA if member.startswith("cat") else LGB_EXTRA
+    extra = (*(CAT_EXTRA if member.startswith("cat") else LGB_EXTRA), *more)
     dep, feat = load_frame(extra)
     if member.endswith("anchor"):
         dep = dep[dep["mvt_aobt3"].notna()].copy()
@@ -122,12 +124,14 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("mode", choices=("fit", "price"))
     ap.add_argument("member", nargs="?", choices=MEMBERS)
+    ap.add_argument("--tag", default="v97")
+    ap.add_argument("--extra", nargs="+", default=[], help="More column files for the member (K3).")
     args = ap.parse_args()
     if args.mode == "fit":
         ref = pd.read_parquet(PRED_OUT)
-        pred = fit_member(args.member)
+        pred = fit_member(args.member, tuple(C.ROOT / x for x in args.extra))
         log.info("%s hold-out RMSE %.2f", args.member, np.sqrt(np.mean((pred - ref["y"].values) ** 2)))
-        pd.DataFrame({"MVT_ID_mvt": ref["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out_path(args.member))
+        pd.DataFrame({"MVT_ID_mvt": ref["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out_path(args.member, args.tag))
         return
     report = price()
     log.info("%s", json.dumps(report, indent=1))

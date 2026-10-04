@@ -1,0 +1,10 @@
+{
+ "design": "day split: odd days real labels in both arms, even days pseudo rows and scoring",
+ "pseudo_rows": 9306,
+ "scored_rows": 154261,
+ "member": 34.350334411294234,
+ "member_stand_clock_rows": 43.47482348532665,
+ "member_other_rows": -9.124489074033972,
+ "blend": 7.404922922447675,
+ "blend_both_halves_estimate": 14.80984584489535
+}

@@ -1,0 +1,24 @@
+{
+ "log_loss": {
+  "sd<=3600": {
+   "control": 0.3635614714086477,
+   "treatment": 0.36027787265559114
+  },
+  "3600<sd<=14400": {
+   "control": 0.12243869774175883,
+   "treatment": 0.1220148107483401
+  },
+  "sd>14400": {
+   "control": 0.12157787165864294,
+   "treatment": 0.12378527004601457
+  }
+ },
+ "columns": [
+  "art_pre_day",
+  "art_pre_day_n",
+  "art_pre_month",
+  "art_day"
+ ],
+ "n_mixture_rows": 26483,
+ "mixture_treatment_minus_control": -52.330629462502515
+}

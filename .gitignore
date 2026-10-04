@@ -112,3 +112,4 @@ models/v3/*.parquet
 # Run logs and derived pushback tables (rebuilt by src_v3/build_opdi_own.py)
 logs/
 models/opdi_own_*.parquet
+models/arr_art*.parquet

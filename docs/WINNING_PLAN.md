@@ -537,18 +537,23 @@ Fill one row per lever as it closes.
 
 | id | lever | upload | live, s | state |
 |---|---|---|---|---|
-| N1 | stack on stand-clock rows only | | | open |
-| G1 | arrival artefact shares in the LIRF gate | | | open |
-| K2 | ADS-B columns in the LIRF `R_norm` | | | open |
-| K1 | `staging-0` and `mlatonly-0` feeds | | | probe open |
-| K3 | route-distance clock | | | open |
-| N5 | 2026 pseudo-labels | | | waits for the team decision |
-| N2 | Optuna study on the v97 columns | | | open |
-| N4 | neural member on the v97 columns | | | open |
-| K4 | long-hold rule | | | open |
+| N1 | stack on stand-clock rows only | v99 | 248.21 (+0.32) | rejected: the stack helps on segment rows live; the 2025 hold-out misprices segment rows (F16.4) |
+| G1 | arrival artefact shares in the LIRF gate | v101 | 247.69 (-0.20) | accepted, best: hold-out -52 MSE, live about -98 |
+| K2 | ADS-B columns in the LIRF `R_norm` | v100 | 248.01 (+0.12) | rejected: hold-out -267 MSE on genuine rows did not transfer, like every LIRF-head model change |
+| K1 | `staging-0` and `mlatonly-0` feeds | | | closed: the union adds at most 0.6 points of coverage (`adsb_feeds_probe.json`) |
+| K3 | route-distance clock | | | closed: member +164, blend plus stack -28 MSE (`swap_k3.holdout.json`) |
+| N5 | 2026 pseudo-labels | | | closed: day-split simulation member +34, blend +7 MSE (`pseudo_n5.holdout.json`) |
+| N2 | Optuna study on the v97 columns | v108 | | refit running; uploads 2026-10-05 00:05 UTC on the v105 recipe |
+| N4 | neural member on the v97 columns | v105 | 246.48 (-0.48) | accepted, best: hold-out -64 MSE, live about -235 |
+| K4 | long-hold rule | | | closed: 4 hold-out candidates, none above 7,200 s |
 | N3 | blend shares per coverage class | | | open |
-| Q1 | commit | | | open |
+| Q1 | commit | | | done: `8114b81` on branch `plan-v99-third-edition` |
 | Q2 | reproduction path for the final file | | | open |
+
+Added during execution (2026-10-03 and 04): the LIRF gate family with 2026 arrival information. v101 (G1 airline
+shares) -0.20 s, v102 (plus the v83 stand link) -0.55 s, v104 (plus operator shares, gate g3) -0.19 s; v107 (g4, plus exact-copy
+and stand-day shares) +0.21 s, rejected. A 63-leaf stack (v103) +0.20 s, rejected. The hold-out underrated every accepted change:
+the user rule of 2026-10-03 is to finish and upload a lever that misses its bar and judge it live.
 
 ## Appendix A. Rerun the measurements
 

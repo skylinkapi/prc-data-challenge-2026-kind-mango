@@ -2,11 +2,14 @@
 
 `--tag` and `--extra` add column files keyed on `MVT_ID_mvt` (v86: the
 forward-window clocks and queue lengths of `build_nm_forward_v85.py`).
+`--study` picks the study file with the parameters and rounds (third-edition
+N2: `models/tune_lgbm_n2.tuned_params.json`).
 """
 from __future__ import annotations
 
 import argparse
 import logging
+from pathlib import Path
 
 import pandas as pd
 
@@ -24,6 +27,7 @@ def main() -> None:
     ap.add_argument("--tag", default="v76", help="Version tag; the anchored base gets the suffix 'a'.")
     ap.add_argument("--extra", nargs="*", default=[],
                     help="Parquets of extra training columns keyed on MVT_ID_mvt, relative to the repo root.")
+    ap.add_argument("--study", type=Path, default=TUNED_V76, help="Study file with the parameters and rounds.")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     dep = _load_frame_v57()
@@ -35,10 +39,10 @@ def main() -> None:
             feat += [c for c in cols.columns if c != "MVT_ID_mvt"]
     changed = f"v73 columns plus {args.extra}, MB5 clock-era parameters"
     if args.base == "plain":
-        train_base(dep, feat, args.tag, changed, tuned_path=TUNED_V76)
+        train_base(dep, feat, args.tag, changed, tuned_path=args.study)
     else:
         train_base(dep, feat, f"{args.tag}a", f"anchored target, {changed}",
-                   anchor_col="mvt_aobt3", tuned_path=TUNED_V76)
+                   anchor_col="mvt_aobt3", tuned_path=args.study)
 
 
 if __name__ == "__main__":

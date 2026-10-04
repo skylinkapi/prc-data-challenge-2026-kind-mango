@@ -1,0 +1,13 @@
+{
+ "lever": "third edition G1 plus the v83 arrival link in the gate",
+ "holdout_price": -322.8,
+ "gate": [
+  "lgbm_p_fb_lirf_g1l.txt",
+  "lirf_regime_g1l.isotonic.pkl",
+  "lirf_regime_g1l.features.txt"
+ ],
+ "gate_columns": "models/arr_art_link_train_g1l.parquet (G1 shares + v83 link columns)",
+ "predict_v67_args": "v97 flags, --gate-* g1l, --extra ... models/arr_art_link_rank_g1l.parquet",
+ "stack_args": "v97 stack, --base kind-mango_v102_base.parquet",
+ "score": 247.1439
+}

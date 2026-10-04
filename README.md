@@ -6,8 +6,13 @@ airport-reported truth.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
 - **This repo:** https://github.com/skylinkapi/prc-data-challenge-2026-kind-mango
-- **Current leaderboard best:** **247.89 s RMSE** (`kind-mango_v97.parquet`,
-  2026-10-03), -1.50 s vs v95; team rank 31. The leaderboard top is 216.57 s
+- **Current leaderboard best:** **246.48 s RMSE** (`kind-mango_v105.parquet`,
+  2026-10-04): v97 with a LIRF fallback gate that reads 2026 arrival information
+  (the airline's and operator's share of arrivals with in-block on the schedule,
+  and the previous arrival at the stand; `src_v3/build_arr_artefact.py`, gate g3)
+  and the MLP member retrained on the v97 columns at 0.2. Path from v97: v101
+  247.69, v102 247.14, v104 246.95, v105 246.48 s (RECAP rows). Before that:
+  **247.89 s RMSE** (`kind-mango_v97.parquet`, 2026-10-03), -1.50 s vs v95; team rank 31. The leaderboard top is 216.57 s
   (API, 2026-10-03). **Next:** `docs/WINNING_PLAN.md` third edition, the path
   from 247.89 s toward 210 s. `python -m src_v3.measure_budget_v97` and
   `python -m src_v3.measure_lirf_gap` measure where the v97 error sits
@@ -430,6 +435,9 @@ src_v3/                         # current pipeline (v48 on), constants in config
   build_adsb_clock.py, build_opdi_own.py   # pushback clocks of the scored flight
   measure_budget_v97.py         # v97 error budget per class, airport and ADS-B coverage; 2026 projection
   measure_lirf_gap.py           # LIRF gate ceiling and the arrival-artefact signal (WINNING_PLAN third edition)
+  build_arr_artefact.py         # G1: airline arrival artefact shares for the LIRF gate (v101 on)
+  train_p_fb_v83.py             # LIRF gate refit with added columns, `--tag g3 --extra ...` (v104, v105)
+  measure_pseudo_n5.py, measure_member_swap.py, probe_adsb_feeds.py, build_route_clock.py   # closed levers N5, K3, K1
 
 external/                       # open-data caches (gitignored)
   metar/       Iowa State ASOS CSVs per ICAO

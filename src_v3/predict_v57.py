@@ -24,7 +24,8 @@ from src_v3.postprocess import apply_ms1, apply_ms2, assert_ms4
 from src_v3.predict_v51 import _load_train_min
 from src_v3.support import build_support
 
-R_NORM_FILES = [f"lgbm_r_norm_lirf_v55_s{s}.txt" for s in (42, 43, 44, 45, 46)]
+R_NORM_SEEDS = (42, 43, 44, 45, 46)
+R_NORM_FILES = [f"lgbm_r_norm_lirf_v55_s{s}.txt" for s in R_NORM_SEEDS]
 P_FB_BOOSTER = "lgbm_p_fb_lirf_v56.txt"
 log = logging.getLogger(__name__)
 
@@ -34,8 +35,8 @@ def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
               gate_iso: str = "lirf_regime_v56.isotonic.pkl",
               extra_files: tuple[str, ...] = (), r_norm_post=None,
               gate_booster: str = P_FB_BOOSTER,
-              gate_features: str = "lirf_regime_v23.features.txt") -> None:
-    """Write the pre-MS file of the v57 stack with the given base members."""
+              gate_features: str = "lirf_regime_v23.features.txt", r_norm_tag: str = "v55") -> None:
+    """Write the pre-MS file of the v57 stack with the given base members; `r_norm_tag` picks the LIRF `R_norm` members."""
     tempo = pd.read_parquet(V2_RANK, columns=["MVT_ID_mvt", *TEMPO_COLS])
     p2575 = pd.read_parquet(C.ROOT / "models" / "tempo_p2575_rank.parquet",
                             columns=["MVT_ID_mvt", *EOBT_P2575])
@@ -48,10 +49,10 @@ def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
                             how="left", validate="1:1")
     predict_v30_main(
         pre_ms,
-        r_norm_files=R_NORM_FILES,
+        r_norm_files=R_NORM_FILES if r_norm_tag == "v55" else [f"lgbm_r_norm_lirf_{r_norm_tag}_s{s}.txt" for s in R_NORM_SEEDS],
         base_model=base_model,
         extra_columns=extra,
-        r_norm_features="lirf_regime_v41.features.txt",
+        r_norm_features="lirf_regime_v41.features.txt" if r_norm_tag == "v55" else f"lirf_regime_{r_norm_tag}.features.txt",
         r_norm_clip=None,
         p_fb_members=[(gate_booster, gate_iso)],
         p_fb_features=gate_features,

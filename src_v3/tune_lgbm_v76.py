@@ -9,7 +9,8 @@ The best trial and the v43 parameters are then refit and priced on the
 hold-out months 1 and 7 outside LIRF. With `--anchor-col`, the study runs
 on `y - clip(anchor, 0, 7,200)` (v79a) and the report also prices the
 best trial against the saved anchored member of `measure_member_v77.py`
-(v43 parameters, 2,000 rounds).
+(v43 parameters, 2,000 rounds). `--extra` adds column files to the study
+frame (third-edition N2: the v97 forward, OPDI and ADS-B columns).
 """
 from __future__ import annotations
 
@@ -76,9 +77,11 @@ def main() -> None:
     ap.add_argument("--out", default=str(OUT), help="Study file with the parameters and the report.")
     ap.add_argument("--sampler-seed", type=int, default=C.GLOBAL_SEED)
     ap.add_argument("--control", help="Study file whose best parameters are trial 0 (v84: the v76 study).")
+    ap.add_argument("--extra", nargs="+", default=[], help="Column files added to the NM clocks (N2: the v97 set).")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    dep, feat = load_frame((CLOCKS_TRAIN,))
+    extra = (CLOCKS_TRAIN, *[C.ROOT / x for x in args.extra])
+    dep, feat = load_frame(extra)
     if args.anchor_col:
         dep = dep[dep[args.anchor_col].notna()].copy()
         dep["TAXITIME_SEC_mvt"] = dep["TAXITIME_SEC_mvt"] - dep[args.anchor_col].clip(0, C.NM_CLOCK_CLIP_S)
@@ -103,7 +106,8 @@ def main() -> None:
     study.optimize(objective, n_trials=C.TUNE_V76_TRIALS)
     arms = {"v43": study.trials[0].params, "best": study.best_params}
     h, _ = holdout_rows()
-    h = h.merge(pd.read_parquet(CLOCKS_TRAIN), on="MVT_ID_mvt", how="left", validate="m:1")
+    for path in extra:
+        h = h.merge(pd.read_parquet(path), on="MVT_ID_mvt", how="left", validate="m:1")
     y, apt = h["TAXITIME_SEC_mvt"].values.astype(float), h["ADEP_mvt"].astype(str).values
     boosters = {arm: fit(dt, dv, p) for arm, p in arms.items()}
     raw = {arm: b.predict(h[feat], num_iteration=b.best_iteration) for arm, b in boosters.items()}

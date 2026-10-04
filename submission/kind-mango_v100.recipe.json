@@ -1,0 +1,23 @@
+{
+ "lever": "third edition K2",
+ "r_norm_tag": "v99r",
+ "holdout_price_genuine_rows": -267.2,
+ "predict_v67_args": "v97 flags plus --r-norm-tag v99r (see release_v97.serve)",
+ "stack_args": [
+  "--sources",
+  "both",
+  "--stand-bound",
+  "--mlp-weight",
+  "0.15",
+  "--rounds",
+  "600",
+  "--adsb-train",
+  "external/adsblol/v97/adsb_clock_train.parquet",
+  "--blend-holdout",
+  "models/v3/blend_v97_holdout.parquet",
+  "--base",
+  "kind-mango_v100_base.parquet"
+ ],
+ "gates": "all pass except lirf_unchanged by design; non-LIRF rows equal v97",
+ "score": 248.005
+}
