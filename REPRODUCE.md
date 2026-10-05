@@ -154,6 +154,50 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    `python -m src_v3.test_parity --version 95` and
    `python -m src_v3.artefact_manifest check --version 95` check it.
 
+   **v111** (the current best, 245.23 s) serves the v104 base, then the v105 stack with a neural
+   term that holds the MLP and the TabM member. Build the v104 base (v97 members, g3 LIRF gate):
+
+   ```bash
+   python -m src_v3.predict_v67 --weight 0.5 --ms3 --base-model lgbm_r_all_v97 --catboost-tag v97c \
+       --catboost-anchor-tag v97ca --anchor-model lgbm_r_all_v97a --anchor-weight 0.5 \
+       --per-airport-tag v97 --per-airport-weight 0.5 \
+       --gate-booster lgbm_p_fb_lirf_g3.txt --gate-iso lirf_regime_g3.isotonic.pkl \
+       --gate-features lirf_regime_g3.features.txt \
+       --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet \
+               models/nm_forward_rank_v85.parquet models/opdi_own_rank_v90.parquet \
+               external/adsblol/adsb_clock_rank.parquet models/arr_art_op_link_rank_g3.parquet \
+       --pre-ms kind-mango_v104_base_pre_ms.parquet --out kind-mango_v104_base.parquet
+   ```
+
+   The v105 file is the stack on that base with the v97-column MLP at 0.2 (rebuild at 1e-13 s):
+
+   ```bash
+   python -m src_v3.mlp_member serve --columns v97
+   python -m src_v3.stack_pushback_v90 serve --sources both --stand-bound --rounds 600 \
+       --adsb-train external/adsblol/v97/adsb_clock_train.parquet \
+       --blend-holdout models/v3/blend_v97_holdout.parquet --mlp-weight 0.2 --mlp-columns v97 \
+       --base kind-mango_v104_base.parquet --out kind-mango_v105.parquet
+   ```
+
+   v111 adds the TabM member (`src_v3/tabm_member.py`). It trains on an NVIDIA GPU with the CUDA
+   build of torch in `.gpu_site/` (install lines in `requirements.txt`). `measure` writes the
+   hold-out member that the stack trains on; `combine` writes the neural term `nn`
+   (0.318 MLP + 0.682 TabM, TabM at 0.3 on top of the v105 base):
+
+   ```bash
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member measure --tag tabm    # hold-out member, about 15 min
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member serve --tag tabm      # two seeds on all rows, about 25 min
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member combine --tags tabm --share 0.3
+   python -m src_v3.stack_pushback_v90 serve --sources both --stand-bound --rounds 600 \
+       --adsb-train external/adsblol/v97/adsb_clock_train.parquet \
+       --blend-holdout models/v3/blend_v97_holdout.parquet --mlp-weight 0.44 --mlp-columns nn \
+       --base kind-mango_v104_base.parquet --out kind-mango_v111.parquet
+   ```
+
+   The script does not force deterministic CUDA kernels, so a TabM refit can differ from the
+   recorded one. The recorded `models/v3/rank_mlp_tabm.parquet` and
+   `models/v3/holdout_mlp_tabm.parquet` rebuild v111 through `combine` and the stack.
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.

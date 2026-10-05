@@ -318,7 +318,13 @@ TABM_BATCH = 1024
 TABM_EPOCHS = 16
 TABM_SERVE_SEEDS = (42, 43)
 TABM_BLEND_WEIGHTS = (0.1, 0.2, 0.3, 0.4, 0.5)
-TABM_SERVE_EPOCH = 13                   # best stop-month epoch of the 16-epoch measure run (163.54 s)
+TABM_PREDICT_BATCH = 4096
+TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spec`
+    "tabm": {"serve_epoch": 13},                      # v111: best stop-month epoch of 16 (163.54 s)
+    "tabm_e24": {"epochs": 24, "serve_epoch": 23},    # 162.68 s; on the v105 base -343 MSE at 0.3
+    "tabm_k32": {"k": 32, "width": 768},
+    "tabm_anchor": {"anchor_col": "mvt_aobt3"},
+}
 TABM_ON_V105 = 0.3                      # share on top of the v105 base; hold-out -214 / -252 / -244 MSE at 0.2 / 0.3 / 0.4
 # Error budget of v97 and the LIRF gap (`measure_budget_v97.py`, `measure_lirf_gap.py`), WINNING_PLAN third edition
 RANK_ROWS = 344841                      # live scale of every ranking-file MSE

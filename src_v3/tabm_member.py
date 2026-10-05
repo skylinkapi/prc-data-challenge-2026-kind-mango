@@ -8,15 +8,17 @@ Each categorical column gets an embedding; a category unseen in training maps to
 
 `measure` fits on the fit months, early-stops on months 11 and 12, scores the hold-out months 1 and 7 and
 prices the member in the v97 hold-out blend. `serve` fits on every served training row up to the best
-measured epoch and scores the ranking feature dump. Both write the `mlp_member` file names with the tag
-`tabm`, so `stack_pushback_v90 --mlp-columns tabm` reads them. Run with `PYTHONPATH=.gpu_site`
-(`config.GPU_SITE`): the served CPU build of torch has no CUDA.
+measured epoch and scores the ranking feature dump. Each member is a named `Spec` in `config.TABM_SPECS`;
+both modes write the `mlp_member` file names with that tag. `combine` writes the neural term `nn`, the MLP
+and the mean of the named TabM members, that `stack_pushback_v90 --mlp-columns nn` reads. Run with
+`PYTHONPATH=.gpu_site` (`config.GPU_SITE`): the served CPU build of torch has no CUDA.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import logging
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -32,14 +34,32 @@ from src_v3.measure_tail_rules import mse_delta
 from src_v3.mlp_member import CAT_COLS, COLUMN_SETS, out_paths
 
 COLUMNS = "v97"
-TAG = "tabm"
 log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class Spec:
+    """Settings of one TabM member; `config.TABM_SPECS` holds the overrides of each named member."""
+    k: int = C.TABM_K
+    blocks: int = C.TABM_BLOCKS
+    width: int = C.TABM_WIDTH
+    dropout: float = C.TABM_DROPOUT
+    bins: int = C.TABM_BINS
+    d_num: int = C.TABM_D_NUM
+    lr: float = C.TABM_LR
+    weight_decay: float = C.TABM_WEIGHT_DECAY
+    batch: int = C.TABM_BATCH
+    epochs: int = C.TABM_EPOCHS
+    serve_epoch: int = C.TABM_EPOCHS - 1
+    anchor_col: str | None = None   # mvt_aobt3: learn y minus the NM clock (0 where missing), as the anchored trees
+    seeds: tuple = C.TABM_SERVE_SEEDS
 
 
 class Prep:
     """Column transforms fitted on the training rows and reused on every other frame."""
 
-    def __init__(self, frame: pd.DataFrame, feat: list[str]):
+    def __init__(self, frame: pd.DataFrame, feat: list[str], spec: Spec):
+        self.anchor_col = spec.anchor_col
         self.num = [c for c in feat if c not in CAT_COLS]
         self.cat = [c for c in feat if c in CAT_COLS]
         x = self._signed_log(frame)
@@ -50,7 +70,7 @@ class Prep:
         rows = np.random.default_rng(C.GLOBAL_SEED).choice(len(x), min(len(x), C.TABM_BIN_ROWS), replace=False)
         sample = self._numeric(x[rows])
         self.keep = sample.min(axis=0) < sample.max(axis=0)   # a column constant in the sample has no bins
-        self.bins = rne.compute_bins(torch.tensor(sample[:, self.keep]), n_bins=C.TABM_BINS)
+        self.bins = rne.compute_bins(torch.tensor(sample[:, self.keep]), n_bins=spec.bins)
         self.vocab = {c: {v: i + 1 for i, v in enumerate(frame[c].astype(str).unique())} for c in self.cat}
 
     def _signed_log(self, frame: pd.DataFrame) -> np.ndarray:
@@ -64,24 +84,27 @@ class Prep:
         z = np.hstack([z, miss[:, self.flagged]]).astype(np.float32)
         return z if self.keep is None else z[:, self.keep]
 
-    def __call__(self, frame: pd.DataFrame, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
+    def __call__(self, frame: pd.DataFrame, device: torch.device) -> tuple[torch.Tensor, torch.Tensor, np.ndarray]:
+        """Numeric and categorical tensors, and the anchor in seconds that the net predicts on top of."""
         num = torch.tensor(self._numeric(self._signed_log(frame)), device=device)
         cat = np.stack([frame[c].astype(str).map(self.vocab[c]).fillna(0).to_numpy(dtype=np.int64)
                         for c in self.cat], axis=1)
-        return num, torch.tensor(cat, device=device)
+        col = self.anchor_col
+        anchor = np.zeros(len(frame)) if col is None else frame[col].clip(lower=0).fillna(0).to_numpy(dtype=float)
+        return num, torch.tensor(cat, device=device), anchor
 
 
 class Net(nn.Module):
-    def __init__(self, bins: list[torch.Tensor], cards: list[int]):
+    def __init__(self, bins: list[torch.Tensor], cards: list[int], spec: Spec):
         super().__init__()
-        self.num = rne.PiecewiseLinearEmbeddings(bins, C.TABM_D_NUM, activation=False, version="B")
+        self.num = rne.PiecewiseLinearEmbeddings(bins, spec.d_num, activation=False, version="B")
         self.emb = nn.ModuleList([nn.Embedding(n + 1, min(C.MLP_EMB_MAX, (n + 2) // 2)) for n in cards])
-        chunks = [C.TABM_D_NUM] * len(bins) + [e.embedding_dim for e in self.emb]
-        self.view = tabm.EnsembleView(k=C.TABM_K)
-        self.body = tabm.make_tabm_backbone(d_in=sum(chunks), n_blocks=C.TABM_BLOCKS, d_block=C.TABM_WIDTH,
-                                            dropout=C.TABM_DROPOUT, k=C.TABM_K, start_scaling_init="normal",
+        chunks = [spec.d_num] * len(bins) + [e.embedding_dim for e in self.emb]
+        self.view = tabm.EnsembleView(k=spec.k)
+        self.body = tabm.make_tabm_backbone(d_in=sum(chunks), n_blocks=spec.blocks, d_block=spec.width,
+                                            dropout=spec.dropout, k=spec.k, start_scaling_init="normal",
                                             start_scaling_init_chunks=chunks)
-        self.head = tabm.LinearEnsemble(C.TABM_WIDTH, 1, k=C.TABM_K)
+        self.head = tabm.LinearEnsemble(spec.width, 1, k=spec.k)
 
     def forward(self, num: torch.Tensor, cat: torch.Tensor) -> torch.Tensor:
         """Predictions of the k submodels, shape (batch, k)."""
@@ -89,33 +112,33 @@ class Net(nn.Module):
         return self.head(self.body(self.view(x))).squeeze(-1)
 
 
-def predict(net: Net, num: torch.Tensor, cat: torch.Tensor) -> np.ndarray:
-    """Mean of the k submodels in seconds, clipped at 0."""
+def predict(net: Net, num: torch.Tensor, cat: torch.Tensor, anchor: np.ndarray) -> np.ndarray:
+    """Anchor plus the mean of the k submodels, in seconds, clipped at 0."""
     net.eval()
-    step = C.TABM_BATCH * 4
+    step = C.TABM_PREDICT_BATCH
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.float16):
         out = [net(num[i:i + step], cat[i:i + step]).float().mean(1) for i in range(0, len(num), step)]
-    return np.clip(torch.cat(out).cpu().numpy() * C.MLP_Y_SCALE, 0, None)
+    return np.clip(anchor + torch.cat(out).cpu().numpy() * C.MLP_Y_SCALE, 0, None)
 
 
 def train(prep: Prep, fit_rows: pd.DataFrame, stop_rows: pd.DataFrame | None, seed: int,
-          serve_epoch: int | None = None) -> tuple[Net, list[float]]:
-    """AdamW with a one-cycle schedule over `TABM_EPOCHS`; keep the best stop-month epoch, or stop after `serve_epoch`."""
+          spec: Spec) -> tuple[Net, list[float]]:
+    """AdamW with a one-cycle schedule over `spec.epochs`; keep the best stop-month epoch, or stop after `spec.serve_epoch`."""
     dev = torch.device("cuda")
     torch.manual_seed(seed)
-    num, cat = prep(fit_rows, dev)
-    y = torch.tensor(fit_rows["TAXITIME_SEC_mvt"].clip(0, C.MLP_Y_CLIP).to_numpy() / C.MLP_Y_SCALE,
+    num, cat, anchor = prep(fit_rows, dev)
+    y = torch.tensor((fit_rows["TAXITIME_SEC_mvt"].clip(0, C.MLP_Y_CLIP).to_numpy() - anchor) / C.MLP_Y_SCALE,
                      dtype=torch.float32, device=dev)
-    net = Net(prep.bins, [len(prep.vocab[c]) for c in prep.cat]).to(dev)
-    opt = torch.optim.AdamW(net.parameters(), lr=C.TABM_LR, weight_decay=C.TABM_WEIGHT_DECAY)
-    sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=C.TABM_LR,
-                                                total_steps=C.TABM_EPOCHS * (len(y) // C.TABM_BATCH + 1))
+    net = Net(prep.bins, [len(prep.vocab[c]) for c in prep.cat], spec).to(dev)
+    opt = torch.optim.AdamW(net.parameters(), lr=spec.lr, weight_decay=spec.weight_decay)
+    sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=spec.lr,
+                                                total_steps=spec.epochs * (len(y) // spec.batch + 1))
     scaler = torch.amp.GradScaler()
     stop = None if stop_rows is None else (*prep(stop_rows, dev), stop_rows["TAXITIME_SEC_mvt"].to_numpy(dtype=float))
     best, state, curve = np.inf, None, []
-    for epoch in range(C.TABM_EPOCHS):
+    for epoch in range(spec.epochs):
         net.train()
-        for idx in torch.randperm(len(y), device=dev).split(C.TABM_BATCH):
+        for idx in torch.randperm(len(y), device=dev).split(spec.batch):
             with torch.autocast("cuda", dtype=torch.float16):
                 out = net(num[idx], cat[idx])
             loss = ((out.float() - y[idx, None]) ** 2).mean()
@@ -126,10 +149,10 @@ def train(prep: Prep, fit_rows: pd.DataFrame, stop_rows: pd.DataFrame | None, se
             sched.step()
         if stop is None:
             log.info("seed %d epoch %d done", seed, epoch)
-            if epoch == serve_epoch:
+            if epoch == spec.serve_epoch:
                 return net, curve
             continue
-        curve.append(float(np.sqrt(np.mean((predict(net, stop[0], stop[1]) - stop[2]) ** 2))))
+        curve.append(float(np.sqrt(np.mean((predict(net, *stop[:3]) - stop[3]) ** 2))))
         log.info("epoch %d: stop-month RMSE %.2f s", epoch, curve[-1])
         if curve[-1] < best:
             best, state = curve[-1], {k: v.clone() for k, v in net.state_dict().items()}
@@ -150,12 +173,12 @@ def price(pred: np.ndarray, ref: pd.DataFrame, mlp: np.ndarray) -> dict:
             "replace_mlp": {str(w): mse_delta((1 - w) * base + w * pred, v105, y) for w in C.TABM_BLEND_WEIGHTS}}
 
 
-def measure(tag: str = TAG) -> None:
+def measure(tag: str, spec: Spec) -> None:
     extra, blend_path, _ = COLUMN_SETS[COLUMNS]
     pred_out, _, report_out = out_paths(tag)
     dep, feat = load_frame(extra)
-    prep = Prep(dep[dep["month"].isin(FIT_MONTHS)], feat)
-    net, curve = train(prep, dep[dep["month"].isin(FIT_MONTHS)], dep[dep["month"].isin(STOP_MONTHS)], C.GLOBAL_SEED)
+    prep = Prep(dep[dep["month"].isin(FIT_MONTHS)], feat, spec)
+    net, curve = train(prep, dep[dep["month"].isin(FIT_MONTHS)], dep[dep["month"].isin(STOP_MONTHS)], C.GLOBAL_SEED, spec)
     del dep
     h, _ = holdout_rows()
     for path in extra:
@@ -172,33 +195,36 @@ def measure(tag: str = TAG) -> None:
     pd.DataFrame({"MVT_ID_mvt": ref["MVT_ID_mvt"].values, "pred": pred}).to_parquet(pred_out)
 
 
-def serve(epoch: int) -> None:
-    """Fit on every served training row with `TABM_SERVE_SEEDS`; score the v97 ranking feature dump."""
+def serve(tag: str, spec: Spec) -> None:
+    """Fit on every served training row with `spec.seeds`; score the v97 ranking feature dump."""
     extra, _, rank_dump = COLUMN_SETS[COLUMNS]
     dep, feat = load_frame(extra)
     rank = pd.read_parquet(rank_dump)
     missing = sorted(set(feat) - set(rank.columns))
     if missing:
         raise KeyError(f"The ranking dump has no column {missing[:5]}. Rerun predict_v67 on the v97 recipe to rebuild it.")
-    prep = Prep(dep, feat)
+    prep = Prep(dep, feat, spec)
     x = prep(rank, torch.device("cuda"))
-    pred = np.mean([predict(train(prep, dep, None, seed, epoch)[0], *x) for seed in C.TABM_SERVE_SEEDS], axis=0)
-    pd.DataFrame({"MVT_ID_mvt": rank["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out_paths(TAG)[1])
+    pred = np.mean([predict(train(prep, dep, None, seed, spec)[0], *x) for seed in spec.seeds], axis=0)
+    pd.DataFrame({"MVT_ID_mvt": rank["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out_paths(tag)[1])
     log.info("ranking rows %d, mean %.1f s", len(pred), pred.mean())
 
 
-def combine(share: float) -> float:
-    """Write the neural term `nn` = MLP and TabM in the proportions of TabM at `share` on top of the v105 base.
+def combine(tags: list[str], share: float) -> float:
+    """Write the neural term `nn`: the MLP and the mean of the TabM members `tags` at `share` on top of the v105 base.
 
     The stack mixes one neural file at one weight; the return value is that weight.
     """
     weight = C.MLP_BLEND_W * (1 - share) + share
     for i in (0, 1):
-        mlp, tbm = (pd.read_parquet(out_paths(t)[i]) for t in (COLUMNS, TAG))
-        if not np.array_equal(mlp["MVT_ID_mvt"].values, tbm["MVT_ID_mvt"].values, equal_nan=True):
-            raise AssertionError(f"{out_paths(TAG)[i].name} and {out_paths(COLUMNS)[i].name} differ in row order. "
-                                 "Rerun both members on the same frame, then retry.")
-        nn_pred = (C.MLP_BLEND_W * (1 - share) * mlp["pred"].values + share * tbm["pred"].values) / weight
+        mlp = pd.read_parquet(out_paths(COLUMNS)[i])
+        members = [pd.read_parquet(out_paths(t)[i]) for t in tags]
+        for t, m in zip(tags, members):
+            if not np.array_equal(mlp["MVT_ID_mvt"].values, m["MVT_ID_mvt"].values, equal_nan=True):
+                raise AssertionError(f"{out_paths(t)[i].name} and {out_paths(COLUMNS)[i].name} differ in row order. "
+                                     "Rerun both members on the same frame, then retry.")
+        tbm = np.mean([m["pred"].values for m in members], axis=0)
+        nn_pred = (C.MLP_BLEND_W * (1 - share) * mlp["pred"].values + share * tbm) / weight
         mlp.assign(pred=nn_pred).to_parquet(out_paths("nn")[i])
     log.info("wrote the nn files; serve them with --mlp-columns nn --mlp-weight %.4f", weight)
     return weight
@@ -208,16 +234,18 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("mode", choices=("measure", "serve", "combine"))
-    ap.add_argument("--epoch", type=int, default=C.TABM_SERVE_EPOCH, help="serve: last epoch (0-based).")
+    ap.add_argument("--tag", default="tabm", choices=sorted(C.TABM_SPECS), help="measure, serve: the member.")
+    ap.add_argument("--tags", nargs="+", default=["tabm"], help="combine: TabM members to average.")
     ap.add_argument("--share", type=float, default=C.TABM_ON_V105, help="combine: TabM share on top of the v105 base.")
     args = ap.parse_args()
     if args.mode == "combine":
-        combine(args.share)
+        combine(args.tags, args.share)
         return
     if not torch.cuda.is_available():
         raise RuntimeError("No CUDA device is visible. The TabM member trains on the GPU. "
                            "Run with PYTHONPATH=.gpu_site (the CUDA build of torch), then retry.")
-    measure() if args.mode == "measure" else serve(args.epoch)
+    spec = Spec(**C.TABM_SPECS[args.tag])
+    measure(args.tag, spec) if args.mode == "measure" else serve(args.tag, spec)
 
 
 if __name__ == "__main__":
