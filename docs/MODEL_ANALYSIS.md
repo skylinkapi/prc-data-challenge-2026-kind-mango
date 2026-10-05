@@ -1,6 +1,6 @@
-# Model analysis: progress to v109, the seventeenth pass (CatBoost gate) and the sixteenth pass (error budget of v97)
+# Model analysis: progress to v111, the eighteenth pass (new observables, TabM), the seventeenth pass (CatBoost gate) and the sixteenth pass (error budget of v97)
 
-Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
+Status on 2026-10-06, 01:25 local time: live best **245.23 s (v111)**, a TabM member at 0.3 on top of the v105 base (eighteenth pass). Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
 rank 31; the leaderboard top is **216.57 s** (API, 09:25 UTC). The
 sixteenth pass below the Progress section measures where the v97 error
 sits. `docs/WINNING_PLAN.md` third edition turns it into the plan toward
@@ -156,6 +156,7 @@ and the output format.
 | N4 MLP on the v97 columns at 0.2 | v105 | -0.48 | accepted, best 246.48 s; hold-out -64 MSE |
 | gate g4: plus exact-copy and stand-day shares | v107 | +0.21 | rejected; hold-out -379 MSE |
 | K1 extra ADSB.lol feeds, K3 route distance, K4 long holds, N5 pseudo-labels, N2 study | not uploaded or pending | | K1 +0.6 points coverage, K3 -28, K4 0 of 4 rows, N5 +7 MSE; N2 refit uploads as v108 |
+| N8 TabM member on the v97 columns at 0.3 on top of the v105 base (eighteenth pass) | v111 | -1.25 | accepted, best 245.23 s; hold-out full path -231 MSE |
 | ADS-B specialist (4.5 step 1) as a stack column, trained on 291 days outside months 1 and 7 | v96 | +0.53 | rejected; hold-out -302 MSE did not transfer (a derived column, like v66, v71, v83) |
 | v96 study on 62 days: 63 leaves, residual clip 7,200 s, A5 offsets, A4 columns | not built | -92, +19, +29 to +523, +37 MSE | closed: under the bar or worse |
 | A2 stack on all 62 January and July 2025 ADS-B days | v95 | -1.12 | accepted; hold-out stack -4,048 MSE; unattended release |
@@ -279,6 +280,68 @@ the 2025 hold-out, 45 % of the remaining error outside LIRF sits in 36
 tail and 24-h rows that no column in the files predicts.
 The stop rule of WINNING_PLAN 11.4 replaces the stop rule of section 6.
 The final status table above gives the state of every measure.
+
+## Eighteenth pass, 2026-10-06: new observables tested, and the TabM member (v111)
+
+### 18.1 Gap
+
+1. v111 scores 245.23 s = 60,137 MSE. 220 s = 48,400 MSE. The gap is
+   11,737 MSE, 20 % of the current error (arithmetic).
+2. Leaderboard API, 2026-10-05 22:05 UTC: top 213.92 s (strong-crane),
+   rank 5 220.08 s, rank 10 225.85 s. kind-mango was rank 35 of 132 teams
+   at 246.48 s. 34 teams are ahead, so the missing error is not one rare
+   trick.
+
+### 18.2 Measurements without an upload
+
+Data: the 2025 training files, the saved v97 hold-out members and the
+ADSB.lol points on disk. Scripts ran from the session scratchpad; the
+numbers below are their outputs.
+
+| question | method | result | state |
+|---|---|---|---|
+| Does `AOBT_3_flt` copy the airport off-block on some rows? | block minus `AOBT_3` in whole minutes, 2025 departures | a smooth peak, no spike at 0 min (EDDF: 0.118 at 0 min, 0.139 at +1 min) | closed |
+| Does the inbound arrival of the same airframe tell a delay at the stand from a delay on the taxiway? | link each departure and each arrival to its ADS-B `icao` by callsign near `MVT`; join the previous arrival of the same `icao` at the airport (79 to 96 % of departures at 9 airports; LTFM has no ADS-B point in 2025); LightGBM on `y - final`, January against July | control stack +814 MSE, with the link +831; residual mean by inbound slack within 10 s in every bin | closed: the stand link of the base already carries it |
+| The same link as a LIRF gate column | logistic layer on the out-of-fold g3 score, fit outside January and July | on delayed rows the fallback rate is 24.8 % after an inbound artefact and 6.7 % otherwise, but the served mixture loses 215 MSE | closed: g3 already reads the airline and stand shares |
+| Position of the first ADS-B point of a segment | east and north offset from the assigned stand as stack columns, v105 path | +366 MSE against +237 for the control stack | closed, as K3 |
+| Stand positions learned from ADS-B (OSM has no position for the assigned stand on 42 % of EDDM and 32 % of EHAM 2026 departures) | hold-out RMSE of segment rows with an unknown stand and a stationary first point | EHAM 107 s and EDDM 118 s, against 92 s and 68 s on stand-clock rows: about -100 hold-out MSE | not built |
+| Can the 24-h artefact occur without a local date crossing? | 2025 LIRF null-record rows above the Step A gate | no crossing: 50 fallback, 14 genuine, 0 24-h; crossing: 51 fallback, 11 24-h, 1 genuine; above 25,000 s no genuine row | `src_v3/step_a_date.py` drops the 24-h term on such rows; it moves 1 row of 2026 (64,814 to 53,520 s), so rule 12 bars an upload of it alone |
+
+### 18.3 TabM member (v111)
+
+`src_v3/tabm_member.py`: TabM (`tabm` 0.0.3) with k = 16 submodels, 2
+blocks of 512, piecewise-linear embeddings (`rtdl_num_embeddings` 0.0.12,
+version B, 32 quantile bins, size 16) of the z-scored signed-log numeric
+columns, a missing flag per column with gaps, and embeddings of the 10
+categorical columns. AdamW, learning rate 1e-3, weight decay 3e-4, one
+cycle over 16 epochs, batch 1,024, mixed precision on an RTX 2070. The
+target is the label in thousands of seconds, clipped at 80,000 s.
+
+| quantity | TabM | MLP (v105) | v97 blend |
+|---|---|---|---|
+| best stop-month RMSE (months 11, 12) | 163.5 s | 171.0 s | |
+| hold-out RMSE (January, July) | 266.8 s | 274.6 s | 265.6 s |
+| residual correlation with the blend | 0.980 | 0.950 | |
+
+| TabM share on top of the v105 base | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 |
+|---|---|---|---|---|---|
+| base only, MSE | -130 | -214 | -252 | -244 | -191 |
+| full serve path (stack, A5 bound), MSE | | -227 | -231 | -191 | |
+
+The share 0.3 was set before the full-year fit. Live: 245.23 s, -1.25 s
+(about -614 MSE), 2.7 times the price.
+
+### 18.4 Reading
+
+1. Neural members transferred at 2 to 4 times their hold-out price three
+   times (v94, v105, v111). Feature, parameter and weight changes of the
+   tree members did not (v96, v98, v108, v110).
+2. The new row-level observables of this pass add nothing on top of the
+   base: the base already reads the stand link, the airline shares and
+   the ADS-B clocks.
+3. The next measures are more TabM capacity and seeds, and a second
+   neural target (the `AOBT_3` anchor). 220 s needs about 11,700 MSE more;
+   no measured lever comes near that.
 
 ## Seventeenth pass, 2026-10-05: strong and weak points of v105, and the CatBoost gate (N7)
 

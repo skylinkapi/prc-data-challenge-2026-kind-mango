@@ -18,3 +18,7 @@ urllib3==2.2.2
 orjson==3.11.4
 # MLP member priced on the hold-out (src_v3/mlp_member.py); v92 does not serve it.
 # CPU wheel: pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+# TabM member (src_v3/tabm_member.py) trains on an NVIDIA GPU. Install the CUDA build and two Apache-2.0
+# packages into a separate folder, so the CPU build above still serves the MLP, then run with PYTHONPATH=.gpu_site:
+#   pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu126 --target .gpu_site --no-deps
+#   pip install tabm==0.0.3 rtdl_num_embeddings==0.0.12 --target .gpu_site --no-deps

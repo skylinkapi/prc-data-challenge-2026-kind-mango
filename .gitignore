@@ -113,3 +113,6 @@ models/v3/*.parquet
 logs/
 models/opdi_own_*.parquet
 models/arr_art*.parquet
+
+# CUDA build of torch and the TabM packages (requirements.txt), about 4 GB
+.gpu_site/
