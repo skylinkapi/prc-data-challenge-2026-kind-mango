@@ -543,10 +543,12 @@ Fill one row per lever as it closes.
 | K1 | `staging-0` and `mlatonly-0` feeds | | | closed: the union adds at most 0.6 points of coverage (`adsb_feeds_probe.json`) |
 | K3 | route-distance clock | | | closed: member +164, blend plus stack -28 MSE (`swap_k3.holdout.json`) |
 | N5 | 2026 pseudo-labels | | | closed: day-split simulation member +34, blend +7 MSE (`pseudo_n5.holdout.json`) |
-| N2 | Optuna study on the v97 columns | v108 | | refit running; uploads 2026-10-05 00:05 UTC on the v105 recipe |
+| N2 | Optuna study on the v97 columns | v108 | 246.49 (+0.02) | rejected: hold-out member -330 MSE did not transfer |
 | N4 | neural member on the v97 columns | v105 | 246.48 (-0.48) | accepted, best: hold-out -64 MSE, live about -235 |
 | K4 | long-hold rule | | | closed: 4 hold-out candidates, none above 7,200 s |
 | N3 | blend shares per coverage class | | | open |
+| N6 | XGBoost member on the v97 columns | | | stopped after two study trials on the user's decision (stop RMSE 170.8 s against 166.8 s for N2) |
+| N7 | CatBoost member in the LIRF gate, mean with g3 | v109 | 247.37 (+0.89) | rejected, closed: hold-out -484 MSE (January +71, July -555) did not transfer |
 | Q1 | commit | | | done: `8114b81` on branch `plan-v99-third-edition` |
 | Q2 | reproduction path for the final file | | | open |
 

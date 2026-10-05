@@ -1,0 +1,12 @@
+{
+ "lever": "N2 LightGBM members (study on the v97 columns)",
+ "gate": "g3",
+ "mlp": [
+  "--mlp-weight",
+  "0.2",
+  "--mlp-columns",
+  "v97"
+ ],
+ "holdout_price_member": -330.2,
+ "score": 246.4933
+}

@@ -1,0 +1,15 @@
+{
+ "lever": "N7 CatBoost member in the LIRF gate (g3c), mean with the g3 LightGBM gate",
+ "base": "v104 recipe plus --gate-catboost catboost_p_fb_lirf_g3c.cbm lirf_regime_g3c.isotonic.pkl",
+ "stack": "v105: --mlp-weight 0.2 --mlp-columns v97 --rounds 600 --adsb-train external/adsblol/v97/adsb_clock_train.parquet",
+ "holdout_price_mixture": {
+  "all": -483.77793567645426,
+  "1": 70.97367467323933,
+  "7": -554.7516103496971
+ },
+ "gates_overridden": [
+  "lirf_unchanged",
+  "over_7200 (+8 LIRF rows)"
+ ],
+ "score": 247.3653
+}

@@ -58,15 +58,20 @@ DEFAULT_P_FB_FEATURES = "lirf_regime_v23.features.txt"
 
 
 def predict_p_fb(frame, members, features_file):
-    """Mean of the calibrated fallback probabilities over (booster, isotonic) members."""
+    """Mean of the calibrated fallback probabilities over (booster, isotonic) members; a `.cbm` member is CatBoost (N7)."""
     with open(os.path.join(MODELS, features_file)) as f:
         feat = f.read().splitlines()
     probs = []
     for model_file, iso_file in members:
         with open(os.path.join(MODELS, iso_file), "rb") as f:
             iso = pickle.load(f)
-        probs.append(iso.transform(lgb.Booster(model_file=os.path.join(MODELS, model_file))
-                                   .predict(frame[feat])))
+        path = os.path.join(MODELS, model_file)
+        if model_file.endswith(".cbm"):
+            from src_v3.catboost_gate import score
+            raw = score(path, frame, feat)
+        else:
+            raw = lgb.Booster(model_file=path).predict(frame[feat])
+        probs.append(iso.transform(raw))
     return np.mean(probs, axis=0)
 
 

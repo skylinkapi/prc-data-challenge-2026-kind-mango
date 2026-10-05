@@ -100,6 +100,8 @@ def main() -> None:
     ap.add_argument("--gate-iso", default=GATE_ISO, help="Isotonic map of the gate (v83: lirf_regime_v83.isotonic.pkl).")
     ap.add_argument("--gate-features", default="lirf_regime_v23.features.txt",
                     help="Feature list of the gate (v83: lirf_regime_v83.features.txt).")
+    ap.add_argument("--gate-catboost", nargs=2, metavar=("MODEL", "ISO"),
+                    help="CatBoost gate member and its isotonic map, averaged with the gate booster (N7: g3c).")
     ap.add_argument("--r-norm-tag", default="v55", help="LIRF R_norm members (K2: v99r, with the ADS-B and OPDI columns).")
     ap.add_argument("--pre-ms", default="kind-mango_v67_pre_ms.parquet")
     ap.add_argument("--out", default="kind-mango_v67.parquet")
@@ -110,7 +112,8 @@ def main() -> None:
     serve_v30(args.pre_ms, args.base_model, dump_features=str(dump_path), stepa_normal_rnorm=True,
               gate_iso=args.gate_iso, extra_files=tuple(args.extra),
               r_norm_post=None if args.r_norm_weight is None else blend_r_norm(args.r_norm_weight),
-              gate_booster=args.gate_booster, gate_features=args.gate_features, r_norm_tag=args.r_norm_tag)
+              gate_booster=args.gate_booster, gate_features=args.gate_features, r_norm_tag=args.r_norm_tag,
+              gate_catboost=args.gate_catboost)
     dump = pd.read_parquet(dump_path)
     pre = pd.read_parquet(C.ROOT / "submission" / args.pre_ms)
     members = score_members(dump, args.base_model)

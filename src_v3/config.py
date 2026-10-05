@@ -123,6 +123,15 @@ CATBOOST_PARAMS = dict(
     random_seed=GLOBAL_SEED, thread_count=12, verbose=250,
     train_dir=str(CACHE / "catboost_info"),
 )
+# CatBoost member of the LIRF gate (third-edition N7, 2026-10-05): ordered target statistics on the categorical
+# columns next to the LightGBM g3 gate. Rounds come from an early stop on months 11 and 12.
+CATBOOST_GATE_PARAMS = dict(
+    loss_function="Logloss", depth=6, learning_rate=0.05, l2_leaf_reg=3.0,
+    iterations=5000, od_type="Iter", od_wait=200,
+    random_seed=GLOBAL_SEED, thread_count=12, verbose=250,
+    train_dir=str(CACHE / "catboost_info_gate"),
+)
+CATBOOST_GATE_SHARES = (0.25, 0.5, 0.75, 1.0)   # CatBoost share of the calibrated gate; 0.5 is pre-registered
 CATBOOST_BLEND_WEIGHTS = (0.3, 0.4, 0.5, 0.6)   # 0.3 and 0.5 pre-registered in WINNING_PLAN L3; v98 grid adds 0.4, 0.6
 # Variant B (option B, v70): deeper trees, another seed and half the columns
 # per split round, for diversity against the v67 member.

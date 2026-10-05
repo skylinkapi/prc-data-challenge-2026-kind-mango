@@ -1,6 +1,6 @@
-# Model analysis: progress to v98 and the sixteenth pass (error budget of v97)
+# Model analysis: progress to v109, the seventeenth pass (CatBoost gate) and the sixteenth pass (error budget of v97)
 
-Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
+Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
 rank 31; the leaderboard top is **216.57 s** (API, 09:25 UTC). The
 sixteenth pass below the Progress section measures where the v97 error
 sits. `docs/WINNING_PLAN.md` third edition turns it into the plan toward
@@ -280,7 +280,106 @@ tail and 24-h rows that no column in the files predicts.
 The stop rule of WINNING_PLAN 11.4 replaces the stop rule of section 6.
 The final status table above gives the state of every measure.
 
-## Sixteenth pass, 2026-10-03: where the error of v97 sits
+## Seventeenth pass, 2026-10-05: strong and weak points of v105, and the CatBoost gate (N7)
+
+### 17.1 Gap
+
+1. v105 scores 246.48 s = 60,752 MSE. 220 s = 48,400 MSE. The gap is
+   12,352 MSE, 20 % of the current error (arithmetic).
+2. Leaderboard API, 2026-10-05 16:50 UTC: top 213.92 s (strong-crane),
+   then 216.88, 217.28 and 217.47 s; rank 5 is 220.08 s. kind-mango is
+   rank 34 of 107 teams.
+3. v108 (N2 LightGBM members on the v105 recipe) scored 246.49 s, +0.02 s.
+   It is rejected. v105 stays the best file.
+
+### 17.2 Strong points
+
+| point | evidence |
+|---|---|
+| pushback clocks of the scored flight | rows with a stand clock serve 93.8 s against a 92.4 s floor (F16.2) |
+| six base members of three classes | tree members correlate 0.975 to 0.991 with the v97 blend; the MLP 0.950 (hold-out residuals, this pass) |
+| arrival information in the LIRF gate | v101, v102 and v104: -0.94 s live in three uploads |
+| exact rebuild | v105 and the v104 base rebuild at max difference 1e-13 s and 0.0 s from the recorded recipe (this pass) |
+
+### 17.3 Weak points
+
+Live projection of the v97 budget (section 2.3 of the third edition),
+grade C:
+
+| block | live MSE | share | lever class that can act |
+|---|---|---|---|
+| LIRF, all classes | about 20,460 | 33 % | gate (fallback probability), `R_norm` |
+| outside LIRF, no clock | 18,332 | 30 % | base members only; LTFM and LFPG have no clock |
+| outside LIRF, segment only | 10,419 | 17 % | base members and stack |
+| tail and 24-h outside LIRF | about 9,410 | 15 % | none: no observable (F16.4) |
+| outside LIRF, stand clock | 2,604 | 4 % | none: at the floor (F16.2) |
+
+Second reading of the weak points:
+
+1. The LIRF gate is the largest block that a model change can reach. A
+   perfect gate cuts the LIRF hold-out MSE from 21,714 to 11,126
+   (`lirf_gap.holdout.json`). `R_norm` changes did not transfer (v49,
+   v68, v100). Gate changes did (v101, v102, v104).
+2. The served gate is one LightGBM classifier. Its main signal is the
+   fallback rate of the airline and the operator: a rate per category.
+   CatBoost computes ordered target statistics per category and per
+   combination of categories. No CatBoost gate was tried before this pass.
+3. Base-member work outside LIRF has a small ceiling. A second plain
+   LightGBM member at share 0.2 costs +50 MSE on the hold-out (residual
+   correlation 0.986). An XGBoost study on the v97 columns (two trials,
+   stopped on the user's decision) reached a stop-month RMSE of 170.8 s
+   against 166.8 s for the N2 LightGBM study.
+4. Blend weights failed twice (v77 cross-fitted +63 MSE; v98 +0.36 s live).
+   Per-airport experts gained -0.22 s live (v89).
+
+Choice: N7, a CatBoost member in the LIRF gate. It acts on the largest
+block, and in the only component where recent changes transferred.
+
+### 17.4 N7 price
+
+`python -m src_v3.catboost_gate price` (`models/v3/catboost_gate.holdout.json`).
+CatBoost Logloss, depth 6, learning rate 0.05, on the 176 g3 columns; 991
+rounds from an early stop on months 11 and 12 (fit months 2 to 6 and 8 to 10).
+Both classes are scored out of fold on the six month-pair folds of the
+v64 protocol, and each class gets a nested isotonic map. The served gate is
+the mean of the calibrated members. The bar, set before the run: -150 MSE on
+the hold-out scale at the CatBoost share 0.5.
+
+| CatBoost share | log loss, `sd` <= 3,600 s | 3,600 to 14,400 s | above 14,400 s | mixture MSE, Jan + Jul | Jan | Jul |
+|---|---|---|---|---|---|---|
+| 0 (g3, v105) | 0.3599 | 0.1213 | 0.1200 | 0 | 0 | 0 |
+| 0.25 | 0.3569 | 0.1187 | 0.1195 | -347 | +20 | -368 |
+| **0.5** | **0.3555** | **0.1179** | **0.1209** | **-484** | **+71** | **-555** |
+| 0.75 | 0.3557 | 0.1184 | 0.1244 | -409 | +152 | -561 |
+| 1.0 | 0.3578 | 0.1210 | 0.1310 | -124 | +263 | -387 |
+
+Facts:
+
+1. The pre-registered share 0.5 passes the bar: -484 MSE.
+2. The calibrated scores of the two classes correlate 0.964.
+3. The gain sits in July. January loses 71 MSE. A share above 0.5 loses
+   more in January; 0.5 stays the served share, and no share is chosen
+   on the hold-out.
+4. Above 14,400 s the log loss rises slightly (0.1200 to 0.1209). Step A
+   serves most of these rows, so the mixture does not use the gate there.
+
+### 17.5 N7 live result
+
+v109 = the v104 base recipe with `--gate-catboost catboost_p_fb_lirf_g3c.cbm
+lirf_regime_g3c.isotonic.pkl`, then the v105 stack. Only LIRF rows move:
+26,482 rows, mean +3.2 s, max 1,870 s. LIRF rows above 7,200 s rise from
+92 to 100. Each new row is a late flight (`sd` 7,437 to 12,657 s) that the
+higher gate moves toward `sd`. Live: **247.37 s, +0.89 s against v105**
+(about +440 MSE). Rejected; N7 closes (stop rule 6.2).
+
+Reading, grade D: the hold-out gain sat in July, and January lost. The
+CatBoost target statistics fix the 2025 fallback rate of each stand and
+operator. The 2026 rates moved (RYR arrival artefacts 0.130 in 2025, 0.267
+in July 2026, F16.6). The g3 LightGBM gate reads that shift from the 2026
+arrival-share columns. A new model class in the LIRF head without new
+information has now failed four times (v49, v68, v100, v109).
+
+
 
 The brief is `docs/AUDIT_PROMPT.md`, written for v67. This pass runs its
 task A (budget), task C (new signal) and task D (floor) on v97. The plan
