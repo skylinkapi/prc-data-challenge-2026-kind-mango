@@ -11,7 +11,7 @@ airport-reported truth.
   (the airline's and operator's share of arrivals with in-block on the schedule,
   and the previous arrival at the stand; `src_v3/build_arr_artefact.py`, gate g3)
   and the MLP member retrained on the v97 columns at 0.2. Path from v97: v101
-  247.69, v102 247.14, v104 246.95, v105 246.48 s (RECAP rows). Rejected since: v108 246.49 s (N2 LightGBM members) and v109 247.37 s (N7, a CatBoost member in the LIRF gate, `src_v3/catboost_gate.py`; `docs/MODEL_ANALYSIS.md` seventeenth pass). Before that:
+  247.69, v102 247.14, v104 246.95, v105 246.48 s (RECAP rows). Rejected since: v108 246.49 s (N2 LightGBM members) and v109 247.37 s (N7, a CatBoost member in the LIRF gate, `src_v3/catboost_gate.py`) and v110 246.57 s (N3, NNLS weights of the base members per coverage class, `src_v3/blend_nnls.py`); `docs/MODEL_ANALYSIS.md` seventeenth pass. Before that:
   **247.89 s RMSE** (`kind-mango_v97.parquet`, 2026-10-03), -1.50 s vs v95; team rank 31. The leaderboard top is 216.57 s
   (API, 2026-10-03). **Next:** `docs/WINNING_PLAN.md` third edition, the path
   from 247.89 s toward 210 s. `python -m src_v3.measure_budget_v97` and
@@ -438,6 +438,7 @@ src_v3/                         # current pipeline (v48 on), constants in config
   build_arr_artefact.py         # G1: airline arrival artefact shares for the LIRF gate (v101 on)
   train_p_fb_v83.py             # LIRF gate refit with added columns, `--tag g3 --extra ...` (v104, v105)
   catboost_gate.py              # N7: CatBoost member of the LIRF gate, `price` and `fit --tag g3c` (v109)
+  blend_nnls.py                 # N3: NNLS member weights per coverage class, `price` and `serve` (v110)
   measure_pseudo_n5.py, measure_member_swap.py, probe_adsb_feeds.py, build_route_clock.py   # closed levers N5, K3, K1
 
 external/                       # open-data caches (gitignored)

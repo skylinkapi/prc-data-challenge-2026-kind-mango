@@ -103,6 +103,7 @@ def main() -> None:
     ap.add_argument("--gate-catboost", nargs=2, metavar=("MODEL", "ISO"),
                     help="CatBoost gate member and its isotonic map, averaged with the gate booster (N7: g3c).")
     ap.add_argument("--r-norm-tag", default="v55", help="LIRF R_norm members (K2: v99r, with the ADS-B and OPDI columns).")
+    ap.add_argument("--dump-terms", help="Write the per-member ranking terms outside LIRF to this models/v3 parquet (N3).")
     ap.add_argument("--pre-ms", default="kind-mango_v67_pre_ms.parquet")
     ap.add_argument("--out", default="kind-mango_v67.parquet")
     args = ap.parse_args()
@@ -124,12 +125,15 @@ def main() -> None:
     if args.ms3:
         lgb_term, moved = apply_ms3(members, adep)
         log.info("MS3 moved %s", moved)
+    terms = {"lgb": lgb_term}
     if args.per_airport_tag:
-        lgb_term = mix(lgb_term, score_seeds(dump, args.per_airport_tag, clip=True), args.per_airport_weight)
+        terms["lgb_per_airport"] = score_seeds(dump, args.per_airport_tag, clip=True)
+        lgb_term = mix(lgb_term, terms["lgb_per_airport"], args.per_airport_weight)
     if args.anchor_model:
         offsets = score_members(dump, args.anchor_model, clip=False)
         offset, moved = apply_ms3(offsets, adep) if args.ms3 else (offsets.mean(axis=0), {})
         log.info("anchored members: MS3 moved %s", moved)
+        terms["lgb_anchor"] = blend_anchor(dump, terms["lgb"], offset, 1.0)
         if args.per_airport_tag:
             offset = mix(offset, score_seeds(dump, [f"{t}a" for t in args.per_airport_tag], clip=False),
                          args.per_airport_weight)
@@ -142,16 +146,21 @@ def main() -> None:
                              "Check the categorical cast, then rerun.")
 
     model, feat = load_catboost(args.catboost_tag)
-    cat = predict(model, dump, feat)
+    cat = terms["cat"] = predict(model, dump, feat)
     if args.catboost_anchor_tag:
         model, feat = load_catboost(args.catboost_anchor_tag)
-        cat = blend_anchor(dump, cat, predict(model, dump, feat, clip=False), args.anchor_weight)
+        cat_offset = predict(model, dump, feat, clip=False)
+        terms["cat_anchor"] = blend_anchor(dump, terms["cat"], cat_offset, 1.0)
+        cat = blend_anchor(dump, cat, cat_offset, args.anchor_weight)
     delta = np.where(is_base, args.weight * (cat - lgb_mean) + (1 - args.weight) * (lgb_term - lgb_mean), 0.0)
     log.info("CatBoost minus LightGBM outside LIRF: mean %.1f s, p99 |d| %.0f s",
              (cat - lgb_mean)[is_base].mean(), np.quantile(np.abs(cat - lgb_mean)[is_base], 0.99))
     pre = pre.merge(pd.DataFrame({"MVT_ID_mvt": dump["MVT_ID_mvt"].values, "delta": delta}),
                     on="MVT_ID_mvt", how="left", validate="1:1")
     pre["TAXITIME_SEC_mvt"] += pre.pop("delta").fillna(0)
+    if args.dump_terms:
+        terms["served"] = args.weight * cat + (1 - args.weight) * lgb_term
+        pd.DataFrame({"MVT_ID_mvt": dump["MVT_ID_mvt"].values, **terms})[is_base].to_parquet(C.MODELS / args.dump_terms)
     write_ms(pre, args.out)
 
 

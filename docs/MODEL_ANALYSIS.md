@@ -1,6 +1,6 @@
 # Model analysis: progress to v109, the seventeenth pass (CatBoost gate) and the sixteenth pass (error budget of v97)
 
-Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
+Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
 rank 31; the leaderboard top is **216.57 s** (API, 09:25 UTC). The
 sixteenth pass below the Progress section measures where the v97 error
 sits. `docs/WINNING_PLAN.md` third edition turns it into the plan toward
@@ -378,6 +378,23 @@ operator. The 2026 rates moved (RYR arrival artefacts 0.130 in 2025, 0.267
 in July 2026, F16.6). The g3 LightGBM gate reads that shift from the 2026
 arrival-share columns. A new model class in the LIRF head without new
 information has now failed four times (v49, v68, v100, v109).
+
+### 17.6 N3: NNLS member weights per coverage class (v110)
+
+`python -m src_v3.blend_nnls price` (`models/v3/blend_nnls.holdout.json`). Non-negative least squares
+of the six hold-out members per coverage class, on rows with `0 < y <= 7,200` s; each month takes the
+weights fitted on the other month; the price includes the stack and the A5 bound. The v105 shares are
+0.1, 0.1, 0.2, 0.2, 0.2 and 0.2 (MLP).
+
+| arm | base only | base, stack and bound | January | July |
+|---|---|---|---|---|
+| per coverage class | +97 | +139 | +1 | +138 |
+| one global weight set | +44 | +118 | +37 | +81 |
+
+The weights of the two months disagree: on rows without a clock the plain LightGBM member gets 0.014
+from January and 0.195 from July. v110 served the per-class weights fitted on both months, on the
+user's request: **246.57 s, +0.10 s against v105**. Rejected; N3 closes. The fixed v105 shares stay,
+as v77 and v98 found.
 
 
 

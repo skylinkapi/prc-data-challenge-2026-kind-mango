@@ -1,0 +1,41 @@
+{
+ "lever": "N3 NNLS weights of the six base members per coverage class, fitted on Jan+Jul 2025",
+ "base": "kind-mango_v104_base.parquet moved by blend_nnls serve (terms of predict_v67 --dump-terms on the v104 recipe)",
+ "stack": "--mlp-weight 0 --rounds 600 --adsb-train external/adsblol/v97/adsb_clock_train.parquet --blend-holdout models/v3/blend_nnls_holdout.parquet",
+ "serve_weights": {
+  "adsb_own": [
+   0.0,
+   0.1951,
+   0.1136,
+   0.1487,
+   0.1548,
+   0.3923
+  ],
+  "adsb_seg": [
+   0.0461,
+   0.2967,
+   0.1283,
+   0.1065,
+   0.2226,
+   0.2053
+  ],
+  "none": [
+   0.0955,
+   0.2153,
+   0.1774,
+   0.2523,
+   0.0864,
+   0.1711
+  ],
+  "opdi_only": [
+   0.0,
+   0.7345,
+   0.0,
+   0.0,
+   0.0646,
+   0.2069
+  ]
+ },
+ "holdout_price_cross_fitted": 139.3546591939151,
+ "score": 246.5749
+}
