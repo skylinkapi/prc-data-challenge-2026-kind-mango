@@ -60,9 +60,9 @@ def lgb_fit(train: pd.DataFrame, feat: list[str]) -> lgb.Booster:
     return lgb.train({**study["tuned"], "num_threads": C.NUM_THREADS}, dt, num_boost_round=study["best_iteration"])
 
 
-def fit_member(member: str, more: tuple = ()) -> np.ndarray:
-    """Hold-out prediction of one member, in the row order of `PRED_OUT`; anchored members fall back to the plain one."""
-    extra = (*(CAT_EXTRA if member.startswith("cat") else LGB_EXTRA), *more)
+def fit_member(member: str, more: tuple = (), adsb: Path = ADSB_TRAIN, tag: str = "v97") -> np.ndarray:
+    """Hold-out prediction of one member, in the row order of `PRED_OUT`; anchored members fall back to the plain one of `tag`."""
+    extra = (*(adsb if x == ADSB_TRAIN else x for x in (CAT_EXTRA if member.startswith("cat") else LGB_EXTRA)), *more)
     dep, feat = load_frame(extra)
     if member.endswith("anchor"):
         dep = dep[dep["mvt_aobt3"].notna()].copy()
@@ -85,24 +85,24 @@ def fit_member(member: str, more: tuple = ()) -> np.ndarray:
         raw = predict(model, h, feat, clip=False)
     if not member.endswith("anchor"):
         return np.clip(raw, 0, None)
-    plain = pd.read_parquet(out_path(member.removesuffix("_anchor")))["pred"].values
+    plain = pd.read_parquet(out_path(member.removesuffix("_anchor"), tag))["pred"].values
     return np.where(np.isnan(anchor(h)), plain, np.clip(anchor(h) + raw, 0, None))
 
 
-def blend_path(per: float) -> Path:
-    return C.MODELS / ("blend_v97_holdout.parquet" if per else "blend_v97np_holdout.parquet")
+def blend_path(per: float, tag: str = "v97") -> Path:
+    return C.MODELS / (f"blend_{tag}_holdout.parquet" if per else f"blend_{tag}np_holdout.parquet")
 
 
-def price(per: float = 0.5) -> dict:
+def price(per: float = 0.5, tag: str = "v97") -> dict:
     """v97 blend and v97 blend plus stack against the v89 blend plus stack, outside LIRF.
 
     `per` is the per-airport share of the plain LightGBM term; 0 drops the per-airport members (v97 as served).
     """
     ref = pd.read_parquet(PRED_OUT)
-    m = {k: pd.read_parquet(out_path(k))["pred"].values for k in MEMBERS}
+    m = {k: pd.read_parquet(out_path(k, tag))["pred"].values for k in MEMBERS}
     new = blend({"lgb": (1 - per) * m["lgb"] + per * m["lgb_per_airport"], "lgb_anchor": m["lgb_anchor"],
                  "cat": m["cat"], "cat_anchor": m["cat_anchor"]}, *C.BLEND_V77_SERVED)
-    path = blend_path(per)
+    path = blend_path(per, tag)
     pd.DataFrame({"MVT_ID_mvt": ref["MVT_ID_mvt"].values, "y": ref["y"].values, "base": new}).to_parquet(path)
     old = pd.read_parquet(sp.BLEND_HOLDOUT)
     y = ref["y"].values
@@ -126,16 +126,17 @@ def main() -> None:
     ap.add_argument("member", nargs="?", choices=MEMBERS)
     ap.add_argument("--tag", default="v97")
     ap.add_argument("--extra", nargs="+", default=[], help="More column files for the member (K3).")
+    ap.add_argument("--adsb-train", default=str(ADSB_TRAIN), help="ADS-B clock table in place of the default (v116: X-Plane stands).")
     args = ap.parse_args()
     if args.mode == "fit":
         ref = pd.read_parquet(PRED_OUT)
-        pred = fit_member(args.member, tuple(C.ROOT / x for x in args.extra))
+        pred = fit_member(args.member, tuple(C.ROOT / x for x in args.extra), C.ROOT / args.adsb_train, args.tag)
         log.info("%s hold-out RMSE %.2f", args.member, np.sqrt(np.mean((pred - ref["y"].values) ** 2)))
         pd.DataFrame({"MVT_ID_mvt": ref["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out_path(args.member, args.tag))
         return
-    report = price()
+    report = price(tag=args.tag)
     log.info("%s", json.dumps(report, indent=1))
-    (C.MODELS / "adsb_base_v97.holdout.json").write_text(json.dumps(report, indent=1))
+    (C.MODELS / f"adsb_base_{args.tag}.holdout.json").write_text(json.dumps(report, indent=1))
 
 
 if __name__ == "__main__":
