@@ -258,6 +258,7 @@ SERVED_ARTEFACTS[112] = (
     "external/adsblol/adsb_clock_rank.parquet", "external/adsblol/v97/adsb_clock_train.parquet",
     "models/v3/holdout_mlp_v97.parquet", "models/v3/rank_mlp_v97.parquet",
     "models/v3/holdout_mlp_tabm_e24.parquet", "models/v3/rank_mlp_tabm_e24.parquet")
+SERVED_ARTEFACTS[114] = tuple(p.replace("tabm_e24", "tabm_e32") for p in SERVED_ARTEFACTS[112])   # v114: 32-epoch member, three seeds
 # v93 stack study (`tune_stack_v93.py`): more 2025 ADS-B days give the stack about 9 times more rows
 STACK_V93_MLP_WEIGHTS = (0.0, 0.1, 0.2)   # MLP hold-out: -190 at 0.1, -213 at 0.2, -69 at 0.3
 STACK_V93_LEAVES = (31, 63)

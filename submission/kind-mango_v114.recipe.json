@@ -1,0 +1,6 @@
+{
+ "lever": "TabM e32 (32-epoch schedule, three seeds) at 0.4 on top of the v105 base, replacing TabM e24 at 0.35; Step A date-crossing fix as in v112",
+ "neural_term": "nn at 0.5200, tags ['tabm_e32']",
+ "holdout_price_vs_v105_base": -386,
+ "score": 244.0193
+}
