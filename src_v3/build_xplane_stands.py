@@ -1,12 +1,13 @@
-"""Stand positions from the X-Plane Scenery Gateway where OSM has no position for the assigned stand (EDDM, EHAM).
+"""Stand positions from the X-Plane Scenery Gateway where OSM has no position for the assigned stand.
 
-OSM has no node for the assigned stand on 42 % of EDDM and 32 % of EHAM departures in 2026, so no ADS-B
-clock at the stand can exist there. The Gateway airport packs (GPL v2 or later) list every stand as an
-`apt.dat` row 1300: latitude, longitude, heading, type, name. `fetch` stores each `apt.dat` unchanged,
-copyright header included. `build` keeps the OSM stands and adds one X-Plane position for each stand value
-of the movement files that OSM lacks. A name matches on letters and digits with leading zeros dropped
-(EHAM `C06` is X-Plane `C6`); a base stand without its own row takes the mean of its lettered sub-positions
-(EDDM `215` is the mean of `215A` and `215B`).
+OSM has no node for the assigned stand on 42 % of EDDM, 32 % of EHAM, 17 % of LEMD, 11 % of LEBL and 9 % of
+LFPG departures in 2026, so no ADS-B clock at the stand can exist there. The Gateway airport packs (GPL v2 or
+later) list every stand as an `apt.dat` row 1300: latitude, longitude, heading, type, name. `fetch` stores each
+`apt.dat` unchanged, copyright header included. `build` keeps the OSM stands and adds one X-Plane position for
+each stand value of the movement files that OSM lacks. A name matches on letters and digits, with a leading
+type word dropped (LEBL `Ramp 287` is `287`) and the leading zeros of each number dropped (EHAM `C06` is X-Plane
+`C6`). A base stand without its own row takes the mean of its lettered sub-positions (EDDM `215` is the mean of
+`215A` and `215B`).
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ from src_v3 import config as C
 from src_v3.build_adsb_clock import STANDS
 from src_v3.build_nm_clocks_v73 import load_dep
 
+TYPE_WORD = re.compile(r"^(GATE|RAMP|STAND|PARKING|POSITION|POS)\s*", re.IGNORECASE)   # X-Plane name prefixes
 log = logging.getLogger(__name__)
 
 
@@ -34,8 +36,8 @@ def key(s: str) -> str:
 
 
 def canon(s: str) -> str:
-    """`key` with the leading zeros of each digit group dropped."""
-    return re.sub(r"(?<![0-9])0+(?=[0-9])", "", key(s))
+    """`key` without a leading type word and with the leading zeros of each digit group dropped (LEBL `Ramp 287` is `287`)."""
+    return re.sub(r"(?<![0-9])0+(?=[0-9])", "", key(TYPE_WORD.sub("", str(s).strip())))
 
 
 def fetch() -> None:
