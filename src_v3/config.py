@@ -340,6 +340,7 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     "tabm_k32": {"k": 32, "width": 768},                # 162.88 s; on the v105 base -203 MSE at 0.3 (closed)
     "tabm_e32": {"epochs": 32, "serve_epoch": 27, "seeds": (42, 43, 44)},    # 162.19 s at epoch 27; on the v105 base -366 / -386 MSE at 0.3 / 0.4
     "tabm_e24_s43": {"epochs": 24, "serve_epoch": 23, "seeds": (43,)},   # seed spread of the hold-out member
+    "tabm_v115": {"epochs": 32, "serve_epoch": 21, "seeds": (42, 43, 44), "columns": "v115"},   # 161.6 s at epoch 21; -390 MSE at 0.4
     "tabm_anchor": {"anchor_col": "mvt_aobt3"},         # 163.99 s; on the v105 base -105 MSE at 0.2 (closed)
 }
 TABM_GATE_SPEC = {"width": 256, "epochs": 12, "batch": 512}   # TabM member of the LIRF gate (`tabm_gate.py`)
@@ -358,6 +359,15 @@ ARTEFACT_MIN_CELL_ROWS = 30             # airline-month cells with fewer departu
 ARTEFACT_SMOOTH_K = 10                  # arrivals of prior weight toward the airport share, airline-day share
 ARTEFACT_SHARE_EDGES = (0.05, 0.1, 0.2, 0.4)   # buckets of the airline-day arrival artefact share
 LATE_SD_S = 1800                        # a departure this late against the schedule carries most of the gate cost
+# EUROCONTROL ATFM slot adherence per airport and day (`build_atfm_slot.py`); take-off times only, not label-derived
+EC_CSV_URL = "https://www.eurocontrol.int/performance/data/download/csv/{}_{}.csv"
+ATFM_SLOT_YEARS = (2025, 2026)
+ATFM_SLOT_DIR = ROOT / "external" / "eurocontrol"
+# X-Plane Scenery Gateway stands (`build_xplane_stands.py`), GPL v2 or later: positions where OSM has no assigned stand
+XPLANE_DIR = ROOT / "external" / "xplane"
+XPLANE_API = "https://gateway.x-plane.com/apiv1/scenery/{}"
+XPLANE_SCENERY = {"EDDM": 111124, "EHAM": 111943}   # recommended packs on 2026-10-06
+STANDS_OSM_XPLANE = XPLANE_DIR / "stands_osm_xplane.parquet"
 # Route-distance clock (`build_route_clock.py`, third-edition K3)
 ROUTE_SNAP_M = 400                      # snap radius of `build_osm_taxi_paths.snap_to_graph`
 ROUTE_CUTOFF_M = 12000                  # longer routes than the largest airport span are not taxi routes

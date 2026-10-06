@@ -313,6 +313,8 @@ stays for the record. See `src/predict_v21_final.py`.
 | Eurocontrol NM | Daily ATC pre-dep delay, ATFM slot adherence, airport traffic | Open (non-commercial-use clause; challenge use confirmed by organiser, 2026-09-17) |
 | OPDI (PRC + OSN) | Flight events (entry-runway, entry-taxiway, exit-parking, …) | Open (CC-BY 4.0, confirmed by organiser) |
 | VRS StandingData | Aircraft-type metadata | Open |
+| X-Plane Scenery Gateway | `apt.dat` of EDDM (scenery 111124) and EHAM (111943): stand positions (row 1300) where OSM has no position for the assigned stand; `python -m src_v3.build_xplane_stands fetch` and `build` (v115 on). The `apt.dat` files are kept unchanged with their copyright header in `external/xplane/`. | GPL v2 or later |
+| EUROCONTROL `atfm_slot_adherence` (ansperformance.eu CSV) | Departures, regulated departures and departures before, inside and after the slot window, per airport and UTC day, 2025 and 2026; `python -m src_v3.build_atfm_slot` (v115 on). Take-off times only, no off-block time. (c) EUROCONTROL. | Open, with attribution; same family as the daily files confirmed by the organiser, 2026-09-17 |
 | ADSB.lol `globe_history` | Daily ADS-B traces; `src_v3/fetch_adsb_days.py` keeps the low points near the 10 airports and deletes the raw archive. Used for the pushback clock of the scored flight (v91 on). Data (c) ADSB.lol contributors. | ODbL 1.0. The derived tables stay out of git (share-alike). |
 
 ## Quick start

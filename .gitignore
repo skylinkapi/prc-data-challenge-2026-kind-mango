@@ -117,3 +117,9 @@ models/arr_art*.parquet
 
 # CUDA build of torch and the TabM packages (requirements.txt), about 4 GB
 .gpu_site/
+
+# X-Plane Scenery Gateway airports (GPL v2+, kept unchanged) and derived stand table
+external/xplane/
+# EUROCONTROL daily CSVs
+external/eurocontrol/*.csv
+models/atfm_slot_*.parquet

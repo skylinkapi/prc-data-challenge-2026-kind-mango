@@ -188,13 +188,14 @@ def main() -> None:
     ap.add_argument("--stack-rows", choices=("all", "own"), default="all",
                     help="Clock rows the stack moves; `own` keeps only rows with a clock at the assigned stand (N1).")
     ap.add_argument("--adsb-train", default=str(ADSB_TRAIN), help="ADS-B clock table of the 2025 training days.")
+    ap.add_argument("--adsb-rank", default=str(ADSB_RANK), help="ADS-B clock table of the ranking days (v115: X-Plane stands).")
     ap.add_argument("--rounds", type=int, default=C.STACK_V90_ROUNDS, help="Boosting rounds of the stack.")
     ap.add_argument("--leaves", type=int, default=C.STACK_V90_PARAMS["num_leaves"], help="Leaves of the stack trees.")
     ap.add_argument("--spec", help="Tag of the ADS-B specialist files to add as a column (v96: v96).")
     ap.add_argument("--blend-holdout", default=str(BLEND_HOLDOUT),
                     help="Out-of-sample hold-out blend the stack learns from; it must match `--base` (v97: blend_v97_holdout).")
     args = ap.parse_args()
-    use = {"opdi": (OPDI_TRAIN, OPDI_RANK), "adsb": (args.adsb_train, ADSB_RANK)}
+    use = {"opdi": (OPDI_TRAIN, OPDI_RANK), "adsb": (args.adsb_train, args.adsb_rank)}
     use = [v for k, v in use.items() if args.sources in (k, "both")]
     if args.neighbours != "none":
         use.append((NB_TRAIN, NB_RANK))

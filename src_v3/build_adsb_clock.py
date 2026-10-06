@@ -10,8 +10,10 @@ The 2025 training days and the 2026 ranking days go through the same code.
 """
 from __future__ import annotations
 
+import argparse
 import logging
 import re
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -28,9 +30,9 @@ M_PER_DEG = 111_320.0
 log = logging.getLogger(__name__)
 
 
-def stand_distance(p: pd.DataFrame) -> np.ndarray:
-    """Metres from each point to the nearest OSM stand node of its airport."""
-    st = pd.read_parquet(STANDS)
+def stand_distance(p: pd.DataFrame, stands=STANDS) -> np.ndarray:
+    """Metres from each point to the nearest stand node of its airport."""
+    st = pd.read_parquet(stands)
     out = np.full(len(p), np.nan)
     for apt, s in st.groupby("ADEP_mvt"):
         m = (p["apt"] == apt).values
@@ -41,11 +43,11 @@ def stand_distance(p: pd.DataFrame) -> np.ndarray:
     return out
 
 
-def own_stand(dep: pd.DataFrame) -> pd.DataFrame:
-    """`dep` with the mean position of the OSM nodes of its `STAND_mvt`; NaN where OSM has no such ref."""
+def own_stand(dep: pd.DataFrame, stands=STANDS) -> pd.DataFrame:
+    """`dep` with the mean position of the stand nodes of its `STAND_mvt`; NaN where the stand table has no such ref."""
     def key(s: pd.Series) -> pd.Series:
         return s.astype(str).str.upper().map(lambda v: re.sub(r"[^A-Z0-9]", "", v))
-    st = pd.read_parquet(STANDS)
+    st = pd.read_parquet(stands)
     pos = st.assign(k=key(st["stand_ref"])).groupby(["ADEP_mvt", "k"])[["lat", "lon"]].mean()
     pos.columns = ["own_lat", "own_lon"]
     return dep.assign(k=key(dep["STAND_mvt"])).merge(pos, left_on=["ADEP_mvt", "k"], right_index=True,
@@ -93,9 +95,9 @@ def first_move_after(g: pd.DataFrame, stops: pd.DataFrame) -> pd.Series:
     return after[after["dt"] < after["stop_end"]].groupby("MVT_ID_mvt")["dt"].max()
 
 
-def clock_columns(g: pd.DataFrame) -> pd.DataFrame:
+def clock_columns(g: pd.DataFrame, stands=STANDS) -> pd.DataFrame:
     """Candidate clocks and quality columns per departure, in seconds before `MVT`."""
-    g["dist"] = stand_distance(g)
+    g["dist"] = stand_distance(g, stands)
     g["moving"] = g["gs"] >= C.ADSB_MOVING_KT
     g["run"] = ((g["moving"] != g["moving"].shift()) | (g["MVT_ID_mvt"] != g["MVT_ID_mvt"].shift())).cumsum()
     g["own"] = metres(g["own_lat"], g["own_lon"], g["lat"], g["lon"])
@@ -126,15 +128,15 @@ def clock_columns(g: pd.DataFrame) -> pd.DataFrame:
     return out.join(top).reset_index()
 
 
-def build(dep: pd.DataFrame) -> pd.DataFrame:
+def build(dep: pd.DataFrame, stands=STANDS) -> pd.DataFrame:
     """ADS-B columns for every departure; `adsb_day_loaded` is 0 where the day is not on disk."""
     dep = own_stand(dep.assign(mvt=dep["MVT_TIME_UTC_mvt"].astype("datetime64[us, UTC]"),
-                               CALLSIGN_flt=dep["CALLSIGN_flt"].str.strip()))
+                               CALLSIGN_flt=dep["CALLSIGN_flt"].str.strip()), stands)
     day = dep["mvt"].dt.floor("D")
     parts = []
     for d, rows in dep.groupby(day):
         loaded = (POINTS / f"{d:%Y.%m.%d}.parquet").exists()
-        f = clock_columns(segment(rows, load_points(d))) if loaded else pd.DataFrame(columns=["MVT_ID_mvt"])
+        f = clock_columns(segment(rows, load_points(d)), stands) if loaded else pd.DataFrame(columns=["MVT_ID_mvt"])
         parts.append(rows[["MVT_ID_mvt"]].merge(f, on="MVT_ID_mvt", how="left").assign(adsb_day_loaded=int(loaded)))
     out = pd.concat(parts, ignore_index=True)
     on = out["adsb_day_loaded"] == 1
@@ -144,9 +146,14 @@ def build(dep: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--stands", type=Path, default=STANDS, help="stand table; v115: OSM plus X-Plane (`build_xplane_stands`).")
+    ap.add_argument("--out-dir", type=Path, default=C.ADSB_DIR, help="folder of the two clock tables.")
+    args = ap.parse_args()
+    args.out_dir.mkdir(parents=True, exist_ok=True)
     extra = ["CALLSIGN_flt", "STAND_mvt"]
-    build(load_dep(sorted(C.TRAIN_DIR.glob("training_*.parquet")), extra)).to_parquet(OUT_TRAIN)
-    build(load_dep([C.RANK], extra)).to_parquet(OUT_RANK)
+    build(load_dep(sorted(C.TRAIN_DIR.glob("training_*.parquet")), extra), args.stands).to_parquet(args.out_dir / OUT_TRAIN.name)
+    build(load_dep([C.RANK], extra), args.stands).to_parquet(args.out_dir / OUT_RANK.name)
 
 
 if __name__ == "__main__":

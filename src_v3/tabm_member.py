@@ -31,7 +31,7 @@ from src_v3 import config as C
 from src_v3.catboost_base import load_frame
 from src_v3.measure_catboost_blend import FIT_MONTHS, STOP_MONTHS, holdout_rows
 from src_v3.measure_tail_rules import mse_delta
-from src_v3.mlp_member import CAT_COLS, COLUMN_SETS, out_paths
+from src_v3.mlp_member import CAT_COLS, COLUMN_SETS, RANK_OVERRIDES, out_paths
 
 COLUMNS = "v97"
 log = logging.getLogger(__name__)
@@ -53,6 +53,7 @@ class Spec:
     serve_epoch: int = C.TABM_EPOCHS - 1
     anchor_col: str | None = None   # mvt_aobt3: learn y minus the NM clock (0 where missing), as the anchored trees
     seeds: tuple = C.TABM_SERVE_SEEDS
+    columns: str = COLUMNS             # column set of `mlp_member.COLUMN_SETS`
 
 
 class Prep:
@@ -174,7 +175,7 @@ def price(pred: np.ndarray, ref: pd.DataFrame, mlp: np.ndarray) -> dict:
 
 
 def measure(tag: str, spec: Spec) -> None:
-    extra, blend_path, _ = COLUMN_SETS[COLUMNS]
+    extra, blend_path, _ = COLUMN_SETS[spec.columns]
     pred_out, _, report_out = out_paths(tag)
     dep, feat = load_frame(extra)
     prep = Prep(dep[dep["month"].isin(FIT_MONTHS)], feat, spec)
@@ -197,9 +198,13 @@ def measure(tag: str, spec: Spec) -> None:
 
 def serve(tag: str, spec: Spec) -> None:
     """Fit on every served training row with `spec.seeds`; score the v97 ranking feature dump."""
-    extra, _, rank_dump = COLUMN_SETS[COLUMNS]
+    extra, _, rank_dump = COLUMN_SETS[spec.columns]
     dep, feat = load_frame(extra)
     rank = pd.read_parquet(rank_dump)
+    for path in RANK_OVERRIDES.get(spec.columns, ()):
+        cols = pd.read_parquet(path)
+        rank = rank.drop(columns=[c for c in cols if c != "MVT_ID_mvt" and c in rank]).merge(
+            cols, on="MVT_ID_mvt", how="left", validate="1:1")
     missing = sorted(set(feat) - set(rank.columns))
     if missing:
         raise KeyError(f"The ranking dump has no column {missing[:5]}. Rerun predict_v67 on the v97 recipe to rebuild it.")

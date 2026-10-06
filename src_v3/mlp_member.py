@@ -37,7 +37,12 @@ COLUMN_SETS = {   # extra column files, hold-out blend, ranking feature dump
     "v85": ((CLOCKS_TRAIN, FORWARD_V85), C.MODELS / "blend_v89_holdout.parquet",
             C.MODELS / "lgbm_r_all_v85_rank_features.parquet"),
     "v97": ((CLOCKS_TRAIN, FORWARD_V85, OPDI_TRAIN, C.ADSB_DIR / "v97" / "adsb_clock_train.parquet"),
-            C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet")}
+            C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet"),
+    "v115": ((CLOCKS_TRAIN, FORWARD_V85, OPDI_TRAIN, C.ADSB_DIR / "v115" / "adsb_clock_train.parquet",
+              C.ROOT / "models" / "atfm_slot_train.parquet"),
+             C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet")}
+RANK_OVERRIDES = {   # ranking tables whose columns replace or extend the feature dump of a column set
+    "v115": (C.ADSB_DIR / "v115" / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet")}
 BLEND_HOLDOUT = COLUMN_SETS["v85"][1]
 PRED_OUT = C.MODELS / "holdout_mlp.parquet"
 RANK_OUT = C.MODELS / "rank_mlp.parquet"
