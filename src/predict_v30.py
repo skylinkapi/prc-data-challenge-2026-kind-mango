@@ -58,7 +58,8 @@ DEFAULT_P_FB_FEATURES = "lirf_regime_v23.features.txt"
 
 
 def predict_p_fb(frame, members, features_file):
-    """Mean of the calibrated fallback probabilities over (booster, isotonic) members; a `.cbm` member is CatBoost (N7)."""
+    """Mean of the calibrated fallback probabilities over (booster, isotonic) members; a `.cbm` member is CatBoost (N7),
+    a `.pt` member is TabM (`src_v3/tabm_gate.py`)."""
     with open(os.path.join(MODELS, features_file)) as f:
         feat = f.read().splitlines()
     probs = []
@@ -69,6 +70,9 @@ def predict_p_fb(frame, members, features_file):
         if model_file.endswith(".cbm"):
             from src_v3.catboost_gate import score
             raw = score(path, frame, feat)
+        elif model_file.endswith(".pt"):
+            from src_v3.tabm_gate import score as score_tabm
+            raw = score_tabm(path, frame, feat)
         else:
             raw = lgb.Booster(model_file=path).predict(frame[feat])
         probs.append(iso.transform(raw))

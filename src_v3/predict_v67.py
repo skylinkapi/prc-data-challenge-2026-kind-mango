@@ -101,7 +101,7 @@ def main() -> None:
     ap.add_argument("--gate-features", default="lirf_regime_v23.features.txt",
                     help="Feature list of the gate (v83: lirf_regime_v83.features.txt).")
     ap.add_argument("--gate-catboost", nargs=2, metavar=("MODEL", "ISO"),
-                    help="CatBoost gate member and its isotonic map, averaged with the gate booster (N7: g3c).")
+                    help="Second gate member (.cbm CatBoost, N7 g3c; .pt TabM, g3t) and its isotonic map, averaged with the gate booster.")
     ap.add_argument("--r-norm-tag", default="v55", help="LIRF R_norm members (K2: v99r, with the ADS-B and OPDI columns).")
     ap.add_argument("--dump-terms", help="Write the per-member ranking terms outside LIRF to this models/v3 parquet (N3).")
     ap.add_argument("--pre-ms", default="kind-mango_v67_pre_ms.parquet")
