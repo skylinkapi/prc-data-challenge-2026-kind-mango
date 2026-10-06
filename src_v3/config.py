@@ -244,6 +244,20 @@ SERVED_ARTEFACTS = {92: (
 SERVED_ARTEFACTS[94] = (*SERVED_ARTEFACTS[92][:-1], "external/adsblol/v94/adsb_clock_train.parquet",
                         "models/v3/holdout_mlp.parquet", "models/v3/rank_mlp.parquet")
 SERVED_ARTEFACTS[95] = tuple(p.replace("/v94/", "/v95/") for p in SERVED_ARTEFACTS[94])
+# v112: v97 members and the g3 gate (the v104 base), the v105 stack with the MLP and the 24-epoch TabM member
+SERVED_ARTEFACTS[112] = (
+    "models/lgbm_r_all_v97_s*.txt", "models/lgbm_r_all_v97a_s*.txt", "models/lgbm_r_all_v97*.encoders.pkl",
+    "models/lgbm_r_all_v97*.features.txt", "models/catboost_r_all_v97c.cbm", "models/catboost_r_all_v97ca.cbm",
+    "models/lgbm_pa_v97_*.txt", "models/lgbm_pa_v97a_*.txt", "models/lgbm_pa_v97*.features.txt",
+    "models/lgbm_r_norm_lirf_v55_s*.txt", "models/lgbm_p_fb_lirf_g3.txt", "models/lirf_regime_g3.isotonic.pkl",
+    "models/lirf_regime_g3.features.txt", "models/lirf_regime.encoders.pkl", "models/lirf_regime_v23.rate_maps.pkl",
+    "models/lirf_band_table_v30.json", "models/arr_art_op_link_rank_g3.parquet",
+    "models/tempo_p2575_rank.parquet", "models/plan_taxi_res_rank_v57.parquet", "models/plan_nm_taxi_rank_v65.parquet",
+    "models/nm_clocks_*_v73.parquet", "models/nm_forward_rank_v85.parquet", "models/opdi_own_*_v90.parquet",
+    "models/v2/cache/frame_rank.parquet", "models/v3/blend_v97_holdout.parquet",
+    "external/adsblol/adsb_clock_rank.parquet", "external/adsblol/v97/adsb_clock_train.parquet",
+    "models/v3/holdout_mlp_v97.parquet", "models/v3/rank_mlp_v97.parquet",
+    "models/v3/holdout_mlp_tabm_e24.parquet", "models/v3/rank_mlp_tabm_e24.parquet")
 # v93 stack study (`tune_stack_v93.py`): more 2025 ADS-B days give the stack about 9 times more rows
 STACK_V93_MLP_WEIGHTS = (0.0, 0.1, 0.2)   # MLP hold-out: -190 at 0.1, -213 at 0.2, -69 at 0.3
 STACK_V93_LEAVES = (31, 63)
@@ -323,7 +337,7 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     "tabm": {"serve_epoch": 13},                      # v111: best stop-month epoch of 16 (163.54 s)
     "tabm_e24": {"epochs": 24, "serve_epoch": 23},    # 162.68 s; on the v105 base -343 MSE at 0.3
     "tabm_k32": {"k": 32, "width": 768},                # 162.88 s; on the v105 base -203 MSE at 0.3 (closed)
-    "tabm_e32": {"epochs": 32, "serve_epoch": 27},    # 162.19 s at epoch 27; on the v105 base -366 / -386 MSE at 0.3 / 0.4
+    "tabm_e32": {"epochs": 32, "serve_epoch": 27, "seeds": (42, 43, 44)},    # 162.19 s at epoch 27; on the v105 base -366 / -386 MSE at 0.3 / 0.4
     "tabm_e24_s43": {"epochs": 24, "serve_epoch": 23, "seeds": (43,)},   # seed spread of the hold-out member
     "tabm_anchor": {"anchor_col": "mvt_aobt3"},         # 163.99 s; on the v105 base -105 MSE at 0.2 (closed)
 }

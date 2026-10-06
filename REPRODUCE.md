@@ -198,6 +198,23 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    recorded one. The recorded `models/v3/rank_mlp_tabm.parquet` and
    `models/v3/holdout_mlp_tabm.parquet` rebuild v111 through `combine` and the stack.
 
+   **v112** (244.29 s) serves the 24-epoch TabM member at 0.35 and then removes the 24-h term of
+   Step A on rows without a local date crossing (`src_v3/step_a_date.py`, one LIRF row). From the
+   artefacts listed in `models/v112.manifest.json` (`python -m src_v3.artefact_manifest check
+   --version 112`), these commands rebuild the uploaded file at a maximum difference of 0.0 s:
+
+   ```bash
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member combine --tags tabm_e24 --share 0.35
+   python -m src_v3.stack_pushback_v90 serve --sources both --stand-bound --rounds 600 \
+       --adsb-train external/adsblol/v97/adsb_clock_train.parquet \
+       --blend-holdout models/v3/blend_v97_holdout.parquet --mlp-weight 0.48 --mlp-columns nn \
+       --base kind-mango_v104_base.parquet --out kind-mango_v112_stack.parquet
+   python -m src_v3.step_a_date kind-mango_v112_stack.parquet kind-mango_v112.parquet
+   ```
+
+   The TabM files come from `PYTHONPATH=.gpu_site python -m src_v3.tabm_member measure --tag tabm_e24`
+   (hold-out member) and `serve --tag tabm_e24` (two seeds on all rows, about 45 min).
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.
