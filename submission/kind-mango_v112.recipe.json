@@ -1,0 +1,6 @@
+{
+ "lever": "TabM e24 (24-epoch schedule) at 0.35 on top of the v105 base, replacing TabM e16 at 0.3; plus the Step A date-crossing fix (1 LIRF row)",
+ "neural_term": "nn at 0.4800, tags ['tabm_e24']",
+ "holdout_price_vs_v105_base": -358,
+ "score": 244.287
+}

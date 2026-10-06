@@ -1,0 +1,6 @@
+{
+ "lever": "TabM member on the v97 columns at 0.3 on top of the v105 base",
+ "neural_term": "nn = 0.318 MLP v97 + 0.682 TabM at 0.44",
+ "holdout_price": -231.1,
+ "score": 245.2277
+}
