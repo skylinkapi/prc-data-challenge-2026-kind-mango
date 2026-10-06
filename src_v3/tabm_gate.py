@@ -43,7 +43,8 @@ log = logging.getLogger(__name__)
 def probability(net: Net, num: torch.Tensor, cat: torch.Tensor) -> np.ndarray:
     """Mean fallback probability of the k submodels."""
     net.eval()
-    with torch.no_grad(), torch.autocast(DEV.type, dtype=torch.float16, enabled=DEV.type == "cuda"):
+    dev = next(net.parameters()).device
+    with torch.no_grad(), torch.autocast(dev.type, dtype=torch.float16, enabled=dev.type == "cuda"):
         out = [torch.sigmoid(net(num[i:i + C.TABM_PREDICT_BATCH], cat[i:i + C.TABM_PREDICT_BATCH]).float()).mean(1)
                for i in range(0, len(num), C.TABM_PREDICT_BATCH)]
     return torch.cat(out).cpu().numpy()
@@ -84,11 +85,12 @@ def fit(rows: pd.DataFrame, feat: list[str], last_epoch: int,
 
 
 def score(model_file: str, frame: pd.DataFrame, feat: list[str]) -> np.ndarray:
-    """Raw fallback probability of a saved TabM gate member."""
-    saved = torch.load(model_file, map_location=DEV, weights_only=False)
-    net = Net(saved["prep"].bins, [len(saved["prep"].vocab[c]) for c in saved["prep"].cat], SPEC).to(DEV)
+    """Raw fallback probability of a saved TabM gate member, on the CPU: the ranking file holds 27k LIRF rows."""
+    cpu = torch.device("cpu")
+    saved = torch.load(model_file, map_location=cpu, weights_only=False)
+    net = Net(saved["prep"].bins, [len(saved["prep"].vocab[c]) for c in saved["prep"].cat], SPEC)
     net.load_state_dict(saved["state"])
-    return probability(net, *saved["prep"](frame, DEV)[:2])
+    return probability(net, *saved["prep"](frame, cpu)[:2])
 
 
 def price() -> None:
