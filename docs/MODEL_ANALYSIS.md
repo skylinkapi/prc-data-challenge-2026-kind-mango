@@ -1,6 +1,6 @@
 # Model analysis: progress to v111, the eighteenth pass (new observables, TabM), the seventeenth pass (CatBoost gate) and the sixteenth pass (error budget of v97)
 
-Status on 2026-10-06, 01:25 local time: live best **245.23 s (v111)**, a TabM member at 0.3 on top of the v105 base (eighteenth pass). Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
+Status on 2026-10-06, 03:00 local time: live best **244.29 s (v112)**, the 24-epoch TabM member at 0.35 plus the Step A date-crossing fix (18.5). Before: **245.23 s (v111)**, a TabM member at 0.3 on top of the v105 base (eighteenth pass). Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
 rank 31; the leaderboard top is **216.57 s** (API, 09:25 UTC). The
 sixteenth pass below the Progress section measures where the v97 error
 sits. `docs/WINNING_PLAN.md` third edition turns it into the plan toward
@@ -156,7 +156,8 @@ and the output format.
 | N4 MLP on the v97 columns at 0.2 | v105 | -0.48 | accepted, best 246.48 s; hold-out -64 MSE |
 | gate g4: plus exact-copy and stand-day shares | v107 | +0.21 | rejected; hold-out -379 MSE |
 | K1 extra ADSB.lol feeds, K3 route distance, K4 long holds, N5 pseudo-labels, N2 study | not uploaded or pending | | K1 +0.6 points coverage, K3 -28, K4 0 of 4 rows, N5 +7 MSE; N2 refit uploads as v108 |
-| N8 TabM member on the v97 columns at 0.3 on top of the v105 base (eighteenth pass) | v111 | -1.25 | accepted, best 245.23 s; hold-out full path -231 MSE |
+| N8 TabM member on the v97 columns at 0.3 on top of the v105 base (eighteenth pass) | v111 | -1.25 | accepted; hold-out full path -231 MSE |
+| N8b TabM with a 24-epoch schedule at 0.35, plus the Step A date-crossing fix | v112 | -0.94 | accepted, best 244.29 s; hold-out -89 MSE against v111, plus one LIRF row |
 | ADS-B specialist (4.5 step 1) as a stack column, trained on 291 days outside months 1 and 7 | v96 | +0.53 | rejected; hold-out -302 MSE did not transfer (a derived column, like v66, v71, v83) |
 | v96 study on 62 days: 63 leaves, residual clip 7,200 s, A5 offsets, A4 columns | not built | -92, +19, +29 to +523, +37 MSE | closed: under the bar or worse |
 | A2 stack on all 62 January and July 2025 ADS-B days | v95 | -1.12 | accepted; hold-out stack -4,048 MSE; unattended release |
@@ -331,7 +332,20 @@ target is the label in thousands of seconds, clipped at 80,000 s.
 The share 0.3 was set before the full-year fit. Live: 245.23 s, -1.25 s
 (about -614 MSE), 2.7 times the price.
 
-### 18.4 Reading
+### 18.4 Variants, the LIRF gate member and v112
+
+| member | stop-month RMSE | on the v105 base at 0.3 / 0.4, MSE | state |
+|---|---|---|---|
+| `tabm`, 16 epochs (v111) | 163.54 s | -252 / -244 | served in v111 |
+| `tabm_e24`, 24 epochs | 162.68 s | -343 / -360 | served in v112 at 0.35; full path -320 |
+| mean of the two | | -307 / -319 | residual correlation 0.997: no gain |
+| `tabm_k32`, k = 32, width 768 | 162.88 s | -203 / -188 | closed |
+
+The TabM gate member (`src_v3/tabm_gate.py`, g3t) prices -319 MSE at the pre-registered share 0.5 (January -16, July -303), against -484 for the CatBoost member that lost 0.89 s live (January +71). It has no target statistics and reads the 2026 share columns directly. It is uploaded alone on top of v112 (v113).
+
+v112 = `tabm_e24` at 0.35 plus `src_v3/step_a_date.py` (one row). Live 244.29 s, -0.94 s. The two parts cannot be split: a file that differs from the best on one row is not allowed (rule 12).
+
+### 18.5 Reading
 
 1. Neural members transferred at 2 to 4 times their hold-out price three
    times (v94, v105, v111). Feature, parameter and weight changes of the

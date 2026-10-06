@@ -550,6 +550,7 @@ Fill one row per lever as it closes.
 | N6 | XGBoost member on the v97 columns | | | stopped after two study trials on the user's decision (stop RMSE 170.8 s against 166.8 s for N2) |
 | N7 | CatBoost member in the LIRF gate, mean with g3 | v109 | 247.37 (+0.89) | rejected, closed: hold-out -484 MSE (January +71, July -555) did not transfer |
 | N8 | TabM member on the v97 columns at 0.3 on top of the v105 base | v111 | 245.23 (-1.25) | accepted, best: hold-out full path -231 MSE (MODEL_ANALYSIS eighteenth pass) |
+| N8b | TabM 24-epoch member at 0.35, plus the Step A date-crossing fix | v112 | 244.29 (-0.94) | accepted, best |
 | Q1 | commit | | | done: `8114b81` on branch `plan-v99-third-edition` |
 | Q2 | reproduction path for the final file | | | open |
 
