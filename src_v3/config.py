@@ -344,7 +344,7 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     "tabm_e32": {"epochs": 32, "serve_epoch": 27, "seeds": (42, 43, 44)},    # 162.19 s at epoch 27; on the v105 base -366 / -386 MSE at 0.3 / 0.4
     "tabm_e24_s43": {"epochs": 24, "serve_epoch": 23, "seeds": (43,)},   # seed spread of the hold-out member
     "tabm_v115": {"epochs": 32, "serve_epoch": 21, "seeds": (42, 43, 44), "columns": "v115"},   # 161.6 s at epoch 21; -390 MSE at 0.4
-    "tabm_v116": {"epochs": 32, "serve_epoch": 21, "seeds": (42, 43, 44), "columns": "v116"},   # X-Plane stands at five airports
+    "tabm_v116": {"epochs": 32, "serve_epoch": 27, "seeds": (42, 43, 44), "columns": "v116"},   # five airports; 161.0 s at epoch 27; -485 MSE at 0.4
     "tabm_anchor": {"anchor_col": "mvt_aobt3"},         # 163.99 s; on the v105 base -105 MSE at 0.2 (closed)
 }
 TABM_GATE_SPEC = {"width": 256, "epochs": 12, "batch": 512}   # TabM member of the LIRF gate (`tabm_gate.py`)
