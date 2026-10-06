@@ -28,6 +28,7 @@ external/vrs/*.parquet
 models/**/*.txt
 models/**/*.pkl
 models/**/*.cbm
+models/**/*.pt
 # Feature lists the v67 chain reads (small text; see REPRODUCE.md)
 !models/v36_tune_cache.parquet.feat.txt
 !models/lirf_regime.features.txt
