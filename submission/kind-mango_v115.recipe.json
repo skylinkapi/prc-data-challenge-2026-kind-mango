@@ -1,0 +1,6 @@
+{
+ "lever": "v115: X-Plane stands at EDDM and EHAM (v115 ADS-B clock tables for the stack, the stand bound and TabM) and ATFM slot adherence columns in TabM; TabM v115 three seeds at 0.4; Step A fix as in v112",
+ "neural_term": "nn at 0.5200, tags ['tabm_v115']",
+ "holdout_price_vs_v114_path": -32.8,
+ "score": 243.6878
+}

@@ -1,6 +1,6 @@
 # Model analysis: progress to v111, the eighteenth pass (new observables, TabM), the seventeenth pass (CatBoost gate) and the sixteenth pass (error budget of v97)
 
-Status on 2026-10-06, 05:20 local time: leaderboard best **244.02 s (v114)**, the 32-epoch TabM member with three seeds at 0.4; -0.27 s against v112, under the 0.3 s acceptance bar. Earlier: live best stays **244.29 s (v112)**; v113 (TabM gate member) 247.40 s, rejected. Before: live best **244.29 s (v112)**, the 24-epoch TabM member at 0.35 plus the Step A date-crossing fix (18.5). Before: **245.23 s (v111)**, a TabM member at 0.3 on top of the v105 base (eighteenth pass). Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
+Status on 2026-10-06, 15:00 local time: live best **243.69 s (v115)**, X-Plane stands at EDDM and EHAM and ATFM slot columns (18.7). Earlier: leaderboard best **244.02 s (v114)**, the 32-epoch TabM member with three seeds at 0.4; -0.27 s against v112, under the 0.3 s acceptance bar. Earlier: live best stays **244.29 s (v112)**; v113 (TabM gate member) 247.40 s, rejected. Before: live best **244.29 s (v112)**, the 24-epoch TabM member at 0.35 plus the Step A date-crossing fix (18.5). Before: **245.23 s (v111)**, a TabM member at 0.3 on top of the v105 base (eighteenth pass). Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
 rank 31; the leaderboard top is **216.57 s** (API, 09:25 UTC). The
 sixteenth pass below the Progress section measures where the v97 error
 sits. `docs/WINNING_PLAN.md` third edition turns it into the plan toward
@@ -159,7 +159,8 @@ and the output format.
 | N8 TabM member on the v97 columns at 0.3 on top of the v105 base (eighteenth pass) | v111 | -1.25 | accepted; hold-out full path -231 MSE |
 | N8b TabM with a 24-epoch schedule at 0.35, plus the Step A date-crossing fix | v112 | -0.94 | accepted, best 244.29 s; hold-out -89 MSE against v111, plus one LIRF row |
 | N9 TabM member in the LIRF gate (g3t), mean with g3 | v113 | +3.12 | rejected, closed: hold-out -319 MSE; LIRF rows mean +37.1 s |
-| N8c TabM 32 epochs, three seeds, at 0.4 | v114 | -0.27 | leaderboard best 244.02 s; under the 0.3 s bar; hold-out -60 MSE against v112 |
+| N8c TabM 32 epochs, three seeds, at 0.4 | v114 | -0.27 | under the 0.3 s bar; hold-out -60 MSE against v112 |
+| K5 X-Plane stands at EDDM and EHAM, ATFM slot columns in TabM | v115 | -0.33 | accepted, best 243.69 s; hold-out -33 MSE against v114 |
 | ADS-B specialist (4.5 step 1) as a stack column, trained on 291 days outside months 1 and 7 | v96 | +0.53 | rejected; hold-out -302 MSE did not transfer (a derived column, like v66, v71, v83) |
 | v96 study on 62 days: 63 leaves, residual clip 7,200 s, A5 offsets, A4 columns | not built | -92, +19, +29 to +523, +37 MSE | closed: under the bar or worse |
 | A2 stack on all 62 January and July 2025 ADS-B days | v95 | -1.12 | accepted; hold-out stack -4,048 MSE; unattended release |
@@ -385,6 +386,22 @@ Reading:
    the ADS-B columns in `R_norm` already lost live (K2, v100, +0.12 s).
 4. Arithmetic, if 28.5 % of LTFM departures carried a segment on all 62 days: about 0.285 x 47,581 x
    (240^2 - 175^2) / 344,841 = 1,060 live MSE, about 2 s. The two free sample days give 2/62 of that.
+
+### 18.7 X-Plane stands and ATFM slots (v115)
+
+OSM has no position for the assigned stand on 42 % of EDDM and 32 % of EHAM departures. The X-Plane Scenery
+Gateway packs (GPL v2+) name every stand; two naming rules match them (sub-positions `215A`/`215B` for `215`;
+leading zeros, `C06` for `C6`). On stands both sources have, the positions agree to a median of 28 m (EDDM)
+and 41 m (EHAM), inside the 100 m radius of a stand clock.
+
+| airport | stand clock 2026, OSM | with X-Plane | stand clock 2025, OSM | with X-Plane |
+|---|---|---|---|---|
+| EDDM | 0.396 | 0.726 | 0.315 | 0.557 |
+| EHAM | 0.519 | 0.763 | 0.454 | 0.639 |
+
+The tree members keep the tables they trained on. The stack, the A5 bound and TabM read the new clocks; TabM
+also reads the ATFM slot adherence per airport and UTC day (take-off times only). Hold-out against the v114
+path: -33 MSE (stack -27, TabM -12). Live: 243.69 s, -0.33 s, about 5 times the price.
 
 ### 18.5 Reading
 

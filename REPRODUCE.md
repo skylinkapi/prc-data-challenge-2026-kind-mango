@@ -215,6 +215,24 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    The TabM files come from `PYTHONPATH=.gpu_site python -m src_v3.tabm_member measure --tag tabm_e24`
    (hold-out member) and `serve --tag tabm_e24` (two seeds on all rows, about 45 min).
 
+   **v115** (243.69 s) adds X-Plane stand positions at EDDM and EHAM and ATFM slot columns. From the artefacts in
+   `models/v115.manifest.json`, these commands rebuild the uploaded file at a maximum difference of 2e-13 s:
+
+   ```bash
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member combine --tags tabm_v115 --share 0.4
+   python -m src_v3.stack_pushback_v90 serve --sources both --stand-bound --rounds 600 \
+       --adsb-train external/adsblol/v115/adsb_clock_train.parquet \
+       --adsb-rank external/adsblol/v115/adsb_clock_rank.parquet \
+       --blend-holdout models/v3/blend_v97_holdout.parquet --mlp-weight 0.52 --mlp-columns nn \
+       --base kind-mango_v104_base.parquet --out kind-mango_v115_stack.parquet
+   python -m src_v3.step_a_date kind-mango_v115_stack.parquet kind-mango_v115.parquet
+   ```
+
+   The inputs come from `python -m src_v3.build_xplane_stands fetch` and `build`, `python -m src_v3.build_adsb_clock
+   --stands external/xplane/stands_osm_xplane.parquet --out-dir external/adsblol/v115`, `python -m
+   src_v3.build_atfm_slot`, and `PYTHONPATH=.gpu_site python -m src_v3.tabm_member measure --tag tabm_v115` and
+   `serve --tag tabm_v115` (three seeds, about 60 min).
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.
