@@ -355,6 +355,37 @@ v113): only new 2026 information has moved the gate the right way (v101, v102, v
 
 v112 = `tabm_e24` at 0.35 plus `src_v3/step_a_date.py` (one row). Live 244.29 s, -0.94 s. The two parts cannot be split: a file that differs from the best on one row is not allowed (rule 12).
 
+### 18.6 More ADS-B ground coverage at LIRF, LFPG and LTFM
+
+Search of 2026-10-06 for open trajectory data beyond ADSB.lol and OPDI:
+
+| source | data for 2025 and January/July 2026 | licence | state |
+|---|---|---|---|
+| ADSB.lol `globe_history` | `prod-0` (used), `staging-0` and `mlatonly-0` (K1: +0.6 points at most); no `prod-1` dump in 2025 or 2026 | ODbL 1.0 | exhausted; it already holds FlyItalyADSB and TheAirTraffic |
+| ADS-B Exchange samples | the 1st of each month only (2 of 62 ranking days) | non-commercial research and evaluation, no derivative works without written permission | not open data |
+| adsb.fi | live API only; history replay answers 403 | personal non-commercial use, citation | no archive |
+| Airplanes.Live | live API only; history replay answers 403 | educational, non-commercial | no archive |
+| Wingbits | one rotating sample day | evaluation only | no |
+
+Evaluation probe on 2026-07-01 (ADS-B Exchange sample, aggregate numbers only): share of departures with an ADS-B
+ground segment and with a clock at the assigned stand.
+
+| airport | ADSB.lol segment | ADSB.lol stand clock | ADS-B Exchange segment | ADS-B Exchange stand clock |
+|---|---|---|---|---|
+| LIRF | 0.0 % | 0.0 % | 83.8 % | 8.8 % |
+| LTFM | 0.0 % | 0.0 % | 28.5 % | 3.5 % |
+| LFPG | 23.7 % | 0.1 % | 0.7 % | 0.0 % |
+| EGLL | 98.5 % | 72.3 % | 98.3 % | 85.2 % |
+
+Reading:
+
+1. Receivers near LIRF and LTFM exist, but their data is not open. No open archive covers them.
+2. At LFPG no source beats ADSB.lol.
+3. An ADS-B clock does not show how LIRF reported the off-block. It can sharpen the genuine term only;
+   the ADS-B columns in `R_norm` already lost live (K2, v100, +0.12 s).
+4. Arithmetic, if 28.5 % of LTFM departures carried a segment on all 62 days: about 0.285 x 47,581 x
+   (240^2 - 175^2) / 344,841 = 1,060 live MSE, about 2 s. The two free sample days give 2/62 of that.
+
 ### 18.5 Reading
 
 1. Neural members transferred at 2 to 4 times their hold-out price three
