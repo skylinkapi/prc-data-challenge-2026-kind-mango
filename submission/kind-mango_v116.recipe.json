@@ -1,0 +1,6 @@
+{
+ "lever": "v116: X-Plane stands also at LEMD, LEBL and LFPG (v116 ADS-B clock tables for the stack, the stand bound and TabM); TabM v116 three seeds at 0.4; ATFM slots and Step A fix as in v115",
+ "neural_term": "nn at 0.5200, tags ['tabm_v116']",
+ "holdout_price_stack_vs_v115": -1.7,
+ "score": 243.653
+}
