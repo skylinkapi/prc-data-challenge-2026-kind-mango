@@ -178,7 +178,7 @@ def measure(tag: str, spec: Spec) -> None:
     pred_out, _, report_out = out_paths(tag)
     dep, feat = load_frame(extra)
     prep = Prep(dep[dep["month"].isin(FIT_MONTHS)], feat, spec)
-    net, curve = train(prep, dep[dep["month"].isin(FIT_MONTHS)], dep[dep["month"].isin(STOP_MONTHS)], C.GLOBAL_SEED, spec)
+    net, curve = train(prep, dep[dep["month"].isin(FIT_MONTHS)], dep[dep["month"].isin(STOP_MONTHS)], spec.seeds[0], spec)
     del dep
     h, _ = holdout_rows()
     for path in extra:

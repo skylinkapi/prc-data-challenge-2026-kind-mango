@@ -323,8 +323,9 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     "tabm": {"serve_epoch": 13},                      # v111: best stop-month epoch of 16 (163.54 s)
     "tabm_e24": {"epochs": 24, "serve_epoch": 23},    # 162.68 s; on the v105 base -343 MSE at 0.3
     "tabm_k32": {"k": 32, "width": 768},                # 162.88 s; on the v105 base -203 MSE at 0.3 (closed)
-    "tabm_e32": {"epochs": 32, "serve_epoch": 31},
-    "tabm_anchor": {"anchor_col": "mvt_aobt3"},
+    "tabm_e32": {"epochs": 32, "serve_epoch": 27},    # 162.19 s at epoch 27; on the v105 base -366 / -386 MSE at 0.3 / 0.4
+    "tabm_e24_s43": {"epochs": 24, "serve_epoch": 23, "seeds": (43,)},   # seed spread of the hold-out member
+    "tabm_anchor": {"anchor_col": "mvt_aobt3"},         # 163.99 s; on the v105 base -105 MSE at 0.2 (closed)
 }
 TABM_GATE_SPEC = {"width": 256, "epochs": 12, "batch": 512}   # TabM member of the LIRF gate (`tabm_gate.py`)
 TABM_ON_V105 = 0.3                      # share on top of the v105 base; hold-out -214 / -252 / -244 MSE at 0.2 / 0.3 / 0.4

@@ -551,6 +551,7 @@ Fill one row per lever as it closes.
 | N7 | CatBoost member in the LIRF gate, mean with g3 | v109 | 247.37 (+0.89) | rejected, closed: hold-out -484 MSE (January +71, July -555) did not transfer |
 | N8 | TabM member on the v97 columns at 0.3 on top of the v105 base | v111 | 245.23 (-1.25) | accepted, best: hold-out full path -231 MSE (MODEL_ANALYSIS eighteenth pass) |
 | N8b | TabM 24-epoch member at 0.35, plus the Step A date-crossing fix | v112 | 244.29 (-0.94) | accepted, best |
+| N9 | TabM member in the LIRF gate | v113 | 247.40 (+3.12) | rejected, closed: LIRF-head model changes keep failing live |
 | Q1 | commit | | | done: `8114b81` on branch `plan-v99-third-edition` |
 | Q2 | reproduction path for the final file | | | open |
 
