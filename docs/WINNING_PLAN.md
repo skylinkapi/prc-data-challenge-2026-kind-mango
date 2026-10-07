@@ -607,8 +607,8 @@ Fill one row per lever as it closes.
 | Q1 | commit | | | done: `8114b81` on branch `plan-v99-third-edition` |
 | Q2 | reproduction path for the final file | | | open |
 | J1 | LOBT window on every record row; LIRF gate 0 where a schedule copy breaks the window | v118 | 242.81 (-0.85) | accepted, best: hold-out -371 MSE, live -411 |
-| J2 | LIRF gate 0 on rows without a record whose arrival row gives `LOBT` within 1 h of `SCHED` | | | priced, open: hold-out -193 MSE |
-| N10 | more TabM seeds, a second network family, a higher neural share | | | open: price on the hold-out first |
+| J2 | LIRF gate 0 on rows without a record whose arrival row gives `LOBT` within 1 h of `SCHED` | v119 | 242.51 (-0.295) | leaderboard best, bundled with N10 for rule 12; 0.005 s under the bar |
+| N10 | second network family: TabM with periodic embeddings (`tabm_plr`), averaged with `tabm_v116` | v119 | 242.51 (-0.295) | bundled with J2; full path -83 MSE on the hold-out |
 | K6 | OPDI `entry-deicing_pad` events as stack columns | | | open: probe one January day; OSN sees the ground only at LSZH, LEBL, EDDF, EHAM, LEMD |
 | Q3 | price levers by the gain on rows with `y <= 3,600` s and a 2026 importance weight | | | open: backtest on the uploads v105 to v117 first |
 | E1 | EUROCONTROL label-derived series | | | decision: organiser ruling needed; the daily series makes the LIRF gate worse (+523 MSE) |

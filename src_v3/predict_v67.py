@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+from functools import partial
 
 import lightgbm as lgb
 import numpy as np
@@ -112,6 +113,8 @@ def main() -> None:
     ap.add_argument("--r-norm-tag", default="v55", help="LIRF R_norm members (K2: v99r, with the ADS-B and OPDI columns).")
     ap.add_argument("--copy-window", action="store_true",
                     help="J1: LIRF gate 0 where |SCHED - LOBT| exceeds the NM join window.")
+    ap.add_argument("--copy-linked", action="store_true",
+                    help="J2, with --copy-window: also gate 0 where the arrival-side LOBT shows a copy would have joined.")
     ap.add_argument("--dump-terms", help="Write the per-member ranking terms outside LIRF to this models/v3 parquet (N3).")
     ap.add_argument("--pre-ms", default="kind-mango_v67_pre_ms.parquet")
     ap.add_argument("--out", default="kind-mango_v67.parquet")
@@ -123,7 +126,8 @@ def main() -> None:
               gate_iso=args.gate_iso, extra_files=tuple(args.extra),
               r_norm_post=None if args.r_norm_weight is None else blend_r_norm(args.r_norm_weight),
               gate_booster=args.gate_booster, gate_features=args.gate_features, r_norm_tag=args.r_norm_tag,
-              gate_catboost=args.gate_catboost, p_fb_post=no_copy if args.copy_window else None)
+              gate_catboost=args.gate_catboost,
+              p_fb_post=partial(no_copy, linked=args.copy_linked) if args.copy_window else None)
     dump = pd.read_parquet(dump_path)
     pre = pd.read_parquet(C.ROOT / "submission" / args.pre_ms)
     members = score_members(dump, args.base_model)

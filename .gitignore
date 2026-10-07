@@ -101,6 +101,7 @@ models/arr_drift_*.parquet
 models/plan_nm_taxi_*.parquet
 models/runway_queue_*.parquet
 models/nm_clocks_*.parquet
+models/lobt_terms_*.parquet
 models/nm_neighbours_*.parquet
 models/nm_forward_*.parquet
 models/stand_seq_*.parquet

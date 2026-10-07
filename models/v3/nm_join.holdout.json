@@ -68,6 +68,40 @@
    }
   }
  },
+ "j3": {
+  "medians_fit_months": [
+   1102.5,
+   989.5,
+   574.5
+  ],
+  "outside_lirf": {
+   "rows_moved": 38,
+   "mse": -229.6,
+   "body": 0.0,
+   "tail": -229.6,
+   "by_group": {
+    "EDDF": -2.8,
+    "EDDM": 0.0,
+    "EGLL": -110.0,
+    "EHAM": -38.9,
+    "LEBL": 0.0,
+    "LEMD": 0.0,
+    "LFPG": -36.9,
+    "LSZH": -40.9,
+    "LTFM": 0.0
+   }
+  },
+  "lirf": {
+   "rows_moved": 11,
+   "mse": -25.4,
+   "body": 0.0,
+   "tail": -25.4,
+   "by_group": {
+    "no_record": 0.0,
+    "record": -25.4
+   }
+  }
+ },
  "served": {
   "file": "kind-mango_v116.parquet",
   "window_rows": 54,

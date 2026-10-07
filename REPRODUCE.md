@@ -259,6 +259,20 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    python -m src_v3.lobt_window kind-mango_v118_stepa.parquet kind-mango_v118.parquet
    ```
 
+   **v119** (242.51 s) adds J2 and the `tabm_plr` member (`models/v119.manifest.json`). Run the v118 base command with
+   `--copy-linked` after `--copy-window` and the names `kind-mango_v119_base*.parquet`; outside the 20 J2 rows it
+   matches the v118 base at 0.0 s. Then:
+
+   ```bash
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member measure --tag tabm_plr   # hold-out member, about 30 min
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member serve --tag tabm_plr     # three seeds, about 100 min
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member combine --tags tabm_v116 tabm_plr --share 0.4
+   ```
+
+   The v118 stack command with `--base kind-mango_v119_base.parquet --out kind-mango_v119_stack.parquet`, then
+   `step_a_date` and `lobt_window` as for v118, write `kind-mango_v119.parquet`. The TabM files are not bit-exact on a
+   rerun (no deterministic CUDA kernels); the recorded `models/v3/*tabm_plr.parquet` files rebuild the upload.
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.

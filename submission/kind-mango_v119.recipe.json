@@ -1,0 +1,26 @@
+{
+ "gates": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "over_80000": true,
+  "over_7200": true,
+  "inside_window": true,
+  "lirf_equals_j2": true,
+  "big_moves": true
+ },
+ "stats": {
+  "rows_moved": 316960,
+  "lirf_rows_moved": 20,
+  "rows_moved_over_3000_s": 0,
+  "mean_shift_outside_lirf_s": -0.1829706183171297,
+  "over_7200": 105
+ },
+ "lever": "v118 + J2 (LIRF gate 0 where the arrival-side LOBT shows a schedule copy would have joined, predict_v67 --copy-window --copy-linked) + N10 tabm_plr (periodic embeddings, three seeds) averaged with tabm_v116 at the TabM share 0.4; bundled for AGENTS rule 12 (J2 alone moves 20 rows)",
+ "holdout_price": {
+  "j2": -193.3,
+  "tabm_plr_full_path": -83.4
+ },
+ "score": 242.5121
+}

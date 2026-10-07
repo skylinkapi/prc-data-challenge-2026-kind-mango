@@ -268,6 +268,8 @@ SERVED_ARTEFACTS[115] = (*(p.replace("tabm_e24", "tabm_v115") for p in SERVED_AR
 SERVED_ARTEFACTS[116] = tuple(p.replace("v115", "v116") for p in SERVED_ARTEFACTS[115])   # v116: five X-Plane airports
 SERVED_ARTEFACTS[117] = tuple(p.replace("_v97", "_v116") for p in SERVED_ARTEFACTS[116])   # v117: refit members
 SERVED_ARTEFACTS[118] = SERVED_ARTEFACTS[116]   # v118: J1 reads only the ranking file on top of v116
+SERVED_ARTEFACTS[119] = (*SERVED_ARTEFACTS[118], "models/v3/holdout_mlp_tabm_plr.parquet",   # v119: J2 and tabm_plr
+                         "models/v3/rank_mlp_tabm_plr.parquet")
 # v93 stack study (`tune_stack_v93.py`): more 2025 ADS-B days give the stack about 9 times more rows
 STACK_V93_MLP_WEIGHTS = (0.0, 0.1, 0.2)   # MLP hold-out: -190 at 0.1, -213 at 0.2, -69 at 0.3
 STACK_V93_LEAVES = (31, 63)
@@ -352,6 +354,11 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     "tabm_v115": {"epochs": 32, "serve_epoch": 21, "seeds": (42, 43, 44), "columns": "v115"},   # 161.6 s at epoch 21; -390 MSE at 0.4
     "tabm_v116": {"epochs": 32, "serve_epoch": 27, "seeds": (42, 43, 44), "columns": "v116"},   # five airports; 161.0 s at epoch 27; -485 MSE at 0.4
     "tabm_anchor": {"anchor_col": "mvt_aobt3"},         # 163.99 s; on the v105 base -105 MSE at 0.2 (closed)
+    # N10, second network family: periodic numeric embeddings instead of piecewise-linear; 161.40 s at epoch 30, -460 MSE
+    # alone at 0.4; averaged with tabm_v116 at 0.4 the full serve path prices -83 MSE (v119)
+    "tabm_plr": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v116", "embed": "plr"},
+    # J family as a member input: the v116 columns plus the unclipped `lobt_ml` and `lobt_sl` (`build_lobt_terms.py`)
+    "tabm_j": {"epochs": 32, "serve_epoch": 27, "seeds": (42, 43, 44), "columns": "v120"},
 }
 TABM_GATE_SPEC = {"width": 256, "epochs": 12, "batch": 512}   # TabM member of the LIRF gate (`tabm_gate.py`)
 TABM_ON_V105 = 0.3                      # share on top of the v105 base; hold-out -214 / -252 / -244 MSE at 0.2 / 0.3 / 0.4
@@ -385,6 +392,11 @@ ADSB_TAXI_SPEED_MS = 7.0                # about 14 kt, a typical taxi speed; the
 # NM join rules (`measure_nm_join.py`, nineteenth pass): all 2,062,577 record departures of 2025 have
 # |BLOCK - LOBT| <= 3,606 s, so the organiser joined a movement to its NM flight only inside that window
 LOBT_WINDOW_S = 3606
+# J3: `mvt_lobt` is clipped at NM_CLOCK_CLIP_S, so the trees miss rows whose LOBT lies 2 to 4 h before the take-off.
+# There the served value is MVT - LOBT minus the median BLOCK - LOBT of the 2025 record departures in the band
+# (100, 25 and 14 rows); medians fit outside January and July price -255 hold-out MSE on 49 rows
+LOBT_ANCHOR_EDGES_S = (7200, 9000, 10800, 14400)
+LOBT_ANCHOR_U_S = (1040.0, 959.0, 633.5)
 ARR_LINK_S = (600, 50_400)              # the arrival of the same flight number lands 10 min to 14 h after the take-off
 V115_SHARES = (0.48, 0.12, 0.40)        # v115 base outside LIRF: tree blend, MLP, TabM (`--mlp-weight 0.52`, TabM 0.4)
 V115_TABM = "tabm_v115"

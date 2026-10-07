@@ -54,6 +54,7 @@ class Spec:
     anchor_col: str | None = None   # mvt_aobt3: learn y minus the NM clock (0 where missing), as the anchored trees
     seeds: tuple = C.TABM_SERVE_SEEDS
     columns: str = COLUMNS             # column set of `mlp_member.COLUMN_SETS`
+    embed: str = "ple"                 # numeric embeddings: piecewise-linear ("ple") or periodic ("plr")
 
 
 class Prep:
@@ -98,7 +99,8 @@ class Prep:
 class Net(nn.Module):
     def __init__(self, bins: list[torch.Tensor], cards: list[int], spec: Spec):
         super().__init__()
-        self.num = rne.PiecewiseLinearEmbeddings(bins, spec.d_num, activation=False, version="B")
+        self.num = (rne.PiecewiseLinearEmbeddings(bins, spec.d_num, activation=False, version="B") if spec.embed == "ple"
+                    else rne.PeriodicEmbeddings(len(bins), spec.d_num, lite=False))
         self.emb = nn.ModuleList([nn.Embedding(n + 1, min(C.MLP_EMB_MAX, (n + 2) // 2)) for n in cards])
         chunks = [spec.d_num] * len(bins) + [e.embedding_dim for e in self.emb]
         self.view = tabm.EnsembleView(k=spec.k)

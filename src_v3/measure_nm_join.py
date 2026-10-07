@@ -38,7 +38,7 @@ from src_v3.build_nm_clocks_v73 import load_dep
 from src_v3.catboost_gate import OOF as GATE_OOF
 from src_v3.catboost_gate import gate_frame
 from src_v3.labels import classify
-from src_v3.lobt_window import window
+from src_v3.lobt_window import anchor, arrival_lobt, window
 from src_v3.measure_gate_clocks import nested_map, r_norm_v41
 from src_v3.measure_tail_rules import HOLD
 from src_v3.mlp_member import out_paths
@@ -51,18 +51,6 @@ log = logging.getLogger(__name__)
 
 def seconds(a: pd.Series, b: pd.Series) -> np.ndarray:
     return (a - b).dt.total_seconds().values
-
-
-def arrival_lobt(paths: list) -> pd.DataFrame:
-    """`LOBT` of the arrival row of the same flight number at the destination, for departures without a record."""
-    cols = ["MVT_ID_mvt", "PHASE_mvt", "FLIGHT_mvt", "ADES_mvt", "FLIGHT_ID_mvt", "MVT_TIME_UTC_mvt", "LOBT_flt"]
-    m = pd.concat([pd.read_parquet(p, columns=cols) for p in paths], ignore_index=True)
-    dep = m[(m["PHASE_mvt"] == "DEP") & m["FLIGHT_ID_mvt"].isna()]
-    arr = m[(m["PHASE_mvt"] == "ARR") & m["FLIGHT_ID_mvt"].notna()][["FLIGHT_mvt", "ADES_mvt", "MVT_TIME_UTC_mvt", "LOBT_flt"]]
-    j = dep[["MVT_ID_mvt", "FLIGHT_mvt", "ADES_mvt", "MVT_TIME_UTC_mvt"]].merge(arr, on=["FLIGHT_mvt", "ADES_mvt"], suffixes=("", "_arr"))
-    j["lag"] = seconds(j["MVT_TIME_UTC_mvt_arr"], j["MVT_TIME_UTC_mvt"])
-    j = j[j["lag"].between(*C.ARR_LINK_S, inclusive="neither")].sort_values("lag").drop_duplicates("MVT_ID_mvt")
-    return j[["MVT_ID_mvt", "LOBT_flt"]].rename(columns={"LOBT_flt": "lobt_arr"})
 
 
 def lobt_terms(paths: list) -> pd.DataFrame:
@@ -131,6 +119,20 @@ def lirf_arms(h: pd.DataFrame) -> dict:
     return out
 
 
+def anchor_medians(paths: list, months: list) -> tuple:
+    """Median `BLOCK - LOBT` per `LOBT_ANCHOR_EDGES_S` band of the record departures of `months` (J3)."""
+    d = load_dep(paths, ["BLOCK_TIME_UTC_mvt"]).dropna(subset=["LOBT_flt"])
+    d = d[d["MVT_TIME_UTC_mvt"].dt.month.isin(months)]
+    band = pd.cut(seconds(d["MVT_TIME_UTC_mvt"], d["LOBT_flt"]), C.LOBT_ANCHOR_EDGES_S, right=False)
+    return tuple(pd.Series(seconds(d["BLOCK_TIME_UTC_mvt"], d["LOBT_flt"])).groupby(band, observed=False).median().values)
+
+
+def anchor_arm(pred: np.ndarray, t: pd.DataFrame, medians: tuple) -> np.ndarray:
+    """J3 on record rows, then the window."""
+    ml = np.where(t["record"].values, t["ml"].values, np.nan)
+    return window(anchor(pred, ml, medians), ml)
+
+
 def price(new: np.ndarray, old: np.ndarray, y: np.ndarray, by: np.ndarray) -> dict:
     """MSE change on the hold-out scale: all rows, the body (`y <= BODY_MAX_S`), the tail, and per group."""
     d = pd.Series(((new - y) ** 2 - (old - y) ** 2) / C.HOLDOUT_ROWS)
@@ -157,13 +159,18 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--served", default="kind-mango_v116.parquet", help="Served ranking file in submission/.")
     args = ap.parse_args()
-    t25 = lobt_terms(sorted(C.TRAIN_DIR.glob("training_2025-*.parquet")))
+    paths = sorted(C.TRAIN_DIR.glob("training_2025-*.parquet"))
+    t25 = lobt_terms(paths)
     o = outside_lirf().merge(t25, on="MVT_ID_mvt", how="left", validate="1:1")
     h = lirf_head().merge(t25, on="MVT_ID_mvt", how="left", validate="1:1")
     arms = lirf_arms(h)
-    report = {"outside_lirf_window": price(project(o["final"].values, o), o["final"].values, o["y"].values, o["apt"].values),
-              "lirf": {k: price(v, h["pred"].values, h["y"].values, np.where(h["record"], "record", "no_record"))
-                       for k, v in arms.items()},
+    j1_o, rec = project(o["final"].values, o), np.where(h["record"], "record", "no_record")
+    fit = anchor_medians(paths, [m for m in range(1, 13) if m not in HOLD])
+    report = {"outside_lirf_window": price(j1_o, o["final"].values, o["y"].values, o["apt"].values),
+              "lirf": {k: price(v, h["pred"].values, h["y"].values, rec) for k, v in arms.items()},
+              "j3": {"medians_fit_months": [round(float(u), 1) for u in fit],
+                     "outside_lirf": price(anchor_arm(j1_o, o, fit), j1_o, o["y"].values, o["apt"].values),
+                     "lirf": price(anchor_arm(arms["all"], h, fit), arms["all"], h["y"].values, rec)},
               "served": served(args.served, lobt_terms([C.RANK]))}
     REPORT.write_text(json.dumps(report, indent=1))
     log.info("outside LIRF %.0f, LIRF all rules %.0f hold-out MSE; %s -> %s", report["outside_lirf_window"]["mse"],
