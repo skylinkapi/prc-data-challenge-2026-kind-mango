@@ -26,7 +26,7 @@ from catboost import CatBoostRegressor
 from src_v3 import config as C
 from src_v3.catboost_base import paths, predict
 from src_v3.catboost_r_norm import blend_r_norm
-from src_v3.postprocess import apply_ms3
+from src_v3.postprocess import MS3_DISAGREE_S, apply_ms3
 from src_v3.predict_v57 import serve_v30, write_ms
 from src_v3.predict_v62 import CAT_COLS, load_training_categories, score_members
 
@@ -67,8 +67,10 @@ def score_seeds(dump: pd.DataFrame, tags: list[str], clip: bool) -> np.ndarray:
     return np.mean([score_per_airport(dump, t, clip) for t in tags], axis=0)
 
 
-def mix(term: np.ndarray, per: np.ndarray, weight: float) -> np.ndarray:
-    return np.where(np.isnan(per), term, (1 - weight) * term + weight * per)
+def mix(term: np.ndarray, per: np.ndarray, weight: float, guard: float | None = None) -> np.ndarray:
+    """`term` mixed with the per-airport member; with `guard`, rows where the two disagree by more than it keep `term`."""
+    keep = np.isnan(per) | (np.abs(per - term) > guard if guard is not None else False)
+    return np.where(keep, term, (1 - weight) * term + weight * per)
 
 
 def load_catboost(tag: str) -> tuple[CatBoostRegressor, list[str]]:
@@ -93,6 +95,8 @@ def main() -> None:
     ap.add_argument("--per-airport-tag", nargs="+",
                     help="Per-airport LightGBM members, one tag per seed (v89: v89; v92: v89 v89s43 v89s44).")
     ap.add_argument("--per-airport-weight", type=float, default=0.5)
+    ap.add_argument("--pa-guard", action="store_true",
+                    help="MS3 for the per-airport mix: keep the global term where they disagree by more than 3,600 s (v117).")
     ap.add_argument("--catboost-anchor-tag", help="CatBoost trained on the AOBT_3 residual (v75: v75a).")
     ap.add_argument("--anchor-weight", type=float, default=0.5,
                     help="Weight of the anchored model inside the LightGBM term and the CatBoost term.")
@@ -126,9 +130,10 @@ def main() -> None:
         lgb_term, moved = apply_ms3(members, adep)
         log.info("MS3 moved %s", moved)
     terms = {"lgb": lgb_term}
+    guard = MS3_DISAGREE_S if args.pa_guard else None
     if args.per_airport_tag:
         terms["lgb_per_airport"] = score_seeds(dump, args.per_airport_tag, clip=True)
-        lgb_term = mix(lgb_term, terms["lgb_per_airport"], args.per_airport_weight)
+        lgb_term = mix(lgb_term, terms["lgb_per_airport"], args.per_airport_weight, guard)
     if args.anchor_model:
         offsets = score_members(dump, args.anchor_model, clip=False)
         offset, moved = apply_ms3(offsets, adep) if args.ms3 else (offsets.mean(axis=0), {})
@@ -136,7 +141,7 @@ def main() -> None:
         terms["lgb_anchor"] = blend_anchor(dump, terms["lgb"], offset, 1.0)
         if args.per_airport_tag:
             offset = mix(offset, score_seeds(dump, [f"{t}a" for t in args.per_airport_tag], clip=False),
-                         args.per_airport_weight)
+                         args.per_airport_weight, guard)
         lgb_term = blend_anchor(dump, lgb_term, offset, args.anchor_weight)
     served = dump[["MVT_ID_mvt"]].merge(pre, on="MVT_ID_mvt", how="left",
                                         validate="1:1")["TAXITIME_SEC_mvt"].values
