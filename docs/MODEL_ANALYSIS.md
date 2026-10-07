@@ -162,7 +162,7 @@ and the output format.
 | N8c TabM 32 epochs, three seeds, at 0.4 | v114 | -0.27 | under the 0.3 s bar; hold-out -60 MSE against v112 |
 | K5 X-Plane stands at EDDM and EHAM, ATFM slot columns in TabM | v115 | -0.33 | accepted, best 243.69 s; hold-out -33 MSE against v114 |
 | K5b X-Plane stands also at LEMD, LEBL, LFPG | v116 | -0.035 | inside noise; 2026 stand-clock share LEMD +4.4, LEBL +2.1 points |
-| K5c tree members refit on the v116 clock tables, MS3 guard on the per-airport mix | v117 | +0.09 | under the 0.3 s bar; hold-out blend -232 MSE against v97 members |
+| K5c tree members refit on the v116 clock tables, MS3 guard on the per-airport mix | v117 | +0.09 | rejected: hold-out blend -232 MSE against v97 members, but the stack already read the new clocks |
 | ADS-B specialist (4.5 step 1) as a stack column, trained on 291 days outside months 1 and 7 | v96 | +0.53 | rejected; hold-out -302 MSE did not transfer (a derived column, like v66, v71, v83) |
 | v96 study on 62 days: 63 leaves, residual clip 7,200 s, A5 offsets, A4 columns | not built | -92, +19, +29 to +523, +37 MSE | closed: under the bar or worse |
 | A2 stack on all 62 January and July 2025 ADS-B days | v95 | -1.12 | accepted; hold-out stack -4,048 MSE; unattended release |

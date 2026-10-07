@@ -554,7 +554,7 @@ Fill one row per lever as it closes.
 | N8c | TabM 32-epoch member, three seeds, at 0.4 | v114 | 244.02 (-0.27) | under the 0.3 s bar |
 | K5 | X-Plane stands at EDDM and EHAM; ATFM slot columns in TabM | v115 | 243.69 (-0.33) | accepted, best |
 | K5b | X-Plane stands also at LEMD, LEBL and LFPG | v116 | 243.65 (-0.035) | inside noise |
-| K5c | tree members refit on the v116 clock tables | v117 | 243.74 (+0.09) | under the 0.3 s bar |
+| K5c | tree members refit on the v116 clock tables | v117 | 243.74 (+0.09) | rejected |
 | N9 | TabM member in the LIRF gate | v113 | 247.40 (+3.12) | rejected, closed: LIRF-head model changes keep failing live |
 | Q1 | commit | | | done: `8114b81` on branch `plan-v99-third-edition` |
 | Q2 | reproduction path for the final file | | | open |
