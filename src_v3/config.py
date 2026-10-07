@@ -266,6 +266,7 @@ SERVED_ARTEFACTS[115] = (*(p.replace("tabm_e24", "tabm_v115") for p in SERVED_AR
                          "external/adsblol/v115/adsb_clock_*.parquet", "external/xplane/*",
                          "models/atfm_slot_*.parquet")
 SERVED_ARTEFACTS[116] = tuple(p.replace("v115", "v116") for p in SERVED_ARTEFACTS[115])   # v116: five X-Plane airports
+SERVED_ARTEFACTS[117] = tuple(p.replace("_v97", "_v116") for p in SERVED_ARTEFACTS[116])   # v117: refit members
 # v93 stack study (`tune_stack_v93.py`): more 2025 ADS-B days give the stack about 9 times more rows
 STACK_V93_MLP_WEIGHTS = (0.0, 0.1, 0.2)   # MLP hold-out: -190 at 0.1, -213 at 0.2, -69 at 0.3
 STACK_V93_LEAVES = (31, 63)

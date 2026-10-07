@@ -1,0 +1,8 @@
+{
+ "lever": "v116 recipe with every tree member refit on the v116 ADS-B clock tables (X-Plane stands); MS3 guard on the per-airport mix",
+ "holdout": {
+  "blend_v97_minus_v89": -5609.010778129569,
+  "blend_and_stack_v97_minus_v89": -1204.895960692895
+ },
+ "score": 243.7426
+}
