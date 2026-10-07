@@ -143,7 +143,10 @@ CATBOOST_BY_TAG = {"v67": CATBOOST_PARAMS, "v69": CATBOOST_PARAMS, "v70": CATBOO
                    "v86ca": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v86ca")},
                    # v97: own train_dir so the full-year fits run next to the hold-out CatBoost fits
                    "v97c": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v97c")},
-                   "v97ca": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v97ca")}}
+                   "v97ca": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v97ca")},
+                   # v117: the v97 members refit on the v116 clock tables (X-Plane stands)
+                   "v116c": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v116c")},
+                   "v116ca": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v116ca")}}
 
 # -- NM clocks, WINNING_PLAN L1 and L2 (track B, 2026-09-26) ----------------
 # 99.9 % of 2025 `MVT - AOBT_3` values lie in 27 to 3,600 s; the clip keeps
