@@ -36,10 +36,11 @@ def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
               extra_files: tuple[str, ...] = (), r_norm_post=None,
               gate_booster: str = P_FB_BOOSTER,
               gate_features: str = "lirf_regime_v23.features.txt", r_norm_tag: str = "v55",
-              gate_catboost: tuple[str, str] | None = None) -> None:
+              gate_catboost: tuple[str, str] | None = None, p_fb_post=None) -> None:
     """Write the pre-MS file of the v57 stack with the given base members; `r_norm_tag` picks the LIRF `R_norm` members.
 
-    `gate_catboost` (model, isotonic map) joins the gate as a second calibrated member (N7)."""
+    `gate_catboost` (model, isotonic map) joins the gate as a second calibrated member (N7); `p_fb_post`
+    changes the calibrated gate before the mixture (J1)."""
     tempo = pd.read_parquet(V2_RANK, columns=["MVT_ID_mvt", *TEMPO_COLS])
     p2575 = pd.read_parquet(C.ROOT / "models" / "tempo_p2575_rank.parquet",
                             columns=["MVT_ID_mvt", *EOBT_P2575])
@@ -62,6 +63,7 @@ def serve_v30(pre_ms: str, base_model: str, dump_features: str | None = None,
         dump_features=dump_features,
         stepa_normal_rnorm=stepa_normal_rnorm,
         r_norm_post=r_norm_post,
+        p_fb_post=p_fb_post,
     )
 
 

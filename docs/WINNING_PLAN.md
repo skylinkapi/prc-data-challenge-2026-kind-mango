@@ -4,6 +4,12 @@ Status: 2026-10-03, 12:00 local time. Base: v97 (247.89 s), the working
 tree on top of commit `2a4ec1b`. The v90 to v98 work is not in a commit
 yet (step Q1).
 
+Update, 2026-10-07: best 243.65 s (v116), rank 36; the top is 213.52 s.
+`docs/MODEL_ANALYSIS.md` nineteenth pass audits v115 and v116 and adds
+one id family, J (NM join rules). Section 4.12 holds J1 and J2; section 10
+holds their state and the revised order of work to 11 October. No
+measured lever reaches 220 s (MODEL_ANALYSIS 19.6).
+
 This edition replaces the second edition of 2026-09-29. Appendix B keeps
 the second edition word for word until it is in a commit; its lever ids
 A1 to C1 stay valid. This edition uses four new id families: G (LIRF
@@ -59,6 +65,12 @@ C arithmetic on measured parts, D reasoning only.
 10. Deadline: 2026-10-11, 23:59:59 CET. Upload before 21:00 UTC on that
     day. The limit is 5 uploads per UTC day; 3 remain on 2026-10-03. A
     top-3 file without a reproduction path wins no prize (Q2).
+11. Added 2026-10-07: the NM join window `|BLOCK - LOBT| <= 3,606` s holds
+    on every 2025 record departure. Two rules from it (J1, J2; section
+    4.12) price -564 hold-out MSE with no fit. With every open lever at
+    its high end the score reaches about 240.8 s; 220 s needs 10,965 MSE
+    and no measured lever or open data source reaches it
+    (`docs/MODEL_ANALYSIS.md` 19.6).
 
 ## 1. What changed since the second edition
 
@@ -456,6 +468,42 @@ Accept a cross-fitted gain of 150 or more only, and upload it alone.
 | TabPFN | built for small tables; the base trains on 1.9 M rows |
 | per-airport CatBoost members | the per-airport LightGBM members gained only -0.22 s live (v89) |
 
+### 4.12 J1 and J2: NM join rules (added 2026-10-07)
+
+Mechanism. Every 2025 departure with an NM record has
+`|BLOCK - LOBT| <= 3,606` s (2,062,577 rows, no exception): the organiser
+joined a movement to its NM flight only inside that window. The served
+path ignores it (MODEL_ANALYSIS F19.1 to F19.3).
+
+J1, one upload, no fit:
+
+1. At LIRF, set the gate to 0 on record rows with
+   `|SCHED - LOBT| > 3,606` s, before the mixture. A schedule copy would
+   break the window there. Add a gate hook to `predict_v30.main`, as
+   `r_norm_post` changes `R_norm`.
+2. After the stack, the A5 bound and `step_a_date`, project every value of
+   a record row onto `MVT - LOBT` plus or minus 3,606 s.
+3. Label-free gate: no row leaves the window; no row without `LOBT`
+   moves; outside LIRF only the rows outside the window move.
+
+Price: hold-out -371 MSE (outside LIRF -256, LIRF -116;
+`python -m src_v3.measure_nm_join`, `models/v3/nm_join.holdout.json`).
+On v116, 54 rows lie outside the window; their projection guarantees a
+live gain of at least 80.5 MSE.
+
+J2, one upload after J1: at LIRF, on rows without a record, take the
+`LOBT` from the arrival row of the same flight number at the destination
+(landing 10 min to 14 h after the take-off). Where
+`|SCHED - LOBT| <= 3,606` s, set the gate to 0: a schedule copy would have
+joined. Price: hold-out -193 MSE (20 rows); 20 ranking rows move.
+
+Stop: AGENTS.md rule 11.5 applies. Conflict for the team to decide: the
+window part guarantees only 80.5 MSE, about 0.17 s, under the 0.3 s bar,
+yet it cannot raise any row's error. If J1 lands between the best minus
+0.3 s and the best, the team decides whether later uploads build on it.
+Result: v118 landed at 242.81 s, -0.85 s against v116, so the bar holds and
+the conflict did not arise. Every later upload builds on v118.
+
 ## 5. Order of work and uploads to 11 October
 
 UTC days. The next free version is v99.
@@ -558,6 +606,17 @@ Fill one row per lever as it closes.
 | N9 | TabM member in the LIRF gate | v113 | 247.40 (+3.12) | rejected, closed: LIRF-head model changes keep failing live |
 | Q1 | commit | | | done: `8114b81` on branch `plan-v99-third-edition` |
 | Q2 | reproduction path for the final file | | | open |
+| J1 | LOBT window on every record row; LIRF gate 0 where a schedule copy breaks the window | v118 | 242.81 (-0.85) | accepted, best: hold-out -371 MSE, live -411 |
+| J2 | LIRF gate 0 on rows without a record whose arrival row gives `LOBT` within 1 h of `SCHED` | | | priced, open: hold-out -193 MSE |
+| N10 | more TabM seeds, a second network family, a higher neural share | | | open: price on the hold-out first |
+| K6 | OPDI `entry-deicing_pad` events as stack columns | | | open: probe one January day; OSN sees the ground only at LSZH, LEBL, EDDF, EHAM, LEMD |
+| Q3 | price levers by the gain on rows with `y <= 3,600` s and a 2026 importance weight | | | open: backtest on the uploads v105 to v117 first |
+| E1 | EUROCONTROL label-derived series | | | decision: organiser ruling needed; the daily series makes the LIRF gate worse (+523 MSE) |
+
+Revised order of work, 2026-10-07 (MODEL_ANALYSIS 19.7): Wed 7 Oct J1;
+Thu 8 Oct J2, N10 prices on the GPU, K6 probe (hard stop for new feature
+families at 23:59 UTC); Fri 9 Oct N10 full-year members and Q2; Sat 10 Oct
+Q2 on a clean clone; Sun 11 Oct last upload before 21:00 UTC.
 
 Added during execution (2026-10-03 and 04): the LIRF gate family with 2026 arrival information. v101 (G1 airline
 shares) -0.20 s, v102 (plus the v83 stand link) -0.55 s, v104 (plus operator shares, gate g3) -0.19 s; v107 (g4, plus exact-copy

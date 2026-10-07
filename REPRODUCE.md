@@ -233,6 +233,32 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    src_v3.build_atfm_slot`, and `PYTHONPATH=.gpu_site python -m src_v3.tabm_member measure --tag tabm_v115` and
    `serve --tag tabm_v115` (three seeds, about 60 min).
 
+   **v118** (242.81 s) is the v116 recipe plus J1, the NM join window (`src_v3/lobt_window.py`). It reads the
+   artefacts of `models/v118.manifest.json` (the same 71 files as v116) and the ranking file. The base command
+   rebuilds the v104 base with `--copy-window`, which sets the LIRF gate to 0 where `|SCHED - LOBT| > 3,606` s; its
+   rows outside LIRF match `kind-mango_v104_base.parquet` at a maximum difference of 0.0 s. The last command
+   projects every row with `LOBT` onto `MVT - LOBT` plus or minus 3,606 s (about 30 min in total):
+
+   ```bash
+   python -m src_v3.predict_v67 --weight 0.5 --ms3 --base-model lgbm_r_all_v97 --catboost-tag v97c \
+       --catboost-anchor-tag v97ca --anchor-model lgbm_r_all_v97a --anchor-weight 0.5 \
+       --per-airport-tag v97 --per-airport-weight 0.5 \
+       --gate-booster lgbm_p_fb_lirf_g3.txt --gate-iso lirf_regime_g3.isotonic.pkl \
+       --gate-features lirf_regime_g3.features.txt --copy-window \
+       --extra models/plan_nm_taxi_rank_v65.parquet models/nm_clocks_rank_v73.parquet \
+               models/nm_forward_rank_v85.parquet models/opdi_own_rank_v90.parquet \
+               external/adsblol/adsb_clock_rank.parquet models/arr_art_op_link_rank_g3.parquet \
+       --pre-ms kind-mango_v118_base_pre_ms.parquet --out kind-mango_v118_base.parquet
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member combine --tags tabm_v116 --share 0.4
+   python -m src_v3.stack_pushback_v90 serve --sources both --stand-bound --rounds 600 \
+       --adsb-train external/adsblol/v116/adsb_clock_train.parquet \
+       --adsb-rank external/adsblol/v116/adsb_clock_rank.parquet \
+       --blend-holdout models/v3/blend_v97_holdout.parquet --mlp-weight 0.52 --mlp-columns nn \
+       --base kind-mango_v118_base.parquet --out kind-mango_v118_stack.parquet
+   python -m src_v3.step_a_date kind-mango_v118_stack.parquet kind-mango_v118_stepa.parquet
+   python -m src_v3.lobt_window kind-mango_v118_stepa.parquet kind-mango_v118.parquet
+   ```
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.

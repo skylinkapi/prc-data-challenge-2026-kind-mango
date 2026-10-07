@@ -85,7 +85,7 @@ def main(out_name="kind-mango_v30.parquet",
          per_member_base_clip=True, fill_zero_rows_per_airport=False,
          base_model="lgbm_r_all_v26", use_plan_features=False, extra_columns=None,
          r_norm_features="lirf_regime.features.txt", r_norm_clip=R_NORM_CLIP,
-         dump_features=None, stepa_normal_rnorm=False, r_norm_post=None):
+         dump_features=None, stepa_normal_rnorm=False, r_norm_post=None, p_fb_post=None):
     base_seeds = base_seeds or DEFAULT_BASE_SEEDS
     r_norm_files = r_norm_files or DEFAULT_R_NORM_FILES
     p_fb_members = p_fb_members or DEFAULT_P_FB_MEMBERS
@@ -200,6 +200,8 @@ def main(out_name="kind-mango_v30.parquet",
 
     print(f"p_fb mean over {len(p_fb_members)} calibrated member(s)...")
     p_fb_cal = predict_p_fb(dep_lirf, p_fb_members, p_fb_features)
+    if p_fb_post is not None:
+        p_fb_cal = p_fb_post(dep_lirf, p_fb_cal)
 
     sd_r = dep["sched_delay"].values.astype(float)
     adep_r = dep["ADEP_mvt"].astype(str).values

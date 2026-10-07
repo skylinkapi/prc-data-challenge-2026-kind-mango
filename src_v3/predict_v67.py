@@ -6,6 +6,8 @@ and ITY340 stay as served. MS1 and MS2 then apply as in v57.
 With `--r-norm-weight`, v68 also blends a LIRF CatBoost member into `R_norm`.
 With `--ms3`, the LightGBM term is the member median where the members
 disagree by more than 3,600 s (MS3, v73).
+With `--copy-window`, the LIRF gate is 0 where a schedule copy breaks the
+NM join window (J1, `lobt_window.no_copy`).
 With `--anchor-model`, the LightGBM term blends in members that learned
 `y - clip(MVT - AOBT_3, 0, 7,200)` (WINNING_PLAN L5, v74); rows without
 `AOBT_3` keep the plain LightGBM term. `--catboost-anchor-tag` does the
@@ -26,6 +28,7 @@ from catboost import CatBoostRegressor
 from src_v3 import config as C
 from src_v3.catboost_base import paths, predict
 from src_v3.catboost_r_norm import blend_r_norm
+from src_v3.lobt_window import no_copy
 from src_v3.postprocess import MS3_DISAGREE_S, apply_ms3
 from src_v3.predict_v57 import serve_v30, write_ms
 from src_v3.predict_v62 import CAT_COLS, load_training_categories, score_members
@@ -107,6 +110,8 @@ def main() -> None:
     ap.add_argument("--gate-catboost", nargs=2, metavar=("MODEL", "ISO"),
                     help="Second gate member (.cbm CatBoost, N7 g3c; .pt TabM, g3t) and its isotonic map, averaged with the gate booster.")
     ap.add_argument("--r-norm-tag", default="v55", help="LIRF R_norm members (K2: v99r, with the ADS-B and OPDI columns).")
+    ap.add_argument("--copy-window", action="store_true",
+                    help="J1: LIRF gate 0 where |SCHED - LOBT| exceeds the NM join window.")
     ap.add_argument("--dump-terms", help="Write the per-member ranking terms outside LIRF to this models/v3 parquet (N3).")
     ap.add_argument("--pre-ms", default="kind-mango_v67_pre_ms.parquet")
     ap.add_argument("--out", default="kind-mango_v67.parquet")
@@ -118,7 +123,7 @@ def main() -> None:
               gate_iso=args.gate_iso, extra_files=tuple(args.extra),
               r_norm_post=None if args.r_norm_weight is None else blend_r_norm(args.r_norm_weight),
               gate_booster=args.gate_booster, gate_features=args.gate_features, r_norm_tag=args.r_norm_tag,
-              gate_catboost=args.gate_catboost)
+              gate_catboost=args.gate_catboost, p_fb_post=no_copy if args.copy_window else None)
     dump = pd.read_parquet(dump_path)
     pre = pd.read_parquet(C.ROOT / "submission" / args.pre_ms)
     members = score_members(dump, args.base_model)

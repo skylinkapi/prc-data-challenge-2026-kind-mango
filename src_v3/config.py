@@ -267,6 +267,7 @@ SERVED_ARTEFACTS[115] = (*(p.replace("tabm_e24", "tabm_v115") for p in SERVED_AR
                          "models/atfm_slot_*.parquet")
 SERVED_ARTEFACTS[116] = tuple(p.replace("v115", "v116") for p in SERVED_ARTEFACTS[115])   # v116: five X-Plane airports
 SERVED_ARTEFACTS[117] = tuple(p.replace("_v97", "_v116") for p in SERVED_ARTEFACTS[116])   # v117: refit members
+SERVED_ARTEFACTS[118] = SERVED_ARTEFACTS[116]   # v118: J1 reads only the ranking file on top of v116
 # v93 stack study (`tune_stack_v93.py`): more 2025 ADS-B days give the stack about 9 times more rows
 STACK_V93_MLP_WEIGHTS = (0.0, 0.1, 0.2)   # MLP hold-out: -190 at 0.1, -213 at 0.2, -69 at 0.3
 STACK_V93_LEAVES = (31, 63)
@@ -381,3 +382,10 @@ STANDS_OSM_XPLANE = XPLANE_DIR / "stands_osm_xplane.parquet"
 ROUTE_SNAP_M = 400                      # snap radius of `build_osm_taxi_paths.snap_to_graph`
 ROUTE_CUTOFF_M = 12000                  # longer routes than the largest airport span are not taxi routes
 ADSB_TAXI_SPEED_MS = 7.0                # about 14 kt, a typical taxi speed; the trees learn the airport scale
+# NM join rules (`measure_nm_join.py`, nineteenth pass): all 2,062,577 record departures of 2025 have
+# |BLOCK - LOBT| <= 3,606 s, so the organiser joined a movement to its NM flight only inside that window
+LOBT_WINDOW_S = 3606
+ARR_LINK_S = (600, 50_400)              # the arrival of the same flight number lands 10 min to 14 h after the take-off
+V115_SHARES = (0.48, 0.12, 0.40)        # v115 base outside LIRF: tree blend, MLP, TabM (`--mlp-weight 0.52`, TabM 0.4)
+V115_TABM = "tabm_v115"
+BODY_MAX_S = 3600                       # gain on rows up to this label is the body share of a price (nineteenth pass)

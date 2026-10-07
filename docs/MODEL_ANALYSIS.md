@@ -1,6 +1,6 @@
-# Model analysis: progress to v111, the eighteenth pass (new observables, TabM), the seventeenth pass (CatBoost gate) and the sixteenth pass (error budget of v97)
+# Model analysis: progress to v117, the nineteenth pass (audit of v115 and v116, NM join rules), the eighteenth pass (new observables, TabM), the seventeenth pass (CatBoost gate) and the sixteenth pass (error budget of v97)
 
-Status on 2026-10-06, 18:40 local time: leaderboard best **243.65 s (v116)**, X-Plane stands at five airports; -0.035 s against v115, inside noise. Earlier: live best **243.69 s (v115)**, X-Plane stands at EDDM and EHAM and ATFM slot columns (18.7). Earlier: leaderboard best **244.02 s (v114)**, the 32-epoch TabM member with three seeds at 0.4; -0.27 s against v112, under the 0.3 s acceptance bar. Earlier: live best stays **244.29 s (v112)**; v113 (TabM gate member) 247.40 s, rejected. Before: live best **244.29 s (v112)**, the 24-epoch TabM member at 0.35 plus the Step A date-crossing fix (18.5). Before: **245.23 s (v111)**, a TabM member at 0.3 on top of the v105 base (eighteenth pass). Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
+Status on 2026-10-07, 16:00 UTC: live best **242.81 s (v118)**, -0.85 s against v116, accepted; team rank 34 of 235. v118 serves J1 of the nineteenth pass (the NM join window) on the v116 recipe: hold-out -371 MSE, live -411. Earlier the same day, 15:00 UTC: leaderboard best **243.65 s (v116)**, team rank 36 of 235; the top is 213.52 s. The nineteenth pass (below the Progress section) audits the served path and measures where the error of v115 sits. It finds one new structural rule, the NM join window `|BLOCK - LOBT| <= 3,606` s, that the pipeline does not use: hold-out -564 MSE, no retrain (`python -m src_v3.measure_nm_join`). No measured lever reaches 220 s (19.6). Status on 2026-10-06, 18:40 local time: leaderboard best **243.65 s (v116)**, X-Plane stands at five airports; -0.035 s against v115, inside noise. Earlier: live best **243.69 s (v115)**, X-Plane stands at EDDM and EHAM and ATFM slot columns (18.7). Earlier: leaderboard best **244.02 s (v114)**, the 32-epoch TabM member with three seeds at 0.4; -0.27 s against v112, under the 0.3 s acceptance bar. Earlier: live best stays **244.29 s (v112)**; v113 (TabM gate member) 247.40 s, rejected. Before: live best **244.29 s (v112)**, the 24-epoch TabM member at 0.35 plus the Step A date-crossing fix (18.5). Before: **245.23 s (v111)**, a TabM member at 0.3 on top of the v105 base (eighteenth pass). Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
 rank 31; the leaderboard top is **216.57 s** (API, 09:25 UTC). The
 sixteenth pass below the Progress section measures where the v97 error
 sits. `docs/WINNING_PLAN.md` third edition turns it into the plan toward
@@ -163,6 +163,8 @@ and the output format.
 | K5 X-Plane stands at EDDM and EHAM, ATFM slot columns in TabM | v115 | -0.33 | accepted, best 243.69 s; hold-out -33 MSE against v114 |
 | K5b X-Plane stands also at LEMD, LEBL, LFPG | v116 | -0.035 | inside noise; 2026 stand-clock share LEMD +4.4, LEBL +2.1 points |
 | K5c tree members refit on the v116 clock tables, MS3 guard on the per-airport mix | v117 | +0.09 | rejected: hold-out blend -232 MSE against v97 members, but the stack already read the new clocks |
+| J1 NM join window: LIRF gate 0 where a schedule copy breaks the window, then the LOBT window as the last step (nineteenth pass) | v118 | -0.85 | accepted, best 242.81 s; hold-out -371 MSE, live -411 (1.1 times); 1,123 rows moved |
+| J2 arrival-side `LOBT` for LIRF rows without a record (nineteenth pass) | not uploaded | | priced: hold-out -193 MSE (20 rows), `nm_join.holdout.json` |
 | ADS-B specialist (4.5 step 1) as a stack column, trained on 291 days outside months 1 and 7 | v96 | +0.53 | rejected; hold-out -302 MSE did not transfer (a derived column, like v66, v71, v83) |
 | v96 study on 62 days: 63 leaves, residual clip 7,200 s, A5 offsets, A4 columns | not built | -92, +19, +29 to +523, +37 MSE | closed: under the bar or worse |
 | A2 stack on all 62 January and July 2025 ADS-B days | v95 | -1.12 | accepted; hold-out stack -4,048 MSE; unattended release |
@@ -286,6 +288,291 @@ the 2025 hold-out, 45 % of the remaining error outside LIRF sits in 36
 tail and 24-h rows that no column in the files predicts.
 The stop rule of WINNING_PLAN 11.4 replaces the stop rule of section 6.
 The final status table above gives the state of every measure.
+
+## Nineteenth pass, 2026-10-07: audit of v115 and v116, and new strategies toward 220 s
+
+### 19.1 Gap
+
+1. v116 scores 243.65 s = 59,365 MSE. 220 s = 48,400 MSE. The gap is
+   **10,965 MSE**, 18 % of the current error (arithmetic).
+2. Leaderboard API, 2026-10-07 14:16 UTC: strong-crane 213.52 s,
+   jolly-lobster 213.71 s, vigorous-whistle 215.81 s, charming-eel 216.53 s,
+   versatile-watermelon 218.77 s; rank 6 is 220.58 s. Twelve teams are
+   below 225 s. kind-mango is rank 36 of 235 teams.
+3. The top teams moved in large steps: bold-ladder 329.8 to 230.4 s in one
+   upload (2026-10-01), strong-crane 253.2 to 235.9 s in one day
+   (2026-09-26), adventurous-radio 263.2 to 228.2 s within 14 h
+   (2026-09-30). Steps of this size come from a few rows with large
+   errors, not from tuning (grade D).
+4. Uploads left: 4 on 2026-10-07 (v117 used one), 5 on each of 8, 9 and
+   10 October, 5 on 11 October before 21:00 UTC: 24 in total.
+
+### 19.2 How this pass was made
+
+1. Scripts in the session scratchpad rebuilt the v115 serve path on the
+   January and July 2025 hold-out: outside LIRF the v97 member blend, the
+   MLP and the v115 TabM member at 0.48, 0.12 and 0.40, the stack
+   cross-fitted January against July on the v115 clock tables, and the
+   A5 bound. At LIRF: the out-of-fold g3 gate with the nested isotonic
+   map, the out-of-sample v41 `R_norm`, Step A with the date fix, and
+   ITY340. One module in the repo repeats the part that the levers need:
+   `python -m src_v3.measure_nm_join` writes
+   `models/v3/nm_join.holdout.json` (about 3 min, no fit).
+2. Public sources, read on 2026-10-07: the leaderboard API; the READMEs and
+   research notes of two public GPLv3 repos, `dhsdb010/OPDI` (team
+   quirky-honey, 302.01 s) and `EnioAguiar/prc-taxiout-2026` (team
+   outgoing-boat, 243.95 s). Only ideas were taken; no code was copied.
+3. Grades as in 0.2. A number names a JSON key, a scratch measurement of
+   this pass, or arithmetic.
+
+### 19.3 Budget of the served path (task A)
+
+Hold-out outside LIRF, v115 path, hold-out scale (317,789 rows):
+
+| class | rows | MSE |
+|---|---|---|
+| clean | 292,319 | 29,951 |
+| fallback | 25,339 | 2,450 |
+| tail | 34 | 12,086 |
+| 24-h | 1 | 20,251 |
+| low | 96 | 88 |
+| total | 317,789 | 64,826 |
+
+| coverage class | rows | MSE | RMSE, s |
+|---|---|---|---|
+| clock at the assigned stand | 63,636 | 1,618 | 93.6 |
+| ADS-B segment only | 85,347 | 8,403 | 184.1 |
+| OPDI only | 2,460 | 173 | 155.5 |
+| no clock | 166,346 | 54,632 | 336.3 |
+
+The v115 clock tables add X-Plane stands, so 13,336 more hold-out rows
+carry a stand clock than in the v97 table (16.2).
+
+LIRF hold-out, current head (26,528 rows): **21,774 MSE**; with a perfect
+gate 11,340.
+
+| delay `sd`, record | rows | fallback rate | gate mean | MSE | MSE, perfect gate |
+|---|---|---|---|---|---|
+| up to 1,800 s, record | 14,897 | 0.275 | 0.279 | 1,681 | 1,258 |
+| 1,800 to 3,600 s, record | 7,443 | 0.085 | 0.091 | 3,224 | 1,800 |
+| 3,600 to 7,200 s, record | 3,047 | 0.065 | 0.065 | 4,569 | 1,762 |
+| 7,200 to 14,400 s, record | 632 | 0.017 | 0.016 | 624 | 507 |
+| 3,600 to 7,200 s, no record | 194 | 0.227 | 0.320 | 1,694 | 362 |
+| 7,200 to 14,400 s, no record | 136 | 0.353 | 0.482 | 4,499 | 310 |
+| 14,400 to 70,000 s, no record (Step A) | 42 | 0.857 | 0.662 | 4,842 | 4,842 |
+
+The 375 LIRF rows without an NM record and with a delay above 1 h hold
+11,036 MSE, **51 % of the LIRF error**. They are 1.4 % of the LIRF rows.
+
+Live scale, projected onto the 2026 coverage mix (grade C, the method of
+16.2):
+
+| block | live MSE | share of 59,384 (v115) |
+|---|---|---|
+| outside LIRF, no clock | 18,032 | 30.4 % |
+| outside LIRF, segment only | 9,715 | 16.4 % |
+| outside LIRF, stand clock | 2,646 | 4.5 % |
+| outside LIRF, OPDI only | 208 | 0.4 % |
+| LIRF and the tail outside LIRF (remainder) | 28,784 | 48.5 % |
+
+Normal classes outside LIRF by airport: LTFM 7,423, LFPG 6,472, EGLL 4,389,
+LEBL 3,137, EDDF 3,115, LEMD 2,640, EHAM 1,620, LSZH 998, EDDM 806.
+
+### 19.4 Findings
+
+**F19.1. The NM join holds every reported off-block within 1 h of `LOBT`.** V, high.
+- Evidence: all 2,062,577 departures of 2025 with an NM record have
+  `|BLOCK - LOBT| <= 3,606` s (minimum -3,606, maximum +3,606, no
+  exception). Arrivals carry the same window on landing against
+  `ARVT_3` (-3,623 to +3,606 s). No other NM time has a hard window.
+- Mechanism: the organiser joined a movement to its NM flight only inside
+  that window. So the label of a record row lies in `MVT - LOBT` plus or
+  minus 3,606 s.
+- Cost today: the pipeline does not use the window. `mvt_lobt` is clipped
+  at 7,200 s, so the trees cannot see the window on 94 ranking rows.
+  Projection of the served value onto the window: hold-out **-256 MSE**
+  outside LIRF (75 rows, of which -234 on rows with `y > 3,600` s; LFPG
+  -83, EHAM -78, LSZH -50, EGLL -29) and -28 at LIRF (`nm_join.holdout.json`, keys
+  `outside_lirf_window`, `lirf.window`). On v116, 54 ranking rows lie
+  outside the window. Their projection guarantees a live gain of at least
+  **80.5 MSE**: a projection onto an interval that holds the label cannot
+  raise the error of a row (key `served`).
+- Public confirmation: team outgoing-boat reports that the window held on
+  the 2026 ranking file (README of `EnioAguiar/prc-taxiout-2026`, their
+  diagnostic upload v10). Rule 12 forbids such an upload for us; the
+  published result needs none.
+
+**F19.2. At LIRF a schedule copy is impossible outside the window.** V, high.
+- Evidence: a fallback row has `BLOCK = SCHED`, so on a record row it
+  needs `|SCHED - LOBT| <= 3,606` s. 1,355 LIRF hold-out record rows have
+  `|SCHED - LOBT| > 3,606` s; none of them is a fallback row. The served
+  gate gives them a mean share above 0.
+- Cost: gate set to 0 on those rows: hold-out **-71 MSE** (824 rows move;
+  body -162, tail +91; key `lirf.copy_record`). 1,550 LIRF ranking rows
+  are in this cell.
+
+**F19.3. A missing NM record means the reported off-block missed the window.** V, high.
+- Evidence: 929 departures of 2025 without a record link to the arrival
+  row of the same flight number at another of the ten airports, landing
+  10 min to 14 h after the take-off. That arrival row carries the NM
+  record of the flight. 97.1 % of these departures have
+  `|BLOCK - LOBT| > 3,606` s. Among their fallback rows 85 % have
+  `|SCHED - LOBT| > 3,606` s; among their genuine rows 10 %.
+- Mechanism: the departure join failed because the reported off-block was
+  more than 1 h from `LOBT`. If `|SCHED - LOBT| <= 3,606` s, a schedule
+  copy would have joined, so the row is not a copy.
+- Cost: at LIRF, 21 linked hold-out rows meet that test and none is a
+  fallback row. Gate set to 0 there: hold-out **-193 MSE** (20 rows move;
+  body -187; key `lirf.copy_linked`). 20 LIRF ranking rows are in this
+  cell; 36 LIRF ranking rows without a record link at all. Outside LIRF
+  the same link gives no usable bound: a cap at `MVT - LOBT - 3,606` s
+  fails on 3.2 % of the rows and costs +38 MSE.
+- All three NM join rules at LIRF together: **-309 MSE** (key `lirf.all`),
+  -352 of it on rows with `y <= 3,600` s.
+
+**F19.4. The remaining error has a time-local part that no observable carries.** V, high.
+- Evidence: per airport and hour, group means of the clean residual remove
+  3,120 hold-out MSE in sample against 1,065 for permuted residuals. The
+  mean residual of the other departures within 15 min, read from the
+  labels, removes 2,092 (oracle). Read only from neighbours with a stand
+  clock it removes 38; on rows without a clock, from neighbours with a
+  clock or a segment, 137.
+- Tested carriers, none passes: the taxi-in excess of arrivals within 15,
+  30 or 60 min (correlation -0.019 to 0.044 per airport, 0 MSE); the
+  arrival and departure runway configuration (cross-fitted group means
+  +226 to +314 MSE).
+- Reading: the local error sits on rows without a clock (LTFM, LFPG), and
+  their neighbours have no clock either.
+
+**F19.5. No static bias is left.** V, high.
+- Evidence: residual group means fitted on January and applied to July,
+  and back, raise the MSE for every key tested (airport, hour, weekday,
+  runway, stand, operator, airline prefix, type, destination, flight
+  number, coverage, record status, runway and hour): +136 to +573.
+
+**F19.6. The LIRF gate is calibrated; the rows without a record are ambiguous, not mispriced.** V, high.
+- Evidence: on rows without a record and a delay above 1 h, the fallback
+  rate depends on the airline (ISR, LAV, ETH, TKJ, TWB, MSC 1.0; KLM, EWG,
+  ELY 0.0; RYR 0.33, WMT 0.49). The served gate follows it: log loss 0.366
+  against 0.476 for a leave-month-out airline rate. The 2025 corrupted
+  flight numbers at LIRF (airline code plus a repeated tail of it, for
+  example `ITYTY672`; 2,906 training and 466 ranking departures) sit in
+  cells where the gate mean matches the fallback rate.
+- A second LIRF artefact, the block equal to `EOBT_1`, is real (2,148 rows
+  within 60 s against about 1,010 expected among late departures) but a
+  perfect classifier gains only 403 MSE.
+
+**F19.7. The label-derived daily delay series does not help the LIRF gate.** V, medium.
+- Evidence: a day-level shift of the gate logit, solved so that the
+  served head matches the daily mean of `max(0, BLOCK - SCHED)` (the
+  quantity of EUROCONTROL's daily pre-departure delay, simulated from the
+  2025 labels), raises the LIRF hold-out MSE by 523 over 61 days.
+- Reading: the daily mean reflects the genuine taxi as much as the
+  fallback share. With the airport-day ceiling of 572 MSE outside LIRF
+  (RECAP, EUROCONTROL row), the label-derived series are worth at most
+  about 1,000 live MSE even if the organiser allows them.
+
+**F19.8. The OPDI fetch drops the de-icing events.** V, medium.
+- Evidence: `src/fetch_opdi_events.py` keeps ten event types. OPDI
+  `flight_events` v002 also holds `entry-deicing_pad` (research note of
+  outgoing-boat, read from the Parquet footer of the 2026-07-09 file).
+- Limit: OPDI comes from OSN receivers. The organiser's coverage table
+  (`euctrl-pru.github.io/opensky-airport-coverage`, sample 5 to 7 June
+  2026) gives a median received taxi-out share of 0.996 at LSZH, 0.797 at
+  LEBL, 0.622 at EDDF, 0.286 at EHAM, 0.175 at LEMD and 0.000 at EDDM,
+  LFPG, EGLL, LIRF and LTFM. The events add nothing at the airports
+  without a clock, and ADSB.lol already shows the stops at the others.
+
+**F19.9. Drift checks on 2026 find coverage changes, not defects.** V, medium.
+- LSZH July: the served value sits a median 277 s above the last time at
+  the stand, against 82 s for the 2025 label. The plain LightGBM member
+  predicts 693 s on these rows against 577 s in July 2025 (label 575 s);
+  `adsb_own_move` explains +159 s of it (input swap). In 2026 the tracks
+  show the pushback start: the gap from first move to the last point at
+  the stand grew from 44 to 189 s, as at EHAM. In 2025 the label followed
+  `adsb_own_move` within a median 28 s in both months. The model follows
+  the same clock, so no fix is set. The risk is about 450 MSE if the 2026
+  label kept the 2025 relation to the last stand point instead.
+- January 2026: predictions sit 134 to 201 s above the January 2025 labels
+  at EDDF, EDDM, EHAM, LSZH and LTFM. The NM clocks rose by 31 to 129 s,
+  and the EUROCONTROL check of 2026-10-06 put the January means near the
+  implied levels.
+- EDDF: segment share 0.873 in 2025 against 0.680 in 2026, stand clocks
+  0.242 against 0.061. The stand names did not change; the receivers did.
+
+**F19.10. Re-tested and closed.** V, high.
+- The next arrival at the stand as a hard floor: +1,530 MSE (LTFM +1,340),
+  as v81.
+- Off-block copies of `LOBT`, `EOBT_1` or `IOBT` outside LIRF: no spike at
+  0 s on late departures.
+- A fallback gate outside LIRF: late fallback rows spread over many days
+  (LEBL: 547 rows on 182 days, the top 10 days hold 111).
+
+**F19.11. A better transfer predictor exists in public.** V, decision.
+- Evidence: outgoing-boat prices a change by the gain on rows with
+  `y <= 3,600` s only (the body share). Over their six uploads with a
+  known live delta, the body share predicted the live delta with a ratio
+  of 1.03 and a mean absolute error of 0.15 s, against 0.44 s for the
+  full hold-out RMSE (their README, section 2.4).
+- Reading for us: the NM join rules at LIRF gain mostly in the body
+  (-352 of -309), so they are likely to transfer. The window outside LIRF
+  gains in the tail; its floor is the guaranteed 80.5 MSE.
+
+### 19.5 Ranked levers
+
+Live MSE on the 344,841-row scale; negative is a gain. Bars are on the
+hold-out scale and set before the run.
+
+| rank | id | lever | evidence | hold-out | live (low, high) | grade | hours | uploads |
+|---|---|---|---|---|---|---|---|---|
+| 1 | J1 | project every served value onto the LOBT window; at LIRF set the gate to 0 where a schedule copy breaks the window | F19.1, F19.2 | -371 | -80, -500 | B | 3 | 1 |
+| 2 | J2 | at LIRF, set the gate to 0 on rows without a record whose arrival row gives a `LOBT` within 1 h of `SCHED` | F19.3 | -193 | -50, -300 | B | 2 | 1 |
+| 3 | N10 | neural members: more TabM seeds, a second network family, a higher neural share | v111 to v115 transferred at 2 to 5 times their price | not priced | -100, -400 | C | 6 GPU | 1 |
+| 4 | K6 | OPDI `entry-deicing_pad` events as stack columns | F19.8 | not priced | 0, -200 | D | 6 | 0 to 1 |
+| - | Q3 | price levers by their body share and a 2026 importance weight | F19.11 | process | 0 | C | 2 | 0 |
+| - | E1 | EUROCONTROL label-derived series | F19.7, RECAP | outside LIRF only | 0, -1,000 | decision | 3 | 1 |
+
+J1 needs no fit. The copy test changes the gate inside `predict_v30.main`
+(a gate hook, as `r_norm_post` changes `R_norm`). The window is the last
+step, after the stack, the A5 bound and `step_a_date`. Only rows outside
+the window, and LIRF rows with a copy test, may move. The label-free gate:
+no row may leave the window, and no row without `LOBT` may move.
+
+### 19.6 Reachable score and the 220 s target
+
+1. J1 and J2 together: -130 to -800 live MSE, 243.4 to 242.0 s
+   (arithmetic). With N10 and K6 at their high end: about 240.8 s.
+2. E1, if the organiser allows it: about 1,000 MSE more, near 238.7 s.
+3. **220 s needs 10,965 MSE. No measured lever and no identified data
+   source reaches it.** The error that blocks it sits in three places:
+   - LIRF rows without an NM record and a delay above 1 h: 51 % of the
+     LIRF error. F19.3 resolves them where the `LOBT` of the flight is
+     known; only 35 of 348 such ranking rows link to an arrival row.
+   - LTFM and LFPG: 13,895 live MSE in the normal classes, nearly all on
+     rows without a clock. No open archive has ground coverage there
+     (F19.8, 18.6).
+   - Tail and 24-h rows outside LIRF without a record: no observable.
+4. The top teams reached 213 to 216 s in steps of 10 to 100 s (19.1).
+   With the information of this pass, the cause of those steps is
+   unmeasured for us.
+
+### 19.7 Upload plan to 11 October
+
+| UTC day | work | uploads |
+|---|---|---|
+| Wed 7 Oct | J1 build, parity check of the unchanged rows, label-free gate, upload | 1 |
+| Thu 8 Oct | J2 on top of the best file; N10 hold-out prices on the GPU overnight; K6 probe on one January day, close if no gain | 1 to 2 |
+| Fri 9 Oct | N10 full-year members if the price passes; Q2 manifest and parity for the best file | 1 to 2 |
+| Sat 10 Oct | Q2 reproduction on a clean clone; README and REPRODUCE for the final recipe | 0 to 1 |
+| Sun 11 Oct | no new model; last upload before 21:00 UTC | 0 to 1 |
+
+### 19.8 Corrections to earlier statements
+
+| earlier statement | this pass |
+|---|---|
+| 16.4 and F16.10: the tail rows outside LIRF have no observable | rows with an NM record do: the LOBT window lifts 9 hold-out tail rows (`y > 7,200` s) and gains 214 MSE on them (F19.1) |
+| WINNING_PLAN third edition 2.4: a perfect LIRF gate is the ceiling of gate work | for rows without a record, the arrival-side `LOBT` decides the gate exactly where it exists (F19.3) |
+| 18.6: no source beats ADSB.lol at LFPG; OSN state vectors stay out by team rule | the organiser's OSN coverage table gives 0.000 at LFPG, LIRF, LTFM, EGLL and EDDM, so the team rule costs nothing there |
 
 ## Eighteenth pass, 2026-10-06: new observables tested, and the TabM member (v111)
 

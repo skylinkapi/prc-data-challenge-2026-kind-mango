@@ -1,0 +1,78 @@
+{
+ "outside_lirf_window": {
+  "rows_moved": 75,
+  "mse": -255.5,
+  "body": -21.5,
+  "tail": -234.0,
+  "by_group": {
+   "EDDF": -9.4,
+   "EDDM": -0.5,
+   "EGLL": -29.0,
+   "EHAM": -77.5,
+   "LEBL": -3.9,
+   "LEMD": -1.1,
+   "LFPG": -82.5,
+   "LSZH": -50.4,
+   "LTFM": -1.2
+  }
+ },
+ "lirf": {
+  "copy_record": {
+   "rows_moved": 824,
+   "mse": -70.8,
+   "body": -162.2,
+   "tail": 91.4,
+   "by_group": {
+    "no_record": 0.0,
+    "record": -70.8
+   }
+  },
+  "copy_linked": {
+   "rows_moved": 20,
+   "mse": -193.3,
+   "body": -187.4,
+   "tail": -5.9,
+   "by_group": {
+    "no_record": -193.3,
+    "record": 0.0
+   }
+  },
+  "copy_both": {
+   "rows_moved": 844,
+   "mse": -264.1,
+   "body": -349.6,
+   "tail": 85.5,
+   "by_group": {
+    "no_record": -193.3,
+    "record": -70.8
+   }
+  },
+  "window": {
+   "rows_moved": 6,
+   "mse": -27.7,
+   "body": -1.8,
+   "tail": -25.9,
+   "by_group": {
+    "no_record": 0.0,
+    "record": -27.7
+   }
+  },
+  "all": {
+   "rows_moved": 849,
+   "mse": -308.9,
+   "body": -351.5,
+   "tail": 42.6,
+   "by_group": {
+    "no_record": -193.3,
+    "record": -115.6
+   }
+  }
+ },
+ "served": {
+  "file": "kind-mango_v116.parquet",
+  "window_rows": 54,
+  "window_guaranteed_gain_mse": 80.5,
+  "lirf_copy_record_rows": 1550,
+  "lirf_copy_linked_rows": 20
+ }
+}

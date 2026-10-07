@@ -1,0 +1,30 @@
+{
+ "gates": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "over_80000": true,
+  "inside_window": true,
+  "no_lobt_unchanged": true,
+  "outside_lirf_only_window_rows": true,
+  "outside_lirf_equals_projection": true,
+  "lirf_moves_explained": true
+ },
+ "stats": {
+  "rows_moved": 1123,
+  "lirf_rows_moved": 1076,
+  "outside_lirf_rows_moved": 47,
+  "rows_moved_over_3000_s": 0,
+  "lirf_mean_shift_s": -2.120184396831974,
+  "over_7200": 104,
+  "ref_over_7200": 101,
+  "window_gain_floor_mse": 80.54951839502732
+ },
+ "lever": "J1: v116 recipe; LIRF gate 0 where |SCHED - LOBT| > 3,606 s (predict_v67 --copy-window); every row with LOBT projected onto MVT - LOBT +/- 3,606 s as the last step (lobt_window)",
+ "holdout_price": {
+  "outside_lirf_window": -255.5,
+  "lirf_record_rules": -115.6
+ },
+ "score": 242.8071
+}
