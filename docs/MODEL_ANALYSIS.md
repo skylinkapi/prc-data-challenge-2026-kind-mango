@@ -428,6 +428,32 @@ Live: v121 scored **242.03 s**, -0.49 s against v119 (-235 MSE against -216 pric
 11.5 holds (best minus 0.3 s is 242.21 s), so v121 is accepted. Every later upload builds on it. The split between P1 and
 the seeds is not measured; a split upload would probe the 19 rows.
 
+### 20.7 Second sweep after v121, 2026-10-08 afternoon
+
+Goal: a lever toward 220 s. Each probe reads the 2025 hold-out serve path of
+20.2 or the 2026 ranking file. None reaches the -150 MSE bar; no upload
+follows.
+
+| probe | idea | result | state |
+|---|---|---|---|
+| year drift | predict 2026 clocked rows with the own-flight ADS-B and OPDI columns masked (v97 LightGBM, three seeds); compare with the stand clock minus its 2025 airport bias; 2026 against 2025 | median drift per airport-month -56 to +37 s (one cell with a single 2025 row aside) | closed: no level shift to correct |
+| time-local correction | median gap of other clocked rows within 30 or 60 min, cross-fitted on random halves | correlation 0.12 (2026) and 0.08 (2025); 1.4 % of the variance; 2025 price -46 MSE | closed |
+| de-icing days | 2026 airport-days with the largest gap | worst day medians -31 s; day spread 24 to 37 s | closed: the served path follows the day level |
+| `AOBT_3` copy rows | rows with `BLOCK = AOBT_3` (12 to 13 % at LEBL, LEMD, EDDM) | perfect detector at most about 960 hold-out MSE; served RMSE there 67 to 137 s at most airports | closed |
+| rows without a record outside LIRF | cap of the served value | cap at 3,000 s: -22 MSE; errors run both ways | closed |
+| LIRF copies in time | arrival artefact share within 15 to 120 min | AUC 0.51 to 0.52; day share 0.53 | closed: copies are not outages |
+| LIRF copies in the track | ADS-B columns against the fallback label (153,576 rows) | AUC 0.45 to 0.50; fallback rate 0.19 to 0.22 with or without a track | closed: a copy is a reporting artefact |
+| `SCHED` precision | schedule off the 5 min grid | 0 to 0.3 % of rows | closed |
+| row ids inside a day | id order against `MVT`, `BLOCK`, `SCHED` | equal correlation to 0.01 | closed: no leak |
+| format and mismatch flags | time precision classes, missing NM fields, `ADES`, `ADEP`, type, rule and callsign mismatches, string shapes, order of times | only P1 and the rows without a record stand out; every other flag below 8 MSE of bias | closed |
+| LIRF rows without a record | served bias +503 s mean | gate over-predicts in July (0.31 against 0.19), not in January | closed: not stable across months |
+
+Reading: the served path has no static, monthly, daily or format bias left
+that a 2025 or 2026 observable can price. The largest block, LIRF schedule
+copies, is invisible in every observable tested (time, track, arrivals of
+the hour, schedule precision). 220 s stays out of reach with the open data
+and rules of this team (20.5).
+
 ## Nineteenth pass, 2026-10-07: audit of v115 and v116, and new strategies toward 220 s
 
 ### 19.1 Gap
