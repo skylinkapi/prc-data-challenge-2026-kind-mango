@@ -1,0 +1,17 @@
+{
+ "rows_2025": 97,
+ "label_quantiles_2025": [
+  1396.0,
+  4453.0,
+  10069.0
+ ],
+ "offset_all_months_s": 242.0,
+ "offset_fit_months_s": 152.5,
+ "loo_month_rmse_s": 1292.7956051921446,
+ "holdout_rows": 17,
+ "served_rmse_s": 2601.9939698334024,
+ "rule_rmse_s": 1305.3814914557713,
+ "mse": -250.1,
+ "body": -26.4,
+ "ranking_rows": 19
+}

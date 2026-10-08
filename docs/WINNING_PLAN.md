@@ -628,6 +628,8 @@ Fill one row per lever as it closes.
 | J4 | arrival-side `AOBT_3` as a clock for departures without a record | | | closed: +38 to +139 MSE |
 | K6 | OPDI `entry-deicing_pad` events as stack columns | | | open: probe one January day; OSN sees the ground only at LSZH, LEBL, EDDF, EHAM, LEMD |
 | Q3 | price levers by the gain on rows with `y <= 3,600` s and a 2026 importance weight | | | open: backtest on the uploads v105 to v117 first |
+| P1 | LFPG departures with `MVT` off the minute grid raised to `MVT - LOBT` minus 242 s (MODEL_ANALYSIS F20.2) | v121 | 242.03 (-0.49) | accepted, best: bundled with N10 seeds for rule 12; hold-out -250 and +34 MSE, live -235 |
+| N10b | six TabM seeds per family (`tabm_v116_b`, `tabm_plr_b`) | v121 | 242.03 (-0.49) | bundled with P1; hold-out +34 MSE (stack-refit noise, grade D) |
 | E1 | EUROCONTROL label-derived series | | | decision: organiser ruling needed; the daily series makes the LIRF gate worse (+523 MSE) |
 
 Revised order of work, 2026-10-07 (MODEL_ANALYSIS 19.7): Wed 7 Oct J1;

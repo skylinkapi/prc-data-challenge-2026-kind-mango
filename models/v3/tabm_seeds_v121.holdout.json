@@ -1,0 +1,21 @@
+{
+ "full_path_mse": 34.2,
+ "body": 28.3,
+ "tail": 5.9,
+ "jan": 21.7,
+ "jul": 12.5,
+ "by_airport": {
+  "EDDF": 3.1,
+  "EDDM": 3.7,
+  "EGLL": 28.6,
+  "EHAM": 1.6,
+  "LEBL": 4.7,
+  "LEMD": 5.8,
+  "LFPG": -12.3,
+  "LSZH": -2.6,
+  "LTFM": 1.5
+ },
+ "member_rmse_plr_b": 266.596060376582,
+ "member_rmse_v116_b": 266.0998800894284,
+ "corr_residuals_plr_seeds": 0.9941669316691201
+}

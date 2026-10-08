@@ -273,6 +273,23 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    `step_a_date` and `lobt_window` as for v118, write `kind-mango_v119.parquet`. The TabM files are not bit-exact on a
    rerun (no deterministic CUDA kernels); the recorded `models/v3/*tabm_plr.parquet` files rebuild the upload.
 
+   **v121** adds N10 seeds and P1 (twentieth pass of `docs/MODEL_ANALYSIS.md`). Two TabM members with seeds 45 to 47
+   join the served pair, so each family averages six seeds. Then the v119 stack, `step_a_date` and `lobt_window` run
+   on the new neural term, and `mvt_precision` raises the 19 LFPG rows whose `MVT` lies off the minute grid:
+
+   ```bash
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member measure --tag tabm_plr_b     # hold-out member, seed 45
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member measure --tag tabm_v116_b
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member serve --tag tabm_plr_b       # three seeds, about 110 min
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member serve --tag tabm_v116_b
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member combine --tags tabm_v116 tabm_v116_b tabm_plr tabm_plr_b --share 0.4
+   ```
+
+   The v118 stack command with `--base kind-mango_v119_base.parquet --out kind-mango_v121_stack.parquet`, then
+   `step_a_date` and `lobt_window` as for v118 (output `kind-mango_v121_window.parquet`), then
+   `python -m src_v3.mvt_precision serve kind-mango_v121_window.parquet kind-mango_v121.parquet`.
+   `python -m src_v3.mvt_precision measure` writes the hold-out price of P1 (`models/v3/mvt_precision.holdout.json`).
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.

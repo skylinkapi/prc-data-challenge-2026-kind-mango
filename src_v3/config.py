@@ -362,6 +362,9 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     # J family as a member input: the v116 columns plus the unclipped `lobt_ml` and `lobt_sl` (`build_lobt_terms.py`);
     # 160.98 s at epoch 30, -526 MSE alone at 0.4; with tabm_v116 and tabm_plr at the share 0.5, full path -17 MSE (v120)
     "tabm_j": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v120"},
+    # N10, more seeds: a second seed set of each served family; v121 averages six seeds per family
+    "tabm_v116_b": {"epochs": 32, "serve_epoch": 27, "seeds": (45, 46, 47), "columns": "v116"},
+    "tabm_plr_b": {"epochs": 32, "serve_epoch": 30, "seeds": (45, 46, 47), "columns": "v116", "embed": "plr"},
 }
 TABM_GATE_SPEC = {"width": 256, "epochs": 12, "batch": 512}   # TabM member of the LIRF gate (`tabm_gate.py`)
 TABM_ON_V105 = 0.3                      # share on top of the v105 base; hold-out -214 / -252 / -244 MSE at 0.2 / 0.3 / 0.4
@@ -404,3 +407,8 @@ ARR_LINK_S = (600, 50_400)              # the arrival of the same flight number 
 V115_SHARES = (0.48, 0.12, 0.40)        # v115 base outside LIRF: tree blend, MLP, TabM (`--mlp-weight 0.52`, TabM 0.4)
 V115_TABM = "tabm_v115"
 BODY_MAX_S = 3600                       # gain on rows up to this label is the body share of a price (nineteenth pass)
+# P1, twentieth pass: at LFPG every movement time is a whole minute plus organiser noise of at most this many
+# seconds; a departure whose MVT lies off that grid comes from another source, and its label is long (97 rows of
+# 2025, median 4,453 s). EGLL has 7 such rows of 2025 with labels under 31 s and none in 2026, so it stays out
+MVT_GRID_JITTER_S = 6
+MVT_PRECISION_AIRPORTS = ("LFPG",)

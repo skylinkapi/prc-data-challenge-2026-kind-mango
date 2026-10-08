@@ -1,0 +1,30 @@
+{
+ "gates": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "over_80000": true,
+  "p1_rows": true,
+  "p1_only_raises": true,
+  "inside_window": true,
+  "lirf_unchanged": true,
+  "over_7200_outside_p1": true,
+  "big_moves_outside_p1": true
+ },
+ "stats": {
+  "rows_moved": 316931,
+  "p1_rows_raised": 18,
+  "p1_mean_move_s": 2044.6113385541557,
+  "mean_shift_outside_p1_s": -1.6522097269979805,
+  "p99_abs_move_outside_p1_s": 34.018670953135526,
+  "over_7200": 108,
+  "ref_over_7200": 105
+ },
+ "lever": "v119 + N10 (TabM members tabm_v116_b and tabm_plr_b, seeds 45 to 47, so each family averages six seeds; combine tabm_v116 tabm_v116_b tabm_plr tabm_plr_b at the share 0.4) + P1 (mvt_precision serve: 19 LFPG rows with MVT off the minute grid raised to MVT - LOBT minus the 2025 median offset); bundled for AGENTS rule 12",
+ "holdout_price": {
+  "seeds_full_path": 34.2,
+  "p1": -250.1
+ },
+ "score": 242.0265
+}
