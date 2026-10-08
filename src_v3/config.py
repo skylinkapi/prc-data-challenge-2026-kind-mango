@@ -270,6 +270,8 @@ SERVED_ARTEFACTS[117] = tuple(p.replace("_v97", "_v116") for p in SERVED_ARTEFAC
 SERVED_ARTEFACTS[118] = SERVED_ARTEFACTS[116]   # v118: J1 reads only the ranking file on top of v116
 SERVED_ARTEFACTS[119] = (*SERVED_ARTEFACTS[118], "models/v3/holdout_mlp_tabm_plr.parquet",   # v119: J2 and tabm_plr
                          "models/v3/rank_mlp_tabm_plr.parquet")
+SERVED_ARTEFACTS[120] = (*SERVED_ARTEFACTS[119], "models/v3/holdout_mlp_tabm_j.parquet",   # v120: J3 and tabm_j
+                         "models/v3/rank_mlp_tabm_j.parquet", "models/lobt_terms_*.parquet")
 # v93 stack study (`tune_stack_v93.py`): more 2025 ADS-B days give the stack about 9 times more rows
 STACK_V93_MLP_WEIGHTS = (0.0, 0.1, 0.2)   # MLP hold-out: -190 at 0.1, -213 at 0.2, -69 at 0.3
 STACK_V93_LEAVES = (31, 63)
@@ -357,8 +359,9 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     # N10, second network family: periodic numeric embeddings instead of piecewise-linear; 161.40 s at epoch 30, -460 MSE
     # alone at 0.4; averaged with tabm_v116 at 0.4 the full serve path prices -83 MSE (v119)
     "tabm_plr": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v116", "embed": "plr"},
-    # J family as a member input: the v116 columns plus the unclipped `lobt_ml` and `lobt_sl` (`build_lobt_terms.py`)
-    "tabm_j": {"epochs": 32, "serve_epoch": 27, "seeds": (42, 43, 44), "columns": "v120"},
+    # J family as a member input: the v116 columns plus the unclipped `lobt_ml` and `lobt_sl` (`build_lobt_terms.py`);
+    # 160.98 s at epoch 30, -526 MSE alone at 0.4; with tabm_v116 and tabm_plr at the share 0.5, full path -17 MSE (v120)
+    "tabm_j": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v120"},
 }
 TABM_GATE_SPEC = {"width": 256, "epochs": 12, "batch": 512}   # TabM member of the LIRF gate (`tabm_gate.py`)
 TABM_ON_V105 = 0.3                      # share on top of the v105 base; hold-out -214 / -252 / -244 MSE at 0.2 / 0.3 / 0.4

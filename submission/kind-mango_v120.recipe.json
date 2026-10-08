@@ -1,0 +1,28 @@
+{
+ "gates": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "over_80000": true,
+  "over_7200_outside_j3": true,
+  "inside_window": true,
+  "j3_rows_anchored": true,
+  "lirf_moves_only_j3": true,
+  "big_moves_outside_j3": true
+ },
+ "stats": {
+  "rows_moved": 316956,
+  "j3_rows": 93,
+  "j3_mean_move_s": 1516.172577515558,
+  "mean_shift_outside_lirf_s": 0.44178155471885333,
+  "over_7200": 120,
+  "ref_over_7200": 105
+ },
+ "lever": "v119 + J3 (rows with LOBT 2 to 4 h before take-off served at MVT - LOBT minus the 2025 median BLOCK - LOBT of their band; lobt_window --anchor) + tabm_j (TabM on the v116 columns plus the unclipped LOBT terms, three seeds) as the third TabM member, TabM share 0.5 (neural weight 0.6); bundled for AGENTS rule 12",
+ "holdout_price": {
+  "j3": -255.0,
+  "tabm_j_three_at_0.5_full_path": -16.7
+ },
+ "score": 242.9111
+}

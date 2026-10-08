@@ -504,6 +504,21 @@ yet it cannot raise any row's error. If J1 lands between the best minus
 Result: v118 landed at 242.81 s, -0.85 s against v116, so the bar holds and
 the conflict did not arise. Every later upload builds on v118.
 
+J3, added 2026-10-07: `mvt_lobt` is clipped at 7,200 s, so the trees do
+not see rows whose `LOBT` lies 2 to 4 h before the take-off. There the
+label is `MVT - LOBT` minus a median `BLOCK - LOBT` of 634 to 1,040 s per
+band (2025), and the served path under-predicts by 860 s on average.
+`lobt_window --anchor` serves that value: hold-out -255 MSE on 49 rows
+(medians fit outside January and July; `nm_join.holdout.json`, key `j3`);
+93 ranking rows. Below 7,200 s the anchor loses (+41 to +138 MSE).
+
+J4, closed 2026-10-07: the arrival-side `AOBT_3` as a clock for departures
+without a record serves worse than the model (RMSE 646 against 473 s on
+246 hold-out rows; +38 to +139 MSE).
+
+Rule 12 applies to every J rule: J2 moves 20 rows and J3 93, so each rides
+with a model change (v119: J2 with `tabm_plr`; v120: J3 with `tabm_j`).
+
 ## 5. Order of work and uploads to 11 October
 
 UTC days. The next free version is v99.
@@ -609,6 +624,8 @@ Fill one row per lever as it closes.
 | J1 | LOBT window on every record row; LIRF gate 0 where a schedule copy breaks the window | v118 | 242.81 (-0.85) | accepted, best: hold-out -371 MSE, live -411 |
 | J2 | LIRF gate 0 on rows without a record whose arrival row gives `LOBT` within 1 h of `SCHED` | v119 | 242.51 (-0.295) | leaderboard best, bundled with N10 for rule 12; 0.005 s under the bar |
 | N10 | second network family: TabM with periodic embeddings (`tabm_plr`), averaged with `tabm_v116` | v119 | 242.51 (-0.295) | bundled with J2; full path -83 MSE on the hold-out |
+| J3 | rows with `LOBT` 2 to 4 h before take-off at `MVT - LOBT` minus the band median of `BLOCK - LOBT` | v120 | 242.91 (+0.40) | rejected, closed, with `tabm_j` at the TabM share 0.5 (bundled for rule 12); hold-out -255 and -17 MSE, all of J3 on rows above 3,600 s |
+| J4 | arrival-side `AOBT_3` as a clock for departures without a record | | | closed: +38 to +139 MSE |
 | K6 | OPDI `entry-deicing_pad` events as stack columns | | | open: probe one January day; OSN sees the ground only at LSZH, LEBL, EDDF, EHAM, LEMD |
 | Q3 | price levers by the gain on rows with `y <= 3,600` s and a 2026 importance weight | | | open: backtest on the uploads v105 to v117 first |
 | E1 | EUROCONTROL label-derived series | | | decision: organiser ruling needed; the daily series makes the LIRF gate worse (+523 MSE) |

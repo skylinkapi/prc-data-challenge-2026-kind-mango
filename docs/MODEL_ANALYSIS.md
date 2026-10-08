@@ -1,6 +1,6 @@
 # Model analysis: progress to v117, the nineteenth pass (audit of v115 and v116, NM join rules), the eighteenth pass (new observables, TabM), the seventeenth pass (CatBoost gate) and the sixteenth pass (error budget of v97)
 
-Status on 2026-10-07, 23:05 UTC: leaderboard best **242.51 s (v119)**, J2 bundled with a periodic-embedding TabM member; -0.295 s against v118, 0.005 s short of the acceptance bar. Status on 2026-10-07, 16:00 UTC: live best **242.81 s (v118)**, -0.85 s against v116, accepted; team rank 34 of 235. v118 serves J1 of the nineteenth pass (the NM join window) on the v116 recipe: hold-out -371 MSE, live -411. Earlier the same day, 15:00 UTC: leaderboard best **243.65 s (v116)**, team rank 36 of 235; the top is 213.52 s. The nineteenth pass (below the Progress section) audits the served path and measures where the error of v115 sits. It finds one new structural rule, the NM join window `|BLOCK - LOBT| <= 3,606` s, that the pipeline does not use: hold-out -564 MSE, no retrain (`python -m src_v3.measure_nm_join`). No measured lever reaches 220 s (19.6). Status on 2026-10-06, 18:40 local time: leaderboard best **243.65 s (v116)**, X-Plane stands at five airports; -0.035 s against v115, inside noise. Earlier: live best **243.69 s (v115)**, X-Plane stands at EDDM and EHAM and ATFM slot columns (18.7). Earlier: leaderboard best **244.02 s (v114)**, the 32-epoch TabM member with three seeds at 0.4; -0.27 s against v112, under the 0.3 s acceptance bar. Earlier: live best stays **244.29 s (v112)**; v113 (TabM gate member) 247.40 s, rejected. Before: live best **244.29 s (v112)**, the 24-epoch TabM member at 0.35 plus the Step A date-crossing fix (18.5). Before: **245.23 s (v111)**, a TabM member at 0.3 on top of the v105 base (eighteenth pass). Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
+Status on 2026-10-08, 01:05 UTC: v120 (J3 with a third TabM member) 242.91 s, +0.40 s against v119, rejected; best stays **242.51 s (v119)** (19.9). Status on 2026-10-07, 23:05 UTC: leaderboard best **242.51 s (v119)**, J2 bundled with a periodic-embedding TabM member; -0.295 s against v118, 0.005 s short of the acceptance bar. Status on 2026-10-07, 16:00 UTC: live best **242.81 s (v118)**, -0.85 s against v116, accepted; team rank 34 of 235. v118 serves J1 of the nineteenth pass (the NM join window) on the v116 recipe: hold-out -371 MSE, live -411. Earlier the same day, 15:00 UTC: leaderboard best **243.65 s (v116)**, team rank 36 of 235; the top is 213.52 s. The nineteenth pass (below the Progress section) audits the served path and measures where the error of v115 sits. It finds one new structural rule, the NM join window `|BLOCK - LOBT| <= 3,606` s, that the pipeline does not use: hold-out -564 MSE, no retrain (`python -m src_v3.measure_nm_join`). No measured lever reaches 220 s (19.6). Status on 2026-10-06, 18:40 local time: leaderboard best **243.65 s (v116)**, X-Plane stands at five airports; -0.035 s against v115, inside noise. Earlier: live best **243.69 s (v115)**, X-Plane stands at EDDM and EHAM and ATFM slot columns (18.7). Earlier: leaderboard best **244.02 s (v114)**, the 32-epoch TabM member with three seeds at 0.4; -0.27 s against v112, under the 0.3 s acceptance bar. Earlier: live best stays **244.29 s (v112)**; v113 (TabM gate member) 247.40 s, rejected. Before: live best **244.29 s (v112)**, the 24-epoch TabM member at 0.35 plus the Step A date-crossing fix (18.5). Before: **245.23 s (v111)**, a TabM member at 0.3 on top of the v105 base (eighteenth pass). Status on 2026-10-05, 20:20 local time: live best stays **246.48 s (v105)**. The seventeenth pass names the strong and weak points of v105 and prices a CatBoost member in the LIRF gate (N7): hold-out -484 MSE, live v109 247.37 s, rejected; and NNLS member weights per coverage class (N3): hold-out +139 MSE, live v110 246.57 s, rejected. Status on 2026-10-04, 04:00 local time: live best **246.48 s (v105)**, LIRF gate g3 with 2026 arrival information plus the MLP on the v97 columns (Progress table). Status on 2026-10-03, 12:00 local time: live best **247.89 s (v97)**, team
 rank 31; the leaderboard top is **216.57 s** (API, 09:25 UTC). The
 sixteenth pass below the Progress section measures where the v97 error
 sits. `docs/WINNING_PLAN.md` third edition turns it into the plan toward
@@ -165,6 +165,7 @@ and the output format.
 | K5c tree members refit on the v116 clock tables, MS3 guard on the per-airport mix | v117 | +0.09 | rejected: hold-out blend -232 MSE against v97 members, but the stack already read the new clocks |
 | J1 NM join window: LIRF gate 0 where a schedule copy breaks the window, then the LOBT window as the last step (nineteenth pass) | v118 | -0.85 | accepted, best 242.81 s; hold-out -371 MSE, live -411 (1.1 times); 1,123 rows moved |
 | J2 arrival-side `LOBT` for LIRF rows without a record, bundled with N10 `tabm_plr` (periodic embeddings) for rule 12 | v119 | -0.295 | leaderboard best 242.51 s, under the 0.3 s bar by 0.005 s; hold-out -193 (J2) and -83 (member), live -143 |
+| J3 anchor on rows with `LOBT` 2 to 4 h before take-off, bundled with `tabm_j` at the TabM share 0.5 | v120 | +0.40 | rejected, closed: hold-out -255 and -17, live +194 |
 | ADS-B specialist (4.5 step 1) as a stack column, trained on 291 days outside months 1 and 7 | v96 | +0.53 | rejected; hold-out -302 MSE did not transfer (a derived column, like v66, v71, v83) |
 | v96 study on 62 days: 63 leaves, residual clip 7,200 s, A5 offsets, A4 columns | not built | -92, +19, +29 to +523, +37 MSE | closed: under the bar or worse |
 | A2 stack on all 62 January and July 2025 ADS-B days | v95 | -1.12 | accepted; hold-out stack -4,048 MSE; unattended release |
@@ -573,6 +574,37 @@ no row may leave the window, and no row without `LOBT` may move.
 | 16.4 and F16.10: the tail rows outside LIRF have no observable | rows with an NM record do: the LOBT window lifts 9 hold-out tail rows (`y > 7,200` s) and gains 214 MSE on them (F19.1) |
 | WINNING_PLAN third edition 2.4: a perfect LIRF gate is the ceiling of gate work | for rows without a record, the arrival-side `LOBT` decides the gate exactly where it exists (F19.3) |
 | 18.6: no source beats ADSB.lol at LFPG; OSN state vectors stay out by team rule | the organiser's OSN coverage table gives 0.000 at LFPG, LIRF, LTFM, EGLL and EDDM, so the team rule costs nothing there |
+
+### 19.9 Execution, 2026-10-07
+
+| upload | change | hold-out, MSE | live |
+|---|---|---|---|
+| v118 | J1: LIRF copy test, then the LOBT window as the last step | -371 | 242.81 s, -0.85 s (-411 MSE), accepted |
+| v119 | J2 (20 rows) bundled with `tabm_plr` for rule 12 | -193 and -83 | 242.51 s, -0.295 s (-143 MSE), 0.005 s under the bar |
+| v120 | J3 (93 rows) bundled with `tabm_j` at the TabM share 0.5 | -255 and -17 | 242.91 s, +0.40 s (+194 MSE), rejected |
+
+Measured for v120, on the full serve path against the v119 recipe:
+
+1. J3 is the second gain of the window family. Rows whose `LOBT` lies 2
+   to 4 h before the take-off get no window signal from the trees,
+   because `mvt_lobt` is clipped at 7,200 s. The 2025 label sits
+   `MVT - LOBT` minus 634 to 1,040 s there. Served at that value: -255 MSE
+   on 49 rows (`nm_join.holdout.json`, key `j3`).
+2. `tabm_j`, TabM on the v116 columns plus the unclipped LOBT terms, is
+   the best single member (hold-out RMSE 266.0 s; -526 MSE alone at 0.4).
+   It correlates 0.9955 with `tabm_v116`, so as a third member it adds
+   -1 MSE at the share 0.4 and -17 at 0.5; a swap for `tabm_v116` gives
+   -8 (`tabm_variants_v120.holdout.json`). The neural term is saturated on
+   the hold-out.
+3. J4, the arrival-side `AOBT_3` as a clock for departures without a
+   record, is worse than the served value (+38 to +139 MSE). Closed.
+
+Reading of v120, grade D: J3 holds about 90 % of the squared change
+against v119 (93 rows, RMS 1,837 s), and its whole hold-out price sits on
+rows above 3,600 s. Outgoing-boat found that share of a price
+anti-correlated with the live delta (F19.11). J1 and J2 transferred; their
+gains sat on rows below 3,600 s (J1 at LIRF) or came from a hard bound (the
+window). A rule fitted to the rare 2025 tail rows did not. Both parts close.
 
 ## Eighteenth pass, 2026-10-06: new observables tested, and the TabM member (v111)
 
