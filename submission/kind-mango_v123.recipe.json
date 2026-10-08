@@ -1,0 +1,27 @@
+{
+ "gates": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "over_80000": true,
+  "p1_rows": true,
+  "p1_only_raises": true,
+  "inside_window": true,
+  "lirf_unchanged": true,
+  "over_7200_outside_p1": true,
+  "big_moves_outside_p1": true
+ },
+ "stats": {
+  "rows_moved": 316865,
+  "p1_rows_raised": 18,
+  "p1_mean_move_s": -2.739450632738968,
+  "mean_shift_outside_p1_s": -0.12106325703485561,
+  "p99_abs_move_outside_p1_s": 48.180847031704985,
+  "over_7200": 108,
+  "ref_over_7200": 108
+ },
+ "lever": "v122 with the TabM share 0.65 instead of 0.5 (stack --mlp-weight 0.72); neural-forward blend",
+ "holdout_price": null,
+ "score": 241.7892
+}

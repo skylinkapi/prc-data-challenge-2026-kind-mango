@@ -365,6 +365,8 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     # N10, more seeds: a second seed set of each served family; v121 averages six seeds per family
     "tabm_v116_b": {"epochs": 32, "serve_epoch": 27, "seeds": (45, 46, 47), "columns": "v116"},
     "tabm_plr_b": {"epochs": 32, "serve_epoch": 30, "seeds": (45, 46, 47), "columns": "v116", "embed": "plr"},
+    # twenty-first pass: periodic embeddings on the J column set; a fourth family for v124
+    "tabm_plr_j": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v120", "embed": "plr"},
 }
 TABM_GATE_SPEC = {"width": 256, "epochs": 12, "batch": 512}   # TabM member of the LIRF gate (`tabm_gate.py`)
 TABM_ON_V105 = 0.3                      # share on top of the v105 base; hold-out -214 / -252 / -244 MSE at 0.2 / 0.3 / 0.4
