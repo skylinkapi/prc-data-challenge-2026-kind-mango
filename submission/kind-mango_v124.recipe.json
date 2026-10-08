@@ -1,0 +1,27 @@
+{
+ "gates": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "over_80000": true,
+  "p1_rows": true,
+  "p1_only_raises": true,
+  "inside_window": true,
+  "lirf_unchanged": true,
+  "over_7200_outside_p1": true,
+  "big_moves_outside_p1": true
+ },
+ "stats": {
+  "rows_moved": 316829,
+  "p1_rows_raised": 18,
+  "p1_mean_move_s": -0.0007832063468676528,
+  "mean_shift_outside_p1_s": 0.25119475194477653,
+  "p99_abs_move_outside_p1_s": 35.157434032854646,
+  "over_7200": 108,
+  "ref_over_7200": 108
+ },
+ "lever": "v123 + tabm_plr_j (TabM with periodic embeddings on the v120 column set: v116 columns plus the unclipped LOBT terms) as a fourth family, one quarter per family, share 0.65",
+ "holdout_price": null,
+ "score": 241.672
+}
