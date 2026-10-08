@@ -290,6 +290,16 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    `python -m src_v3.mvt_precision serve kind-mango_v121_window.parquet kind-mango_v121.parquet`.
    `python -m src_v3.mvt_precision measure` writes the hold-out price of P1 (`models/v3/mvt_precision.holdout.json`).
 
+   **v122** serves the v121 chain with `tabm_j` as a third TabM family (the files of
+   `tabm_member serve --tag tabm_j`, made for v120):
+
+   ```bash
+   PYTHONPATH=.gpu_site python -m src_v3.tabm_member combine        --tags tabm_v116 tabm_v116_b tabm_plr tabm_plr_b tabm_j tabm_j --share 0.5
+   ```
+
+   `tabm_j` appears twice so that each family takes one third. Then run the v121 stack command with
+   `--mlp-weight 0.6` and the names `kind-mango_v122_*`, followed by `step_a_date`, `lobt_window` and `mvt_precision serve`.
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.
