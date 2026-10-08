@@ -29,6 +29,8 @@ from src_v3.build_lobt_terms import OUT_RANK as LOBT_RANK
 from src_v3.build_lobt_terms import OUT_TRAIN as LOBT_TRAIN
 from src_v3.build_nm_clocks_v73 import OUT_TRAIN as CLOCKS_TRAIN
 from src_v3.build_opdi_own import OUT_TRAIN as OPDI_TRAIN
+from src_v3.build_struct_terms import OUT_RANK as STRUCT_RANK
+from src_v3.build_struct_terms import OUT_TRAIN as STRUCT_TRAIN
 from src_v3.catboost_base import load_frame
 from src_v3.measure_catboost_blend import FIT_MONTHS, STOP_MONTHS, holdout_rows
 from src_v3.measure_tail_rules import mse_delta
@@ -48,11 +50,16 @@ COLUMN_SETS = {   # extra column files, hold-out blend, ranking feature dump
              C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet"),
     "v120": ((CLOCKS_TRAIN, FORWARD_V85, OPDI_TRAIN, C.ADSB_DIR / "v116" / "adsb_clock_train.parquet",
               C.ROOT / "models" / "atfm_slot_train.parquet", LOBT_TRAIN),
+             C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet"),
+    "v126": ((CLOCKS_TRAIN, FORWARD_V85, OPDI_TRAIN, C.ADSB_DIR / "v116" / "adsb_clock_train.parquet",
+              C.ROOT / "models" / "atfm_slot_train.parquet", LOBT_TRAIN, STRUCT_TRAIN),
              C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet")}
 RANK_OVERRIDES = {   # ranking tables whose columns replace or extend the feature dump of a column set
     "v115": (C.ADSB_DIR / "v115" / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet"),
     "v116": (C.ADSB_DIR / "v116" / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet"),
-    "v120": (C.ADSB_DIR / "v116" / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet", LOBT_RANK)}
+    "v120": (C.ADSB_DIR / "v116" / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet", LOBT_RANK),
+    "v126": (C.ADSB_DIR / "v116" / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet", LOBT_RANK,
+             STRUCT_RANK)}
 BLEND_HOLDOUT = COLUMN_SETS["v85"][1]
 PRED_OUT = C.MODELS / "holdout_mlp.parquet"
 RANK_OUT = C.MODELS / "rank_mlp.parquet"

@@ -367,6 +367,8 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     "tabm_plr_b": {"epochs": 32, "serve_epoch": 30, "seeds": (45, 46, 47), "columns": "v116", "embed": "plr"},
     # twenty-first pass: periodic embeddings on the J column set; a fourth family for v124
     "tabm_plr_j": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v120", "embed": "plr"},
+    # twenty-first pass: the J column set plus the structure terms of the record (`build_struct_terms.py`)
+    "tabm_s": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v126"},
 }
 TABM_GATE_SPEC = {"width": 256, "epochs": 12, "batch": 512}   # TabM member of the LIRF gate (`tabm_gate.py`)
 TABM_ON_V105 = 0.3                      # share on top of the v105 base; hold-out -214 / -252 / -244 MSE at 0.2 / 0.3 / 0.4
@@ -414,3 +416,4 @@ BODY_MAX_S = 3600                       # gain on rows up to this label is the b
 # 2025, median 4,453 s). EGLL has 7 such rows of 2025 with labels under 31 s and none in 2026, so it stays out
 MVT_GRID_JITTER_S = 6
 MVT_PRECISION_AIRPORTS = ("LFPG",)
+DUP_WINDOW_S = 86_400                   # repeated departures of one flight number count within a day (F21.3)

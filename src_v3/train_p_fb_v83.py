@@ -5,7 +5,8 @@ plus the four link columns, and the v64 out-of-fold isotonic map. Hold-out
 price (`measure_gate_clocks.py --tag arr_link_v83`): the served mixture on
 Jan+Jul improves by 277 MSE; log loss improves in every `sd` bin.
 `--tag g1 --extra models/arr_art_train_g1.parquet` fits the third-edition G1
-gate with the arrival artefact shares instead of the link columns.
+gate with the arrival artefact shares instead of the link columns. `--extra` takes
+several files: `--tag g5` adds the NM clocks to the g3 columns (twenty-first pass).
 """
 from __future__ import annotations
 
@@ -33,14 +34,15 @@ log = logging.getLogger(__name__)
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--tag", default="v83")
-    ap.add_argument("--extra", default=str(LINK_TRAIN.relative_to(C.ROOT)), help="Parquet of the added gate columns.")
+    ap.add_argument("--extra", nargs="+", default=[str(LINK_TRAIN.relative_to(C.ROOT))], help="Parquets of the added gate columns.")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     n_iter = lgb.Booster(model_file=str(V56_BOOSTER)).num_trees()
     dep, feat = load_gate_frame()
-    cols = pd.read_parquet(C.ROOT / args.extra)
-    dep = dep.merge(cols, on="MVT_ID_mvt", how="left", validate="m:1")
-    feat = feat + [c for c in cols.columns if c != "MVT_ID_mvt"]
+    for path in args.extra:
+        cols = pd.read_parquet(C.ROOT / path)
+        dep = dep.merge(cols, on="MVT_ID_mvt", how="left", validate="m:1")
+        feat = feat + [c for c in cols.columns if c != "MVT_ID_mvt"]
     y = dep["is_fb"].values
     dt = lgb.Dataset(dep[feat], label=y, categorical_feature=CAT_COLS, params={"feature_pre_filter": False})
     lgb.train(GATE_PARAMS, dt, num_boost_round=n_iter).save_model(str(C.ROOT / "models" / f"lgbm_p_fb_lirf_{args.tag}.txt"))
