@@ -1,0 +1,32 @@
+{
+ "format": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "moves": {
+  "rows_moved": 202112,
+  "mean_shift_s": 0.07478984001915487,
+  "p99_abs_move_s": 63.14788082152531,
+  "max_abs_move_s": 386.158001258829,
+  "over_7200": 109,
+  "ref_over_7200": 108
+ },
+ "lever": "v127 with the stack tuned for the 2026 coverage mix: hold-out clock rows weighted by the 2026-to-2025 share of their airport and coverage class; 15 leaves, 100 rows per leaf, L2 50, 400 rounds (best of 54 sets on the weighted cross-fitted objective, tune_stack_v128.json)",
+ "tabm_tags": [
+  "tabm_v116",
+  "tabm_v116_b",
+  "tabm_plr",
+  "tabm_plr_b",
+  "tabm_j",
+  "tabm_j",
+  "tabm_plr_j",
+  "tabm_plr_j",
+  "tabm_s",
+  "tabm_s"
+ ],
+ "holdout_price": null,
+ "score": 240.5965
+}

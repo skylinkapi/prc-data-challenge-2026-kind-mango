@@ -312,7 +312,8 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
 
    Then the v126 chain (combine with the ten TabM tags of `submission/kind-mango_v127.recipe.json`, share 0.65)
    with the stack options `--adsb-train/--adsb-rank external/adsblol/v127/...` and
-   `--opdi-train/--opdi-rank models/opdi_own_*_v127.parquet`.
+   `--opdi-train/--opdi-rank models/opdi_own_*_v127.parquet`. **v128** adds the stack options `--coverage-weights
+   --leaves 15 --min-data 100 --l2 50 --rounds 400` (the 600-round default goes).
 
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
