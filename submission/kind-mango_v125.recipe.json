@@ -1,0 +1,30 @@
+{
+ "format": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "moves": {
+  "lirf_rows_moved": 25197,
+  "lirf_mean_shift_s": 1.3229542555632399,
+  "lirf_p99_abs_move_s": 213.74706783615557,
+  "outside_lirf_max_abs_move_s": 2.2737367544323206e-13,
+  "lirf_over_7200": 96,
+  "ref_lirf_over_7200": 93
+ },
+ "lever": "kind-mango_v124.parquet recipe with the LIRF gate g5: the g3 columns plus the five NM clock columns (train_p_fb_v83 --tag g5 --extra arr_art_op_link_train_g3 nm_clocks_train_v73; 207 rounds, 182 columns)",
+ "tabm_tags": [
+  "tabm_v116",
+  "tabm_v116_b",
+  "tabm_plr",
+  "tabm_plr_b",
+  "tabm_j",
+  "tabm_j",
+  "tabm_plr_j",
+  "tabm_plr_j"
+ ],
+ "holdout_price": null,
+ "score": 242.3454
+}

@@ -1,0 +1,33 @@
+{
+ "format": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "moves": {
+  "rows_moved": 316820,
+  "mean_shift_s": 0.2536257720541155,
+  "p99_abs_move_s": 31.381880979964045,
+  "max_abs_move_s": 318.94615537747495,
+  "over_7200": 109,
+  "ref_over_7200": 108
+ },
+ "lever": "kind-mango_v124.parquet recipe plus tabm_s (TabM on the v126 column set: the J columns plus the structure terms of the record, build_struct_terms) as a fifth family, one fifth per family, share 0.65",
+ "base": "kind-mango_v119_base.parquet",
+ "tabm_tags": [
+  "tabm_v116",
+  "tabm_v116_b",
+  "tabm_plr",
+  "tabm_plr_b",
+  "tabm_j",
+  "tabm_j",
+  "tabm_plr_j",
+  "tabm_plr_j",
+  "tabm_s",
+  "tabm_s"
+ ],
+ "holdout_price": null,
+ "score": 241.6594
+}

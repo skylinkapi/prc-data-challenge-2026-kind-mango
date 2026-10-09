@@ -633,6 +633,8 @@ Fill one row per lever as it closes.
 | N10c | `tabm_j` as a third TabM family at the share 0.5, without J3 (reopened by F20.3) | v122 | 241.84 (-0.18) | leaderboard best, 0.11 s under the bar: hold-out -42 MSE, live -88 |
 | N11 | TabM share 0.65 (neural weight 0.72) | v123 | 241.79 (-0.06) | leaderboard best, under the bar; no hold-out price (user directive) |
 | N12 | fourth TabM family `tabm_plr_j` (periodic embeddings, J column set) | v124 | 241.67 (-0.12) | leaderboard best, under the bar |
+| L15 | NM clocks in the LIRF gate (g5) | v125 | 242.35 (+0.67) | rejected, closed: hold-out +108, live +326 MSE |
+| N13 | fifth TabM family `tabm_s` (structure terms of the record) | v126 | 241.66 (-0.01) | leaderboard best, inside noise |
 | E1 | EUROCONTROL label-derived series | | | decision: organiser ruling needed; the daily series makes the LIRF gate worse (+523 MSE) |
 
 Revised order of work, 2026-10-07 (MODEL_ANALYSIS 19.7): Wed 7 Oct J1;
