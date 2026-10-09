@@ -300,6 +300,20 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    `tabm_j` appears twice so that each family takes one third. Then run the v121 stack command with
    `--mlp-weight 0.6` and the names `kind-mango_v122_*`, followed by `step_a_date`, `lobt_window` and `mvt_precision serve`.
 
+   **v127** links the departures without an NM record to their ADS-B and OPDI tracks by flight number:
+
+   ```bash
+   python -m src_v3.build_adsb_clock --stands external/xplane/stands_osm_xplane.parquet \
+       --out-dir external/adsblol/v127 --link-flight --keep external/adsblol/v116
+   python -m src_v3.build_opdi_own --link-flight \
+       --keep models/opdi_own_train_v90.parquet models/opdi_own_rank_v90.parquet \
+       --out models/opdi_own_train_v127.parquet models/opdi_own_rank_v127.parquet
+   ```
+
+   Then the v126 chain (combine with the ten TabM tags of `submission/kind-mango_v127.recipe.json`, share 0.65)
+   with the stack options `--adsb-train/--adsb-rank external/adsblol/v127/...` and
+   `--opdi-train/--opdi-rank models/opdi_own_*_v127.parquet`.
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.

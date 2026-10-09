@@ -211,6 +211,7 @@ STACK_V90_PARAMS = dict(objective="regression", learning_rate=0.03, num_leaves=3
                         verbose=-1, deterministic=True, num_threads=NUM_THREADS, seed=GLOBAL_SEED)
 STACK_V90_ROUNDS = 600
 STACK_V90_RES_CLIP_S = 3600             # a 24-h artefact must not steer the stack
+STACK_COVER_W = (0.2, 5.0)              # bounds of the 2026-to-2025 coverage weight of a stack training row (v128)
 STACK_V90_MIN_FOLD_DAYS = 5             # cross-fit by month once each month has this many ADS-B days
 ADSB_RETRIES = 8                        # a DNS failure stopped the first July 2026 run
 ADSB_BACKOFF_S = 15
@@ -417,3 +418,7 @@ BODY_MAX_S = 3600                       # gain on rows up to this label is the b
 MVT_GRID_JITTER_S = 6
 MVT_PRECISION_AIRPORTS = ("LFPG",)
 DUP_WINDOW_S = 86_400                   # repeated departures of one flight number count within a day (F21.3)
+# Twenty-second pass, coverage: a departure without an NM record has no callsign, so ADS-B never linked it. The
+# fallback key is `FLIGHT_mvt`; an IATA flight number takes the ICAO airline code that the record rows pair with it
+ADSB_IATA_MIN_PAIRS = 20                # record rows behind one IATA-to-ICAO airline pair
+ADSB_IATA_PURITY = 0.9                  # share of the IATA code's record rows that carry that ICAO code

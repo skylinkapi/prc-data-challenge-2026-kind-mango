@@ -7,6 +7,9 @@ the pushback. A gap above `ADSB_SEGMENT_GAP_S` ends the taxi segment,
 walking back from the take-off. The columns give the stack model the
 candidate clocks and their quality; the model learns which one to trust.
 The 2025 training days and the 2026 ranking days go through the same code.
+A departure without an NM record has no callsign. With `--link-flight` it links by `FLIGHT_mvt`; an IATA flight
+number takes the ICAO airline code that the record rows pair with it (`LY358` is `ELY358`). With `--keep DIR`,
+rows with an NM callsign take the columns of the tables in DIR, so only the newly linked rows change.
 """
 from __future__ import annotations
 
@@ -27,6 +30,8 @@ STANDS = C.ROOT / "external" / "osm" / "stands.parquet"
 OUT_TRAIN = C.ADSB_DIR / "adsb_clock_train.parquet"
 OUT_RANK = C.ADSB_DIR / "adsb_clock_rank.parquet"
 M_PER_DEG = 111_320.0
+IATA_FLIGHT = r"^([A-Z0-9]{2})(\d{1,4}[A-Z]?)$"   # airline code and number of an IATA flight number
+ICAO_FLIGHT = r"^([A-Z]{3})(\d{1,4}[A-Z]?)$"      # the same for an ICAO callsign
 log = logging.getLogger(__name__)
 
 
@@ -128,6 +133,28 @@ def clock_columns(g: pd.DataFrame, stands=STANDS) -> pd.DataFrame:
     return out.join(top).reset_index()
 
 
+def airline_map(dep: pd.DataFrame) -> dict:
+    """IATA airline code of `FLIGHT_mvt` to the ICAO code of `CALLSIGN_flt`, from record rows with the same number."""
+    f = dep["FLIGHT_mvt"].str.upper().str.replace(r"[^A-Z0-9]", "", regex=True).str.extract(IATA_FLIGHT)
+    c = dep["CALLSIGN_flt"].str.upper().str.strip().str.extract(ICAO_FLIGHT)
+    pairs = pd.DataFrame({"iata": f[0], "icao": c[0]})[f[0].notna() & c[0].notna() & (f[1] == c[1])]
+    n = pairs.groupby(["iata", "icao"]).size().sort_values(ascending=False)
+    top = n.groupby(level="iata").head(1).reset_index(level="icao")
+    top["purity"] = top[0] / n.groupby(level="iata").sum()
+    top = top[(top[0] >= C.ADSB_IATA_MIN_PAIRS) & (top["purity"] >= C.ADSB_IATA_PURITY)]
+    log.info("airline map: %d IATA codes", len(top))
+    return top["icao"].to_dict()
+
+
+def callsigns(dep: pd.DataFrame, amap: dict) -> pd.Series:
+    """`CALLSIGN_flt`; where it is missing, `FLIGHT_mvt` with an IATA airline code replaced through `amap`."""
+    flight = dep["FLIGHT_mvt"].str.upper().str.replace(r"[^A-Z0-9]", "", regex=True)
+    parts = flight.str.extract(IATA_FLIGHT)
+    icao = parts[0].map(amap)
+    fallback = flight.where(icao.isna(), icao + parts[1])
+    return dep["CALLSIGN_flt"].str.strip().fillna(fallback)
+
+
 def build(dep: pd.DataFrame, stands=STANDS) -> pd.DataFrame:
     """ADS-B columns for every departure; `adsb_day_loaded` is 0 where the day is not on disk."""
     dep = own_stand(dep.assign(mvt=dep["MVT_TIME_UTC_mvt"].astype("datetime64[us, UTC]"),
@@ -149,11 +176,23 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--stands", type=Path, default=STANDS, help="stand table; v115: OSM plus X-Plane (`build_xplane_stands`).")
     ap.add_argument("--out-dir", type=Path, default=C.ADSB_DIR, help="folder of the two clock tables.")
+    ap.add_argument("--link-flight", action="store_true", help="link rows without an NM callsign by `FLIGHT_mvt`.")
+    ap.add_argument("--keep", type=Path, help="folder of clock tables whose rows with an NM callsign are kept unchanged.")
     args = ap.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    extra = ["CALLSIGN_flt", "STAND_mvt"]
-    build(load_dep(sorted(C.TRAIN_DIR.glob("training_*.parquet")), extra), args.stands).to_parquet(args.out_dir / OUT_TRAIN.name)
-    build(load_dep([C.RANK], extra), args.stands).to_parquet(args.out_dir / OUT_RANK.name)
+    extra = ["CALLSIGN_flt", "STAND_mvt", "FLIGHT_mvt"]
+    train, rank = load_dep(sorted(C.TRAIN_DIR.glob("training_*.parquet")), extra), load_dep([C.RANK], extra)
+    amap = airline_map(train) if args.link_flight else {}
+    for dep, out in ((train, OUT_TRAIN), (rank, OUT_RANK)):
+        has_callsign = dep["CALLSIGN_flt"].notna()
+        table = build(dep.assign(CALLSIGN_flt=callsigns(dep, amap)) if args.link_flight else dep, args.stands)
+        if args.keep:
+            kept = pd.read_parquet(args.keep / out.name)
+            ids = dep.loc[has_callsign, "MVT_ID_mvt"]
+            table = pd.concat([kept[kept["MVT_ID_mvt"].isin(ids)], table[~table["MVT_ID_mvt"].isin(ids)]], ignore_index=True)
+        table.to_parquet(args.out_dir / out.name)
+        log.info("%s: segment on %d rows without an NM callsign", out.name,
+                 int(table.loc[table["MVT_ID_mvt"].isin(dep.loc[~has_callsign, "MVT_ID_mvt"]), "adsb_seg"].notna().sum()))
 
 
 if __name__ == "__main__":

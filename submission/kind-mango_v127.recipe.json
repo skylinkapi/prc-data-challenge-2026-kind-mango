@@ -1,0 +1,32 @@
+{
+ "format": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "moves": {
+  "rows_moved": 202397,
+  "mean_shift_s": -0.13426241582248336,
+  "p99_abs_move_s": 53.10809964198083,
+  "max_abs_move_s": 1292.1987008475417,
+  "over_7200": 108,
+  "ref_over_7200": 109
+ },
+ "lever": "v126 recipe; the stack and the A5 stand bound read the v127 clock tables: departures without an NM record link to their ADS-B and OPDI tracks by FLIGHT_mvt (IATA codes mapped to ICAO from the record rows); rows with an NM callsign keep the v116 and v90 values",
+ "tabm_tags": [
+  "tabm_v116",
+  "tabm_v116_b",
+  "tabm_plr",
+  "tabm_plr_b",
+  "tabm_j",
+  "tabm_j",
+  "tabm_plr_j",
+  "tabm_plr_j",
+  "tabm_s",
+  "tabm_s"
+ ],
+ "holdout_price": null,
+ "score": 240.7045
+}

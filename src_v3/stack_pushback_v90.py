@@ -88,15 +88,34 @@ def stand_bound(f: pd.DataFrame) -> np.ndarray:
 
 
 def features(f: pd.DataFrame) -> list[str]:
-    drop = {"MVT_ID_mvt", "y", "ADEP_mvt", "MVT_TIME_UTC_mvt", "has_clock", "adsb_day_loaded",
+    drop = {"MVT_ID_mvt", "y", "ADEP_mvt", "MVT_TIME_UTC_mvt", "has_clock", "adsb_day_loaded", "w",
             "aobt3_eobt1", "aobt3_sched", "mvt_lobt", "lobt_aobt3"}
     return [c for c in f.columns if c not in drop]
 
 
 def fit(f: pd.DataFrame, feat: list[str], params: dict = C.STACK_V90_PARAMS,
         rounds: int = C.STACK_V90_ROUNDS, res_clip: int = C.STACK_V90_RES_CLIP_S) -> lgb.Booster:
-    d = lgb.Dataset(f[feat], (f["y"] - f["base"]).clip(-res_clip, res_clip))
+    d = lgb.Dataset(f[feat], (f["y"] - f["base"]).clip(-res_clip, res_clip), weight=f.get("w"))
     return lgb.train(params, d, rounds)
+
+
+def coverage_class(f: pd.DataFrame) -> pd.Series:
+    """Coverage class of each row: a clock at the assigned stand, an ADS-B ground segment only, or OPDI only."""
+    own = f[["adsb_own_move", "adsb_own_last"]].notna().any(axis=1)
+    return pd.Series(np.select([own, f["adsb_seg"].notna()], ["own", "seg"], "opdi"), index=f.index)
+
+
+def coverage_weights(train: pd.DataFrame, rank: pd.DataFrame) -> pd.Series:
+    """Weight of each clock row of `train`: the 2026 share of its airport and coverage class over its 2025 share.
+
+    The hold-out holds the 2025 coverage mix (EGLL had a stand clock on 4 % of departures, 46 % in 2026), so the
+    weights point the stack's loss at the mix it serves. They are capped at `STACK_COVER_W` and read no label."""
+    def shares(f: pd.DataFrame) -> pd.Series:
+        c = f[f["has_clock"]]
+        return c.groupby([c["ADEP_mvt"].astype(str), coverage_class(c)]).size() / len(c)
+    ratio = (shares(rank) / shares(train)).clip(*C.STACK_COVER_W)
+    key = pd.MultiIndex.from_arrays([train["ADEP_mvt"].astype(str), coverage_class(train)])
+    return pd.Series(ratio.reindex(key).fillna(C.STACK_COVER_W[0]).values, index=train.index).where(train["has_clock"])
 
 
 def crossfit(f: pd.DataFrame, params: dict = C.STACK_V90_PARAMS, rounds: int = C.STACK_V90_ROUNDS,
@@ -158,12 +177,15 @@ def mix_mlp(base: pd.DataFrame, mlp_path, weight: float, is_lirf: np.ndarray) ->
 
 
 def serve(train: pd.DataFrame, rank_paths: tuple, args: argparse.Namespace) -> None:
-    feat = features(train)
-    booster = fit(train[train["has_clock"]], feat, {**C.STACK_V90_PARAMS, "num_leaves": args.leaves}, rounds=args.rounds)
     served = pd.read_parquet(C.ROOT / "submission" / args.base).rename(columns={"TAXITIME_SEC_mvt": "base"})
     adep = served[["MVT_ID_mvt"]].merge(load_dep([C.RANK])[["MVT_ID_mvt", "ADEP_mvt"]], on="MVT_ID_mvt", how="left")
     served = mix_mlp(served, mlp_paths(args.mlp_columns)[1], args.mlp_weight, (adep["ADEP_mvt"].astype(str) == "LIRF").values)
     f = frame(served, rank_paths, load_dep([C.RANK], ["CALLSIGN_flt"]), args.neighbours == "rows")
+    if args.coverage_weights:
+        train = train.assign(w=coverage_weights(train, f))
+    feat = [c for c in features(train) if c != "w"]
+    params = {**C.STACK_V90_PARAMS, "num_leaves": args.leaves, "min_data_in_leaf": args.min_data, "lambda_l2": args.l2}
+    booster = fit(train[train["has_clock"]], feat, params, rounds=args.rounds)
     rows = f["has_clock"] & (f[["adsb_own_move", "adsb_own_last"]].notna().any(axis=1) if args.stack_rows == "own" else True)
     move = np.where(rows, booster.predict(f[feat]), 0.0)
     log.info("moved %d rows; mean move %.1f s; p99 |move| %.0f s", int(rows.sum()),
@@ -189,13 +211,19 @@ def main() -> None:
                     help="Clock rows the stack moves; `own` keeps only rows with a clock at the assigned stand (N1).")
     ap.add_argument("--adsb-train", default=str(ADSB_TRAIN), help="ADS-B clock table of the 2025 training days.")
     ap.add_argument("--adsb-rank", default=str(ADSB_RANK), help="ADS-B clock table of the ranking days (v115: X-Plane stands).")
+    ap.add_argument("--opdi-train", default=str(OPDI_TRAIN), help="OPDI clock table of the 2025 training days.")
+    ap.add_argument("--opdi-rank", default=str(OPDI_RANK), help="OPDI clock table of the ranking days (v127: flight-number links).")
     ap.add_argument("--rounds", type=int, default=C.STACK_V90_ROUNDS, help="Boosting rounds of the stack.")
     ap.add_argument("--leaves", type=int, default=C.STACK_V90_PARAMS["num_leaves"], help="Leaves of the stack trees.")
+    ap.add_argument("--min-data", type=int, default=C.STACK_V90_PARAMS["min_data_in_leaf"], help="Minimum rows per stack leaf.")
+    ap.add_argument("--l2", type=float, default=C.STACK_V90_PARAMS["lambda_l2"], help="L2 penalty of the stack leaves.")
+    ap.add_argument("--coverage-weights", action="store_true",
+                    help="Weight the hold-out clock rows by the 2026 share of their airport and coverage class (v128).")
     ap.add_argument("--spec", help="Tag of the ADS-B specialist files to add as a column (v96: v96).")
     ap.add_argument("--blend-holdout", default=str(BLEND_HOLDOUT),
                     help="Out-of-sample hold-out blend the stack learns from; it must match `--base` (v97: blend_v97_holdout).")
     args = ap.parse_args()
-    use = {"opdi": (OPDI_TRAIN, OPDI_RANK), "adsb": (args.adsb_train, args.adsb_rank)}
+    use = {"opdi": (args.opdi_train, args.opdi_rank), "adsb": (args.adsb_train, args.adsb_rank)}
     use = [v for k, v in use.items() if args.sources in (k, "both")]
     if args.neighbours != "none":
         use.append((NB_TRAIN, NB_RANK))
