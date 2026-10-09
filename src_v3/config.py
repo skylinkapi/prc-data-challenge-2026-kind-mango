@@ -370,6 +370,12 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     "tabm_plr_j": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v120", "embed": "plr"},
     # twenty-first pass: the J column set plus the structure terms of the record (`build_struct_terms.py`)
     "tabm_s": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v126"},
+    # v129: the five served families refit on the K7 tables (no-record departures linked to their tracks, v127)
+    "tabm_s_k7": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v126k7"},
+    "tabm_j_k7": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v120k7"},
+    "tabm_plr_j_k7": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v120k7", "embed": "plr"},
+    "tabm_v116_k7": {"epochs": 32, "serve_epoch": 27, "seeds": (42, 43, 44), "columns": "v116k7"},
+    "tabm_plr_k7": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v116k7", "embed": "plr"},
 }
 TABM_GATE_SPEC = {"width": 256, "epochs": 12, "batch": 512}   # TabM member of the LIRF gate (`tabm_gate.py`)
 TABM_ON_V105 = 0.3                      # share on top of the v105 base; hold-out -214 / -252 / -244 MSE at 0.2 / 0.3 / 0.4

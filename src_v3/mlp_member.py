@@ -37,6 +37,8 @@ from src_v3.measure_tail_rules import mse_delta
 from train_lgbm_v21 import CAT_COLS
 
 FORWARD_V85 = C.ROOT / "models" / "nm_forward_train_v85.parquet"
+# K7 (v127): the ADS-B and OPDI tables with the departures without an NM record linked by flight number
+ADSB_K7, OPDI_K7 = C.ADSB_DIR / "v127", C.ROOT / "models"
 COLUMN_SETS = {   # extra column files, hold-out blend, ranking feature dump
     "v85": ((CLOCKS_TRAIN, FORWARD_V85), C.MODELS / "blend_v89_holdout.parquet",
             C.MODELS / "lgbm_r_all_v85_rank_features.parquet"),
@@ -53,13 +55,28 @@ COLUMN_SETS = {   # extra column files, hold-out blend, ranking feature dump
              C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet"),
     "v126": ((CLOCKS_TRAIN, FORWARD_V85, OPDI_TRAIN, C.ADSB_DIR / "v116" / "adsb_clock_train.parquet",
               C.ROOT / "models" / "atfm_slot_train.parquet", LOBT_TRAIN, STRUCT_TRAIN),
-             C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet")}
+             C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet"),
+    "v116k7": ((CLOCKS_TRAIN, FORWARD_V85, OPDI_K7 / "opdi_own_train_v127.parquet", ADSB_K7 / "adsb_clock_train.parquet",
+                C.ROOT / "models" / "atfm_slot_train.parquet"),
+               C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet"),
+    "v120k7": ((CLOCKS_TRAIN, FORWARD_V85, OPDI_K7 / "opdi_own_train_v127.parquet", ADSB_K7 / "adsb_clock_train.parquet",
+                C.ROOT / "models" / "atfm_slot_train.parquet", LOBT_TRAIN),
+               C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet"),
+    "v126k7": ((CLOCKS_TRAIN, FORWARD_V85, OPDI_K7 / "opdi_own_train_v127.parquet", ADSB_K7 / "adsb_clock_train.parquet",
+                C.ROOT / "models" / "atfm_slot_train.parquet", LOBT_TRAIN, STRUCT_TRAIN),
+               C.MODELS / "blend_v97_holdout.parquet", C.MODELS / "lgbm_r_all_v97_rank_features.parquet")}
 RANK_OVERRIDES = {   # ranking tables whose columns replace or extend the feature dump of a column set
     "v115": (C.ADSB_DIR / "v115" / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet"),
     "v116": (C.ADSB_DIR / "v116" / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet"),
     "v120": (C.ADSB_DIR / "v116" / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet", LOBT_RANK),
     "v126": (C.ADSB_DIR / "v116" / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet", LOBT_RANK,
-             STRUCT_RANK)}
+             STRUCT_RANK),
+    "v116k7": (ADSB_K7 / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet",
+               OPDI_K7 / "opdi_own_rank_v127.parquet"),
+    "v120k7": (ADSB_K7 / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet",
+               OPDI_K7 / "opdi_own_rank_v127.parquet", LOBT_RANK),
+    "v126k7": (ADSB_K7 / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet",
+               OPDI_K7 / "opdi_own_rank_v127.parquet", LOBT_RANK, STRUCT_RANK)}
 BLEND_HOLDOUT = COLUMN_SETS["v85"][1]
 PRED_OUT = C.MODELS / "holdout_mlp.parquet"
 RANK_OUT = C.MODELS / "rank_mlp.parquet"
