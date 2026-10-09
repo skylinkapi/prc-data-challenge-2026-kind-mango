@@ -18,7 +18,9 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import pickle
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -198,23 +200,58 @@ def measure(tag: str, spec: Spec) -> None:
     pd.DataFrame({"MVT_ID_mvt": ref["MVT_ID_mvt"].values, "pred": pred}).to_parquet(pred_out)
 
 
-def serve(tag: str, spec: Spec) -> None:
-    """Fit on every served training row with `spec.seeds`; score the v97 ranking feature dump."""
-    extra, _, rank_dump = COLUMN_SETS[spec.columns]
-    dep, feat = load_frame(extra)
-    rank = pd.read_parquet(rank_dump)
-    for path in RANK_OVERRIDES.get(spec.columns, ()):
+def saved_paths(tag: str, seed: int) -> tuple[Path, Path]:
+    """Fitted column transforms of a member and the weights of one of its seeds (git ignores both)."""
+    return C.MODELS / f"tabm_{tag}.prep.pkl", C.MODELS / f"tabm_{tag}_s{seed}.pt"
+
+
+def rank_frame(dump: Path, overrides: tuple, feat: list[str]) -> pd.DataFrame:
+    """The ranking feature dump with the columns of `overrides` replaced or added."""
+    rank = pd.read_parquet(dump)
+    for path in overrides:
         cols = pd.read_parquet(path)
         rank = rank.drop(columns=[c for c in cols if c != "MVT_ID_mvt" and c in rank]).merge(
             cols, on="MVT_ID_mvt", how="left", validate="1:1")
     missing = sorted(set(feat) - set(rank.columns))
     if missing:
         raise KeyError(f"The ranking dump has no column {missing[:5]}. Rerun predict_v67 on the v97 recipe to rebuild it.")
+    return rank
+
+
+def serve(tag: str, spec: Spec) -> None:
+    """Fit on every served training row with `spec.seeds`, save the fits, and score the v97 ranking feature dump."""
+    extra, _, rank_dump = COLUMN_SETS[spec.columns]
+    dep, feat = load_frame(extra)
+    rank = rank_frame(rank_dump, RANK_OVERRIDES.get(spec.columns, ()), feat)
     prep = Prep(dep, feat, spec)
+    with open(saved_paths(tag, spec.seeds[0])[0], "wb") as f:
+        pickle.dump(prep, f)
     x = prep(rank, torch.device("cuda"))
-    pred = np.mean([predict(train(prep, dep, None, seed, spec)[0], *x) for seed in spec.seeds], axis=0)
+    preds = []
+    for seed in spec.seeds:
+        net = train(prep, dep, None, seed, spec)[0]
+        torch.save(net.state_dict(), saved_paths(tag, seed)[1])
+        preds.append(predict(net, *x))
+    pred = np.mean(preds, axis=0)
     pd.DataFrame({"MVT_ID_mvt": rank["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out_paths(tag)[1])
     log.info("ranking rows %d, mean %.1f s", len(pred), pred.mean())
+
+
+def predict_saved(tag: str, spec: Spec, dump: Path, overrides: list[Path], out: Path) -> None:
+    """Score another ranking feature dump with the saved fits of `serve`; no training."""
+    with open(saved_paths(tag, spec.seeds[0])[0], "rb") as f:
+        prep = pickle.load(f)
+    rank = rank_frame(dump, tuple(overrides), prep.num + prep.cat)
+    x = prep(rank, torch.device("cuda"))
+    cards = [len(prep.vocab[c]) for c in prep.cat]
+    preds = []
+    for seed in spec.seeds:
+        net = Net(prep.bins, cards, spec).to("cuda")
+        net.load_state_dict(torch.load(saved_paths(tag, seed)[1], map_location="cuda"))
+        preds.append(predict(net, *x))
+    pred = np.mean(preds, axis=0)
+    pd.DataFrame({"MVT_ID_mvt": rank["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out)
+    log.info("%s: %d rows from the saved fits, mean %.1f s -> %s", tag, len(pred), pred.mean(), out.name)
 
 
 def combine(tags: list[str], share: float) -> float:
@@ -240,10 +277,13 @@ def combine(tags: list[str], share: float) -> float:
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("mode", choices=("measure", "serve", "combine"))
+    ap.add_argument("mode", choices=("measure", "serve", "predict", "combine"))
     ap.add_argument("--tag", default="tabm", choices=sorted(C.TABM_SPECS), help="measure, serve: the member.")
     ap.add_argument("--tags", nargs="+", default=["tabm"], help="combine: TabM members to average.")
     ap.add_argument("--share", type=float, default=C.TABM_ON_V105, help="combine: TabM share on top of the v105 base.")
+    ap.add_argument("--dump", type=Path, help="predict: ranking feature dump to score with the saved fits of `--tag`.")
+    ap.add_argument("--overrides", nargs="*", type=Path, default=[], help="predict: tables that replace dump columns.")
+    ap.add_argument("--out", type=Path, help="predict: output parquet of the ranking predictions.")
     args = ap.parse_args()
     if args.mode == "combine":
         combine(args.tags, args.share)
@@ -252,6 +292,9 @@ def main() -> None:
         raise RuntimeError("No CUDA device is visible. The TabM member trains on the GPU. "
                            "Run with PYTHONPATH=.gpu_site (the CUDA build of torch), then retry.")
     spec = Spec(**C.TABM_SPECS[args.tag])
+    if args.mode == "predict":
+        predict_saved(args.tag, spec, args.dump, args.overrides, args.out)
+        return
     measure(args.tag, spec) if args.mode == "measure" else serve(args.tag, spec)
 
 
