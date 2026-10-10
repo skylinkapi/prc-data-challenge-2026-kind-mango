@@ -317,6 +317,14 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    on the K7 column sets (`tabm_member measure` then `serve` for `tabm_s_k7`, `tabm_j_k7`, `tabm_plr_j_k7`,
    `tabm_v116_k7` and `tabm_plr_k7`) and combines them with `--share 0.65`, one fifth per family.
 
+   **v130** links the departures that no callsign links by their lift-off:
+
+   ```bash
+   python -m src_v3.build_adsb_clock --stands external/xplane/stands_osm_xplane.parquet \n       --out-dir external/adsblol/v130 --link-flight --link-takeoff --keep external/adsblol/v127
+   ```
+
+   Then the v129 chain with the stack options `--adsb-train/--adsb-rank external/adsblol/v130/...`.
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.

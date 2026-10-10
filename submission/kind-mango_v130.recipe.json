@@ -1,0 +1,33 @@
+{
+ "format": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "moves": {
+  "rows_moved": 203085,
+  "mean_shift_s": 0.34659357867814294,
+  "p99_abs_move_s": 28.01108497590969,
+  "max_abs_move_s": 2114.607475623543,
+  "over_7200": 108,
+  "ref_over_7200": 108
+ },
+ "lever": "v129 with the stack and the A5 stand bound on the v130 ADS-B tables: departures that no callsign links take the aircraft of their type that lifts off at MVT plus the airport offset",
+ "adsb_tables": "external/adsblol/v130",
+ "tabm_tags": [
+  "tabm_s_k7",
+  "tabm_s_k7",
+  "tabm_j_k7",
+  "tabm_j_k7",
+  "tabm_plr_j_k7",
+  "tabm_plr_j_k7",
+  "tabm_v116_k7",
+  "tabm_v116_k7",
+  "tabm_plr_k7",
+  "tabm_plr_k7"
+ ],
+ "holdout_price": null,
+ "score": 238.2524
+}

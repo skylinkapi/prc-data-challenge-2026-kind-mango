@@ -428,3 +428,9 @@ DUP_WINDOW_S = 86_400                   # repeated departures of one flight numb
 # fallback key is `FLIGHT_mvt`; an IATA flight number takes the ICAO airline code that the record rows pair with it
 ADSB_IATA_MIN_PAIRS = 20                # record rows behind one IATA-to-ICAO airline pair
 ADSB_IATA_PURITY = 0.9                  # share of the IATA code's record rows that carry that ICAO code
+# v130: link a departure that has no callsign link by its lift-off. On 2026 callsign links the first airborne point
+# follows `MVT` by these medians (std 9 to 22 s); time and aircraft type alone pick the callsign aircraft on 99.4 %
+ADSB_LIFT_OFFSET_S = {"EDDF": -7, "EDDM": 11, "EGLL": 15, "EHAM": -24, "LEBL": -13, "LEMD": -15,
+                      "LFPG": 30, "LIRF": 13, "LSZH": -10, "LTFM": 0}
+ADSB_LIFT_TOL_S = 45                    # largest distance from `MVT` plus the offset
+ADSB_LIFT_GAP_S = 60                    # largest gap from the last ground point to the first airborne point

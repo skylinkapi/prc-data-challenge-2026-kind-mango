@@ -8,8 +8,10 @@ walking back from the take-off. The columns give the stack model the
 candidate clocks and their quality; the model learns which one to trust.
 The 2025 training days and the 2026 ranking days go through the same code.
 A departure without an NM record has no callsign. With `--link-flight` it links by `FLIGHT_mvt`; an IATA flight
-number takes the ICAO airline code that the record rows pair with it (`LY358` is `ELY358`). With `--keep DIR`,
-rows with an NM callsign take the columns of the tables in DIR, so only the newly linked rows change.
+number takes the ICAO airline code that the record rows pair with it (`LY358` is `ELY358`). With `--link-takeoff`,
+a departure that no callsign links takes the aircraft of its type that lifts off at `MVT` plus the airport offset;
+many airlines broadcast a callsign that differs from the flight number (`EZY12AB`). With `--keep DIR`, rows with
+an NM callsign or a segment in the tables of DIR take those columns, so only the newly linked rows change.
 """
 from __future__ import annotations
 
@@ -82,9 +84,34 @@ def link(dep: pd.DataFrame, p: pd.DataFrame) -> pd.DataFrame:
     return n.drop(columns="n").merge(dep[["MVT_ID_mvt", "ADEP_mvt", "mvt", "own_lat", "own_lon"]], on="MVT_ID_mvt")
 
 
-def segment(dep: pd.DataFrame, p: pd.DataFrame) -> pd.DataFrame:
+def liftoffs(p: pd.DataFrame) -> pd.DataFrame:
+    """Lift-off events: the first airborne point of an aircraft within `ADSB_LIFT_GAP_S` of a ground point."""
+    p = p.sort_values(["icao", "ts"])
+    after_ground = ((p["icao"].shift() == p["icao"]) & (p["alt"].shift() == C.ADSB_GROUND)
+                    & ((p["ts"] - p["ts"].shift()).dt.total_seconds() <= C.ADSB_LIFT_GAP_S))
+    return p.loc[(p["alt"] != C.ADSB_GROUND) & after_ground, ["icao", "apt", "ts", "type"]]
+
+
+def link_liftoff(dep: pd.DataFrame, p: pd.DataFrame, linked: pd.DataFrame) -> pd.DataFrame:
+    """One `icao` per departure that `linked` misses: the closest lift-off of its aircraft type within
+    `ADSB_LIFT_TOL_S` of `MVT` plus the airport offset, skipping lift-offs of aircraft that a callsign links."""
+    todo = dep.loc[~dep["MVT_ID_mvt"].isin(linked["MVT_ID_mvt"]), ["MVT_ID_mvt", "ADEP_mvt", "AIRCRAFT_TYPE_mvt", "mvt"]]
+    m = todo.merge(liftoffs(p), left_on=["ADEP_mvt", "AIRCRAFT_TYPE_mvt"], right_on=["apt", "type"])
+    m["r"] = ((m["ts"] - m["mvt"]).dt.total_seconds() - m["ADEP_mvt"].map(C.ADSB_LIFT_OFFSET_S)).abs()
+    m = m[m["r"] <= C.ADSB_LIFT_TOL_S]
+    taken = linked[["icao", "ADEP_mvt", "mvt"]].merge(m[["icao", "ADEP_mvt", "ts"]], on=["icao", "ADEP_mvt"])
+    taken = taken.loc[(taken["ts"] - taken["mvt"]).dt.total_seconds().abs() <= C.ADSB_AFTER_S, ["icao", "ts"]]
+    m = m.merge(taken.drop_duplicates().assign(taken=True), on=["icao", "ts"], how="left")
+    m = m[m["taken"].isna()].sort_values("r").drop_duplicates("MVT_ID_mvt").drop_duplicates(["icao", "ts"])
+    return m[["MVT_ID_mvt", "icao"]].merge(dep[["MVT_ID_mvt", "ADEP_mvt", "mvt", "own_lat", "own_lon"]], on="MVT_ID_mvt")
+
+
+def segment(dep: pd.DataFrame, p: pd.DataFrame, use_liftoff: bool = False) -> pd.DataFrame:
     """Ground points of each linked aircraft in its last taxi segment before `MVT`, time-sorted."""
-    g = link(dep, p).merge(p[p["alt"] == C.ADSB_GROUND], left_on=["icao", "ADEP_mvt"], right_on=["icao", "apt"])
+    linked = link(dep, p)
+    if use_liftoff:
+        linked = pd.concat([linked, link_liftoff(dep, p, linked)], ignore_index=True)
+    g = linked.merge(p[p["alt"] == C.ADSB_GROUND], left_on=["icao", "ADEP_mvt"], right_on=["icao", "apt"])
     g["dt"] = (g["mvt"] - g["ts"]).dt.total_seconds()
     g = g[(g["dt"] >= -C.ADSB_AFTER_S) & (g["dt"] <= C.ADSB_LOOKBACK_S)].sort_values(["MVT_ID_mvt", "dt"])
     gap = g.groupby("MVT_ID_mvt")["dt"].diff().fillna(g["dt"])  # the first gap runs from `MVT`
@@ -155,7 +182,7 @@ def callsigns(dep: pd.DataFrame, amap: dict) -> pd.Series:
     return dep["CALLSIGN_flt"].str.strip().fillna(fallback)
 
 
-def build(dep: pd.DataFrame, stands=STANDS) -> pd.DataFrame:
+def build(dep: pd.DataFrame, stands=STANDS, use_liftoff: bool = False) -> pd.DataFrame:
     """ADS-B columns for every departure; `adsb_day_loaded` is 0 where the day is not on disk."""
     dep = own_stand(dep.assign(mvt=dep["MVT_TIME_UTC_mvt"].astype("datetime64[us, UTC]"),
                                CALLSIGN_flt=dep["CALLSIGN_flt"].str.strip()), stands)
@@ -163,7 +190,8 @@ def build(dep: pd.DataFrame, stands=STANDS) -> pd.DataFrame:
     parts = []
     for d, rows in dep.groupby(day):
         loaded = (POINTS / f"{d:%Y.%m.%d}.parquet").exists()
-        f = clock_columns(segment(rows, load_points(d)), stands) if loaded else pd.DataFrame(columns=["MVT_ID_mvt"])
+        f = (clock_columns(segment(rows, load_points(d), use_liftoff), stands) if loaded
+             else pd.DataFrame(columns=["MVT_ID_mvt"]))
         parts.append(rows[["MVT_ID_mvt"]].merge(f, on="MVT_ID_mvt", how="left").assign(adsb_day_loaded=int(loaded)))
     out = pd.concat(parts, ignore_index=True)
     on = out["adsb_day_loaded"] == 1
@@ -177,18 +205,21 @@ def main() -> None:
     ap.add_argument("--stands", type=Path, default=STANDS, help="stand table; v115: OSM plus X-Plane (`build_xplane_stands`).")
     ap.add_argument("--out-dir", type=Path, default=C.ADSB_DIR, help="folder of the two clock tables.")
     ap.add_argument("--link-flight", action="store_true", help="link rows without an NM callsign by `FLIGHT_mvt`.")
-    ap.add_argument("--keep", type=Path, help="folder of clock tables whose rows with an NM callsign are kept unchanged.")
+    ap.add_argument("--link-takeoff", action="store_true", help="link rows that no callsign links by their lift-off (v130).")
+    ap.add_argument("--keep", type=Path,
+                    help="folder of clock tables whose rows with an NM callsign or a segment are kept unchanged.")
     args = ap.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    extra = ["CALLSIGN_flt", "STAND_mvt", "FLIGHT_mvt"]
+    extra = ["CALLSIGN_flt", "STAND_mvt", "FLIGHT_mvt", "AIRCRAFT_TYPE_mvt"]
     train, rank = load_dep(sorted(C.TRAIN_DIR.glob("training_*.parquet")), extra), load_dep([C.RANK], extra)
     amap = airline_map(train) if args.link_flight else {}
     for dep, out in ((train, OUT_TRAIN), (rank, OUT_RANK)):
         has_callsign = dep["CALLSIGN_flt"].notna()
-        table = build(dep.assign(CALLSIGN_flt=callsigns(dep, amap)) if args.link_flight else dep, args.stands)
+        table = build(dep.assign(CALLSIGN_flt=callsigns(dep, amap)) if args.link_flight else dep, args.stands,
+                      args.link_takeoff)
         if args.keep:
             kept = pd.read_parquet(args.keep / out.name)
-            ids = dep.loc[has_callsign, "MVT_ID_mvt"]
+            ids = pd.concat([dep.loc[has_callsign, "MVT_ID_mvt"], kept.loc[kept["adsb_seg"].notna(), "MVT_ID_mvt"]])
             table = pd.concat([kept[kept["MVT_ID_mvt"].isin(ids)], table[~table["MVT_ID_mvt"].isin(ids)]], ignore_index=True)
         table.to_parquet(args.out_dir / out.name)
         log.info("%s: segment on %d rows without an NM callsign", out.name,
