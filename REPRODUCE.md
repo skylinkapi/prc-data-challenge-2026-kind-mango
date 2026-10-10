@@ -313,7 +313,9 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    Then the v126 chain (combine with the ten TabM tags of `submission/kind-mango_v127.recipe.json`, share 0.65)
    with the stack options `--adsb-train/--adsb-rank external/adsblol/v127/...` and
    `--opdi-train/--opdi-rank models/opdi_own_*_v127.parquet`. **v128** adds the stack options `--coverage-weights
-   --leaves 15 --min-data 100 --l2 50 --rounds 400` (the 600-round default goes).
+   --leaves 15 --min-data 100 --l2 50 --rounds 400` (the 600-round default goes). **v129** refits the five TabM families
+   on the K7 column sets (`tabm_member measure` then `serve` for `tabm_s_k7`, `tabm_j_k7`, `tabm_plr_j_k7`,
+   `tabm_v116_k7` and `tabm_plr_k7`) and combines them with `--share 0.65`, one fifth per family.
 
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded

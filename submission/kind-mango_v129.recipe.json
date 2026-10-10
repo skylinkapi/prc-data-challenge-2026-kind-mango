@@ -1,0 +1,39 @@
+{
+ "format": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "moves": {
+  "rows_moved": 316842,
+  "mean_shift_s": 0.9890154365464366,
+  "p99_abs_move_s": 44.92834311177465,
+  "max_abs_move_s": 2086.589114788032,
+  "over_7200": 108,
+  "ref_over_7200": 109
+ },
+ "lever": "v128 with the TabM families refit on the K7 tables (column sets v116k7, v120k7, v126k7: the v127 ADS-B and OPDI tables, no-record departures linked by flight number)",
+ "refit_families": [
+  "tabm_s_k7",
+  "tabm_j_k7",
+  "tabm_plr_j_k7",
+  "tabm_v116_k7",
+  "tabm_plr_k7"
+ ],
+ "tabm_tags": [
+  "tabm_s_k7",
+  "tabm_s_k7",
+  "tabm_j_k7",
+  "tabm_j_k7",
+  "tabm_plr_j_k7",
+  "tabm_plr_j_k7",
+  "tabm_v116_k7",
+  "tabm_v116_k7",
+  "tabm_plr_k7",
+  "tabm_plr_k7"
+ ],
+ "holdout_price": null,
+ "score": 239.7232
+}
