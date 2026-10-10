@@ -77,6 +77,20 @@ RANK_OVERRIDES = {   # ranking tables whose columns replace or extend the featur
                OPDI_K7 / "opdi_own_rank_v127.parquet", LOBT_RANK),
     "v126k7": (ADSB_K7 / "adsb_clock_rank.parquet", C.ROOT / "models" / "atfm_slot_rank.parquet",
                OPDI_K7 / "opdi_own_rank_v127.parquet", LOBT_RANK, STRUCT_RANK)}
+
+
+def swap_adsb(paths: tuple, old: Path, new: Path) -> tuple:
+    return tuple(new if q == old else q for q in paths)
+
+
+# K8 (v130): the K7 sets with the ADS-B tables in which the departures that no callsign links take their lift-off aircraft
+ADSB_K8 = C.ADSB_DIR / "v130"
+for _name in ("v116", "v120", "v126"):
+    _extra, _blend, _dump = COLUMN_SETS[f"{_name}k7"]
+    COLUMN_SETS[f"{_name}k8"] = (swap_adsb(_extra, ADSB_K7 / "adsb_clock_train.parquet", ADSB_K8 / "adsb_clock_train.parquet"),
+                                 _blend, _dump)
+    RANK_OVERRIDES[f"{_name}k8"] = swap_adsb(RANK_OVERRIDES[f"{_name}k7"], ADSB_K7 / "adsb_clock_rank.parquet",
+                                             ADSB_K8 / "adsb_clock_rank.parquet")
 BLEND_HOLDOUT = COLUMN_SETS["v85"][1]
 PRED_OUT = C.MODELS / "holdout_mlp.parquet"
 RANK_OUT = C.MODELS / "rank_mlp.parquet"
