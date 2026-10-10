@@ -1,0 +1,39 @@
+{
+ "format": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "moves": {
+  "rows_moved": 316800,
+  "mean_shift_s": -0.40280479388705176,
+  "p99_abs_move_s": 29.922034005382926,
+  "max_abs_move_s": 2403.616416224365,
+  "over_7200": 108,
+  "ref_over_7200": 108
+ },
+ "lever": "v130 with the TabM families refit on the K8 tables (column sets v116k8, v120k8, v126k8: the v130 ADS-B tables with the lift-off links, OPDI v127)",
+ "refit_families": [
+  "tabm_s_k8",
+  "tabm_j_k8",
+  "tabm_plr_j_k8",
+  "tabm_v116_k8",
+  "tabm_plr_k8"
+ ],
+ "tabm_tags": [
+  "tabm_s_k8",
+  "tabm_s_k8",
+  "tabm_j_k8",
+  "tabm_j_k8",
+  "tabm_plr_j_k8",
+  "tabm_plr_j_k8",
+  "tabm_v116_k8",
+  "tabm_v116_k8",
+  "tabm_plr_k8",
+  "tabm_plr_k8"
+ ],
+ "holdout_price": null,
+ "score": 235.9495
+}

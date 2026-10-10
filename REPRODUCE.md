@@ -323,7 +323,9 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    python -m src_v3.build_adsb_clock --stands external/xplane/stands_osm_xplane.parquet \n       --out-dir external/adsblol/v130 --link-flight --link-takeoff --keep external/adsblol/v127
    ```
 
-   Then the v129 chain with the stack options `--adsb-train/--adsb-rank external/adsblol/v130/...`.
+   Then the v129 chain with the stack options `--adsb-train/--adsb-rank external/adsblol/v130/...`. **v131** refits the
+   five TabM families on the K8 column sets (`tabm_member measure` then `serve` for `tabm_s_k8`, `tabm_j_k8`,
+   `tabm_plr_j_k8`, `tabm_v116_k8` and `tabm_plr_k8`) and combines them with `--share 0.65`, one fifth per family.
 
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded

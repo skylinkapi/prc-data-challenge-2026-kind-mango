@@ -638,7 +638,8 @@ Fill one row per lever as it closes.
 | K7 | no-record departures linked to their ADS-B and OPDI tracks by flight number (F22.1) | v127 | 240.70 (-0.95) | accepted, best |
 | N14 | stack with coverage weights and tuned leaves (F22.3) | v128 | 240.60 (-0.11) | leaderboard best, under the bar |
 | K7b | the five TabM families refit on the K7 tables | v129 | 239.72 (-0.87) | accepted |
-| K8 | departures that no callsign links take the aircraft of their type that lifts off at `MVT` (stack and stand bound) | v130 | 238.25 (-1.47) | accepted, best |
+| K8 | departures that no callsign links take the aircraft of their type that lifts off at `MVT` (stack and stand bound) | v130 | 238.25 (-1.47) | accepted |
+| K8b | the five TabM families refit on the K8 tables (lift-off links) | v131 | 235.95 (-2.30) | accepted, best |
 | E1 | EUROCONTROL label-derived series | | | decision: organiser ruling needed; the daily series makes the LIRF gate worse (+523 MSE) |
 
 Revised order of work, 2026-10-07 (MODEL_ANALYSIS 19.7): Wed 7 Oct J1;
