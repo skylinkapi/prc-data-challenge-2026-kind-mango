@@ -13,6 +13,8 @@ With `--anchor-model`, the LightGBM term blends in members that learned
 `AOBT_3` keep the plain LightGBM term. `--catboost-anchor-tag` does the
 same for the CatBoost term (v75). `--per-airport-tag` mixes one member per
 airport into the plain and the anchored LightGBM terms (v89).
+With `--anchor-adsb`, the anchored members read another ADS-B ranking table
+than the plain members (v132: the plain members refit on the v130 tables).
 """
 from __future__ import annotations
 
@@ -77,6 +79,12 @@ def mix(term: np.ndarray, per: np.ndarray, weight: float, guard: float | None = 
     return np.where(keep, term, (1 - weight) * term + weight * per)
 
 
+def with_adsb(dump: pd.DataFrame, path: str) -> pd.DataFrame:
+    """`dump` with the ADS-B columns of the ranking table at `path`, in the same row order."""
+    cols = pd.read_parquet(C.ROOT / path)
+    return dump.drop(columns=cols.columns.drop("MVT_ID_mvt")).merge(cols, on="MVT_ID_mvt", how="left", validate="1:1")
+
+
 def load_catboost(tag: str) -> tuple[CatBoostRegressor, list[str]]:
     model_path, _, meta_path = paths(tag)
     model = CatBoostRegressor()
@@ -102,6 +110,9 @@ def main() -> None:
     ap.add_argument("--pa-guard", action="store_true",
                     help="MS3 for the per-airport mix: keep the global term where they disagree by more than 3,600 s (v117).")
     ap.add_argument("--catboost-anchor-tag", help="CatBoost trained on the AOBT_3 residual (v75: v75a).")
+    ap.add_argument("--per-airport-anchor-tag", nargs="+",
+                    help="Anchored per-airport members; the default is each --per-airport-tag plus 'a'.")
+    ap.add_argument("--anchor-adsb", help="ADS-B ranking table of the anchored members when it differs from the one in --extra.")
     ap.add_argument("--anchor-weight", type=float, default=0.5,
                     help="Weight of the anchored model inside the LightGBM term and the CatBoost term.")
     ap.add_argument("--gate-booster", default="lgbm_p_fb_lirf_v56.txt", help="LIRF gate booster (v83: lgbm_p_fb_lirf_v83.txt).")
@@ -130,6 +141,7 @@ def main() -> None:
               p_fb_post=partial(no_copy, linked=args.copy_linked) if args.copy_window else None)
     dump = pd.read_parquet(dump_path)
     pre = pd.read_parquet(C.ROOT / "submission" / args.pre_ms)
+    anchor_dump = with_adsb(dump, args.anchor_adsb) if args.anchor_adsb else dump
     members = score_members(dump, args.base_model)
     lgb_mean = members.mean(axis=0)
     adep = dump["ADEP_mvt"].astype(str).values
@@ -144,12 +156,13 @@ def main() -> None:
         terms["lgb_per_airport"] = score_seeds(dump, args.per_airport_tag, clip=True)
         lgb_term = mix(lgb_term, terms["lgb_per_airport"], args.per_airport_weight, guard)
     if args.anchor_model:
-        offsets = score_members(dump, args.anchor_model, clip=False)
+        offsets = score_members(anchor_dump, args.anchor_model, clip=False)
         offset, moved = apply_ms3(offsets, adep) if args.ms3 else (offsets.mean(axis=0), {})
         log.info("anchored members: MS3 moved %s", moved)
         terms["lgb_anchor"] = blend_anchor(dump, terms["lgb"], offset, 1.0)
         if args.per_airport_tag:
-            offset = mix(offset, score_seeds(dump, [f"{t}a" for t in args.per_airport_tag], clip=False),
+            pa_anchor = args.per_airport_anchor_tag or [f"{t}a" for t in args.per_airport_tag]
+            offset = mix(offset, score_seeds(anchor_dump, pa_anchor, clip=False),
                          args.per_airport_weight, guard)
         lgb_term = blend_anchor(dump, lgb_term, offset, args.anchor_weight)
     served = dump[["MVT_ID_mvt"]].merge(pre, on="MVT_ID_mvt", how="left",
@@ -163,7 +176,7 @@ def main() -> None:
     cat = terms["cat"] = predict(model, dump, feat)
     if args.catboost_anchor_tag:
         model, feat = load_catboost(args.catboost_anchor_tag)
-        cat_offset = predict(model, dump, feat, clip=False)
+        cat_offset = predict(model, anchor_dump, feat, clip=False)
         terms["cat_anchor"] = blend_anchor(dump, terms["cat"], cat_offset, 1.0)
         cat = blend_anchor(dump, cat, cat_offset, args.anchor_weight)
     delta = np.where(is_base, args.weight * (cat - lgb_mean) + (1 - args.weight) * (lgb_term - lgb_mean), 0.0)

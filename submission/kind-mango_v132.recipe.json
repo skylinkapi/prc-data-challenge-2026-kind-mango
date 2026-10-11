@@ -1,0 +1,32 @@
+{
+ "format": {
+  "rows": true,
+  "same_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "moves": {
+  "rows_moved": 316785,
+  "mean_shift_s": 0.09235636462980072,
+  "p99_abs_move_s": 30.27640923522969,
+  "max_abs_move_s": 533.4687293381628,
+  "over_7200": 108,
+  "ref_over_7200": 108
+ },
+ "lever": "v131 with the plain tree members (LightGBM, CatBoost, per-airport LightGBM) refit on the v130 ADS-B tables; the anchored members keep the v97 fits and the v97 ADS-B table; MS3 guard on the per-airport mix; the stack learns from the hold-out blend of the same members",
+ "members": {
+  "lgb": "lgbm_r_all_v130",
+  "cat": "v130c",
+  "per_airport": "v130",
+  "lgb_anchor": "lgbm_r_all_v97a",
+  "cat_anchor": "v97ca",
+  "per_airport_anchor": "v97a"
+ },
+ "holdout_blend": {
+  "blend_v97_minus_v89": -5760.409161278663,
+  "blend_and_stack_v97_minus_v89": -1341.407136008651
+ },
+ "holdout_price": null,
+ "score": 235.5388
+}

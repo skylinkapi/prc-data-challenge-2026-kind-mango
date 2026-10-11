@@ -327,6 +327,23 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    five TabM families on the K8 column sets (`tabm_member measure` then `serve` for `tabm_s_k8`, `tabm_j_k8`,
    `tabm_plr_j_k8`, `tabm_v116_k8` and `tabm_plr_k8`) and combines them with `--share 0.65`, one fifth per family.
 
+   **v132** refits the three plain tree members on the v130 tables (about 6.4 h, two fits at a time). `A` is
+   `external/adsblol/v130/adsb_clock_train.parquet`:
+
+   ```bash
+   python -m src_v3.catboost_base --tag v130c --rounds-from v67 --extra models/nm_clocks_train_v73.parquet models/opdi_own_train_v90.parquet A
+   python -m src_v3.train_per_airport_v89 plain --tag v130 --extra models/nm_forward_train_v85.parquet models/opdi_own_train_v90.parquet A
+   python -m src_v3.train_v76_base plain --tag v130 --extra models/nm_forward_train_v85.parquet models/opdi_own_train_v90.parquet A
+   python -m src_v3.measure_adsb_base_v97 fit cat --tag v130 --adsb-train A              # also lgb_per_airport and lgb
+   python -m src_v3.measure_adsb_base_v97 price --tag v130 --pa-guard --keep-v97 lgb_anchor cat_anchor
+   ```
+
+   The base is the v119 base command with `--base-model lgbm_r_all_v130 --catboost-tag v130c --per-airport-tag v130
+   --per-airport-anchor-tag v97a --pa-guard --anchor-adsb external/adsblol/adsb_clock_rank.parquet`, with
+   `external/adsblol/v130/adsb_clock_rank.parquet` as the ADS-B table in `--extra`, and the names
+   `kind-mango_v132_base*.parquet`. The anchored members keep the v97 fits and read the v97 ADS-B table. Then the
+   v131 chain with `--blend-holdout models/v3/blend_v130_holdout.parquet --base kind-mango_v132_base.parquet`.
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.

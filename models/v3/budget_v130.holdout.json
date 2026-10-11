@@ -1,0 +1,66 @@
+{
+ "tables": "external/adsblol/v130",
+ "stack": "v95 cross-fit at AUTO_MLP_WEIGHT, as measure_budget_v97",
+ "by_coverage": {
+  "v97": [
+   {
+    "cov": "adsb_own",
+    "rows": 64698,
+    "mse": 1813.0,
+    "mse_no_stack": 2106.3,
+    "rmse": 98.2
+   },
+   {
+    "cov": "adsb_seg",
+    "rows": 85574,
+    "mse": 7917.3,
+    "mse_no_stack": 7860.5,
+    "rmse": 178.5
+   },
+   {
+    "cov": "none",
+    "rows": 165057,
+    "mse": 54959.3,
+    "mse_no_stack": 54959.3,
+    "rmse": 338.6
+   },
+   {
+    "cov": "opdi_only",
+    "rows": 2460,
+    "mse": 157.7,
+    "mse_no_stack": 184.8,
+    "rmse": 148.6
+   }
+  ],
+  "v130": [
+   {
+    "cov": "adsb_own",
+    "rows": 64698,
+    "mse": 1784.6,
+    "mse_no_stack": 1920.7,
+    "rmse": 97.5
+   },
+   {
+    "cov": "adsb_seg",
+    "rows": 85574,
+    "mse": 7781.2,
+    "mse_no_stack": 7669.1,
+    "rmse": 176.9
+   },
+   {
+    "cov": "none",
+    "rows": 165057,
+    "mse": 54980.8,
+    "mse_no_stack": 54980.8,
+    "rmse": 338.7
+   },
+   {
+    "cov": "opdi_only",
+    "rows": 2460,
+    "mse": 156.5,
+    "mse_no_stack": 182.8,
+    "rmse": 148.0
+   }
+  ]
+ }
+}

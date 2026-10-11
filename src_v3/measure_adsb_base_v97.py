@@ -94,13 +94,20 @@ def blend_path(per: float, tag: str = "v97") -> Path:
     return C.MODELS / (f"blend_{tag}_holdout.parquet" if per else f"blend_{tag}np_holdout.parquet")
 
 
-def price(per: float = 0.5, tag: str = "v97", guard: bool = False) -> dict:
+def price(per: float = 0.5, tag: str = "v97", guard: bool = False, keep: tuple = ()) -> dict:
     """v97 blend and v97 blend plus stack against the v89 blend plus stack, outside LIRF.
 
     `per` is the per-airport share of the plain LightGBM term; 0 drops the per-airport members (v97 as served).
+    The members in `keep` come from the v97 fits (v132: the anchored members). A kept anchored member falls back to
+    the plain member of `tag` on the rows without `AOBT_3`, as `predict_v67 --anchor-adsb` serves it.
     """
     ref = pd.read_parquet(PRED_OUT)
-    m = {k: pd.read_parquet(out_path(k, tag))["pred"].values for k in MEMBERS}
+    m = {k: pd.read_parquet(out_path(k, "v97" if k in keep else tag))["pred"].values for k in MEMBERS}
+    clocks = pd.read_parquet(CLOCKS_TRAIN, columns=["MVT_ID_mvt", "mvt_aobt3"])
+    no_anchor = ref[["MVT_ID_mvt"]].merge(clocks, on="MVT_ID_mvt", how="left", validate="m:1")["mvt_aobt3"].isna().values
+    for k in keep:
+        if k.endswith("_anchor"):
+            m[k] = np.where(no_anchor, m[k.removesuffix("_anchor")], m[k])
     pa = np.where(np.abs(m["lgb_per_airport"] - m["lgb"]) > MS3_DISAGREE_S, m["lgb"], m["lgb_per_airport"]) if guard         else m["lgb_per_airport"]   # `predict_v67 --pa-guard`
     new = blend({"lgb": (1 - per) * m["lgb"] + per * pa, "lgb_anchor": m["lgb_anchor"],
                  "cat": m["cat"], "cat_anchor": m["cat_anchor"]}, *C.BLEND_V77_SERVED)
@@ -129,6 +136,8 @@ def main() -> None:
     ap.add_argument("--tag", default="v97")
     ap.add_argument("--extra", nargs="+", default=[], help="More column files for the member (K3).")
     ap.add_argument("--pa-guard", action="store_true", help="price: the MS3 guard on the per-airport mix (v117).")
+    ap.add_argument("--keep-v97", nargs="+", default=[], choices=MEMBERS,
+                    help="price: members that keep the v97 hold-out fit (v132: lgb_anchor cat_anchor).")
     ap.add_argument("--adsb-train", default=str(ADSB_TRAIN), help="ADS-B clock table in place of the default (v116: X-Plane stands).")
     args = ap.parse_args()
     if args.mode == "fit":
@@ -137,7 +146,7 @@ def main() -> None:
         log.info("%s hold-out RMSE %.2f", args.member, np.sqrt(np.mean((pred - ref["y"].values) ** 2)))
         pd.DataFrame({"MVT_ID_mvt": ref["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out_path(args.member, args.tag))
         return
-    report = price(tag=args.tag, guard=args.pa_guard)
+    report = price(tag=args.tag, guard=args.pa_guard, keep=tuple(args.keep_v97))
     log.info("%s", json.dumps(report, indent=1))
     (C.MODELS / f"adsb_base_{args.tag}.holdout.json").write_text(json.dumps(report, indent=1))
 
