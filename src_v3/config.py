@@ -275,6 +275,20 @@ SERVED_ARTEFACTS[119] = (*SERVED_ARTEFACTS[118], "models/v3/holdout_mlp_tabm_plr
                          "models/v3/rank_mlp_tabm_plr.parquet")
 SERVED_ARTEFACTS[120] = (*SERVED_ARTEFACTS[119], "models/v3/holdout_mlp_tabm_j.parquet",   # v120: J3 and tabm_j
                          "models/v3/rank_mlp_tabm_j.parquet", "models/lobt_terms_*.parquet")
+# v132 and the final file: trained artefacts that `release_final serve` reads; `release_final tables` builds the rest
+SERVED_ARTEFACTS[132] = (
+    "models/lgbm_r_all_v130_s*.txt", "models/lgbm_r_all_v130.encoders.pkl", "models/lgbm_r_all_v130.features.txt",
+    "models/lgbm_r_all_v97a_s*.txt", "models/lgbm_r_all_v97a.features.txt",
+    "models/catboost_r_all_v130c.cbm", "models/catboost_r_all_v130c.meta.json",
+    "models/catboost_r_all_v97ca.cbm", "models/catboost_r_all_v97ca.meta.json",
+    "models/lgbm_pa_v130_*.txt", "models/lgbm_pa_v130.features.txt", "models/lgbm_pa_v97a_*.txt", "models/lgbm_pa_v97a.features.txt",
+    "models/lgbm_r_norm_lirf_v55_s*.txt", "models/lgbm_p_fb_lirf_g3.txt", "models/lirf_regime_g3.isotonic.pkl",
+    "models/lirf_regime_g3.features.txt", "models/lirf_regime_v41.features.txt", "models/lirf_regime.encoders.pkl",
+    "models/lirf_regime_v23.rate_maps.pkl", "models/lirf_band_table_v30.json",
+    "models/nm_clocks_train_v73.parquet", "models/opdi_own_train_v127.parquet", "external/adsblol/v130/adsb_clock_train.parquet",
+    "external/xplane/stands_osm_xplane.parquet", "models/v3/blend_v130_holdout.parquet",
+    "models/v3/holdout_mlp_v97.parquet", "models/v3/holdout_mlp_tabm_*_k8.parquet",
+    "models/v3/mlp_v97.prep.pkl", "models/v3/mlp_v97_s*.pt", "models/v3/tabm_tabm_*_k8.prep.pkl", "models/v3/tabm_tabm_*_k8_s*.pt")
 # v93 stack study (`tune_stack_v93.py`): more 2025 ADS-B days give the stack about 9 times more rows
 STACK_V93_MLP_WEIGHTS = (0.0, 0.1, 0.2)   # MLP hold-out: -190 at 0.1, -213 at 0.2, -69 at 0.3
 STACK_V93_LEAVES = (31, 63)

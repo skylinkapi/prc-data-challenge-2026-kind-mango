@@ -11,7 +11,8 @@ A departure without an NM record has no callsign. With `--link-flight` it links 
 number takes the ICAO airline code that the record rows pair with it (`LY358` is `ELY358`). With `--link-takeoff`,
 a departure that no callsign links takes the aircraft of its type that lifts off at `MVT` plus the airport offset;
 many airlines broadcast a callsign that differs from the flight number (`EZY12AB`). With `--keep DIR`, rows with
-an NM callsign or a segment in the tables of DIR take those columns, so only the newly linked rows change.
+an NM callsign take the columns of the tables in DIR, so only the newly linked rows change; `--keep-linked` also
+keeps the rows that have a segment in DIR (v130: the flight-number links of v127 stay).
 """
 from __future__ import annotations
 
@@ -206,8 +207,8 @@ def main() -> None:
     ap.add_argument("--out-dir", type=Path, default=C.ADSB_DIR, help="folder of the two clock tables.")
     ap.add_argument("--link-flight", action="store_true", help="link rows without an NM callsign by `FLIGHT_mvt`.")
     ap.add_argument("--link-takeoff", action="store_true", help="link rows that no callsign links by their lift-off (v130).")
-    ap.add_argument("--keep", type=Path,
-                    help="folder of clock tables whose rows with an NM callsign or a segment are kept unchanged.")
+    ap.add_argument("--keep", type=Path, help="folder of clock tables whose rows with an NM callsign are kept unchanged.")
+    ap.add_argument("--keep-linked", action="store_true", help="with --keep: also keep the rows with a segment in that folder.")
     args = ap.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
     extra = ["CALLSIGN_flt", "STAND_mvt", "FLIGHT_mvt", "AIRCRAFT_TYPE_mvt"]
@@ -219,7 +220,9 @@ def main() -> None:
                       args.link_takeoff)
         if args.keep:
             kept = pd.read_parquet(args.keep / out.name)
-            ids = pd.concat([dep.loc[has_callsign, "MVT_ID_mvt"], kept.loc[kept["adsb_seg"].notna(), "MVT_ID_mvt"]])
+            ids = dep.loc[has_callsign, "MVT_ID_mvt"]
+            if args.keep_linked:
+                ids = pd.concat([ids, kept.loc[kept["adsb_seg"].notna(), "MVT_ID_mvt"]])
             table = pd.concat([kept[kept["MVT_ID_mvt"].isin(ids)], table[~table["MVT_ID_mvt"].isin(ids)]], ignore_index=True)
         table.to_parquet(args.out_dir / out.name)
         log.info("%s: segment on %d rows without an NM callsign", out.name,

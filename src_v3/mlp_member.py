@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import pickle
 import sys
 from pathlib import Path
 
@@ -211,8 +212,13 @@ def measure(columns: str) -> None:
     pd.DataFrame({"MVT_ID_mvt": ref["MVT_ID_mvt"].values, "pred": pred}).to_parquet(pred_out)
 
 
+def saved_paths(columns: str, seed: int) -> tuple[Path, Path]:
+    """Fitted column transforms of a column set and the weights of one of its seeds (git ignores both)."""
+    return C.MODELS / f"mlp_{columns}.prep.pkl", C.MODELS / f"mlp_{columns}_s{seed}.pt"
+
+
 def serve(columns: str) -> None:
-    """Fit on every served training row with `MLP_SERVE_SEEDS` seeds; score the ranking feature dump of the column set."""
+    """Fit on every served training row with `MLP_SERVE_SEEDS` seeds, save the fits, and score the ranking feature dump."""
     extra, _, rank_dump = COLUMN_SETS[columns]
     dep, feat = load_frame(extra)
     rank = pd.read_parquet(rank_dump)
@@ -220,18 +226,46 @@ def serve(columns: str) -> None:
     if missing:
         raise KeyError(f"The ranking dump has no column {missing[:5]}. Rerun predict_v67 for v89 to rebuild it.")
     prep = Prep(dep, feat)
+    with open(saved_paths(columns, C.MLP_SERVE_SEEDS[0])[0], "wb") as f:
+        pickle.dump(prep, f)
     x = prep(rank)
-    pred = np.mean([predict(train(prep, dep, None, seed), *x) for seed in C.MLP_SERVE_SEEDS], axis=0)
+    preds = []
+    for seed in C.MLP_SERVE_SEEDS:
+        net = train(prep, dep, None, seed)
+        torch.save(net.state_dict(), saved_paths(columns, seed)[1])
+        preds.append(predict(net, *x))
+    pred = np.mean(preds, axis=0)
     pd.DataFrame({"MVT_ID_mvt": rank["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out_paths(columns)[1])
     log.info("ranking rows %d, mean %.1f s", len(pred), pred.mean())
+
+
+def predict_saved(columns: str, dump: Path, out: Path) -> None:
+    """Score another ranking feature dump with the saved fits of `serve`; no training."""
+    with open(saved_paths(columns, C.MLP_SERVE_SEEDS[0])[0], "rb") as f:
+        prep = pickle.load(f)
+    rank = pd.read_parquet(dump)
+    x = prep(rank)
+    preds = []
+    for seed in C.MLP_SERVE_SEEDS:
+        net = Net(x[0].shape[1], [len(prep.vocab[c]) for c in prep.cat])
+        net.load_state_dict(torch.load(saved_paths(columns, seed)[1]))
+        preds.append(predict(net, *x))
+    pred = np.mean(preds, axis=0)
+    pd.DataFrame({"MVT_ID_mvt": rank["MVT_ID_mvt"].values, "pred": pred}).to_parquet(out)
+    log.info("%s: %d rows from the saved fits, mean %.1f s -> %s", columns, len(pred), pred.mean(), out.name)
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("mode", choices=("measure", "serve"))
+    ap.add_argument("mode", choices=("measure", "serve", "predict"))
     ap.add_argument("--columns", choices=sorted(COLUMN_SETS), default="v85")
+    ap.add_argument("--dump", type=Path, help="predict: ranking feature dump to score with the saved fits of `--columns`.")
+    ap.add_argument("--out", type=Path, help="predict: output parquet of the ranking predictions.")
     args = ap.parse_args()
+    if args.mode == "predict":
+        predict_saved(args.columns, args.dump, args.out)
+        return
     measure(args.columns) if args.mode == "measure" else serve(args.columns)
 
 

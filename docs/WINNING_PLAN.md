@@ -620,7 +620,7 @@ Fill one row per lever as it closes.
 | K5c | tree members refit on the v116 clock tables | v117 | 243.74 (+0.09) | rejected |
 | N9 | TabM member in the LIRF gate | v113 | 247.40 (+3.12) | rejected, closed: LIRF-head model changes keep failing live |
 | Q1 | commit | | | done: `8114b81` on branch `plan-v99-third-edition` |
-| Q2 | reproduction path for the final file | | | open |
+| Q2 | reproduction path for the final file | | | closed 2026-10-12: `release_final tables` and `serve` rebuild v132 from the ranking-phase files (116 rows of 2026-07-01 differ, maximum 38.9 s) and build the final file; `models/v132.manifest.json`; REPRODUCE section 8 |
 | J1 | LOBT window on every record row; LIRF gate 0 where a schedule copy breaks the window | v118 | 242.81 (-0.85) | accepted, best: hold-out -371 MSE, live -411 |
 | J2 | LIRF gate 0 on rows without a record whose arrival row gives `LOBT` within 1 h of `SCHED` | v119 | 242.51 (-0.295) | leaderboard best, bundled with N10 for rule 12; 0.005 s under the bar |
 | N10 | second network family: TabM with periodic embeddings (`tabm_plr`), averaged with `tabm_v116` | v119 | 242.51 (-0.295) | bundled with J2; full path -83 MSE on the hold-out |

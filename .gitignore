@@ -43,6 +43,7 @@ models/features_cache*
 
 # Submission outputs (produced by predict.py; keep result JSONs)
 submission/kind-mango_v*.parquet
+submission/kind-mango_final*.parquet
 
 # Python
 __pycache__/

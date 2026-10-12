@@ -1,0 +1,50 @@
+{
+ "file": "kind-mango_final.parquet",
+ "sha256": "055c3eb833d0bf999a18019c7286d2327a6f4e18d01d85d6742fcfed796c8346",
+ "recipe": "v132 on the final organiser files; python -m src_v3.release_final tables; serve --also submission/ranking_phase1.parquet",
+ "rows": 670790,
+ "rows_by_month": {
+  "1": 152719,
+  "2": 144158,
+  "6": 181791,
+  "7": 192122
+ },
+ "mean_s_by_month": {
+  "1": 1085.0,
+  "2": 990.1,
+  "6": 983.7,
+  "7": 1005.1
+ },
+ "rows_above_7200_s": 160,
+ "format": {
+  "template_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "shared_rows_against_v132": {
+  "rows": 344841,
+  "mean_shift_s": 0.111,
+  "mean_abs_s": 6.62,
+  "median_abs_s": 4.38,
+  "p99_abs_s": 37.9,
+  "max_abs_s": 940,
+  "rows_over_300_s": 35,
+  "lirf_rows_over_300_s": 26
+ },
+ "parity_on_ranking_phase_files": {
+  "rows_differ": 116,
+  "day": "2026-07-01",
+  "max_abs_s": 38.92,
+  "mean_abs_s": 0.001871
+ },
+ "adsb_segment_share_by_month": {
+  "1": 0.639,
+  "2": 0.585,
+  "6": 0.604,
+  "7": 0.579
+ },
+ "p1_flagged_rows": 39,
+ "p1_rows_from_first_release_only": 2,
+ "uploaded": false
+}

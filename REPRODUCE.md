@@ -2,7 +2,8 @@
 
 This guide rebuilds `submission/kind-mango_v92.parquet`, the current team
 file (WINNING_PLAN second edition, C1). It also keeps the path to v67, the
-last file before the NM clocks. Two tiers exist:
+last file before the NM clocks. Section 8 builds the file of the final phase,
+`kind-mango_final.parquet` (the v132 recipe). Two tiers exist:
 
 - **Tier 1** serves v92 from the trained artefacts in `models/`. It takes
   about 15 minutes after the feature builds. A parity test checks the
@@ -320,7 +321,7 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    **v130** links the departures that no callsign links by their lift-off:
 
    ```bash
-   python -m src_v3.build_adsb_clock --stands external/xplane/stands_osm_xplane.parquet \n       --out-dir external/adsblol/v130 --link-flight --link-takeoff --keep external/adsblol/v127
+   python -m src_v3.build_adsb_clock --stands external/xplane/stands_osm_xplane.parquet \n       --out-dir external/adsblol/v130 --link-flight --link-takeoff --keep external/adsblol/v127 --keep-linked
    ```
 
    Then the v129 chain with the stack options `--adsb-train/--adsb-rank external/adsblol/v130/...`. **v131** refits the
@@ -447,6 +448,8 @@ stack runs with `deterministic` and 4 threads.
   it, the clock table of that day cannot be rebuilt.
 - v90 and v91 are not reproducible bit for bit: v91 read the clock table of
   24 July days, and the table now holds 62 days.
+- The recorded ADS-B tables of v127 to v132 predate the ADS-B day 2026-06-30. A rebuild differs on 116 departures
+  of 2026-07-01 by at most 38.9 s (section 8).
 
 ## 7. Upload
 
@@ -456,3 +459,51 @@ python -m src_v2.cli upload kind-mango_v92.parquet
 
 The limit is 5 uploads per UTC day. The bucket gets a result JSON with the
 score within about 30 seconds.
+
+## 8. Final phase: `kind-mango_final.parquet`
+
+The final file is the v132 recipe on the organiser files of the final phase (670,790 departures of January,
+February, June and July 2026). `src_v3/release_final.py` holds every command. No model trains in this path.
+
+1. Copy the repository with the trained artefacts of `models/v132.manifest.json` (80 files, 14.3 GB). Run
+   `python -m src_v3.artefact_manifest check --version 132`. `python -m src_v3.mlp_member serve --columns v97`
+   (CPU, about 2 h, the same weights on each run) and `tabm_member serve` for the five `tabm_*_k8` tags write the
+   saved fits if they are missing.
+2. Get the open data for the two new months (section 3): `python -m src_v3.fetch_adsb_days --start 2026-02-01 --end
+   2026-02-28` and `--start 2026-05-31 --end 2026-06-30`, the OPDI events, the METAR files and the EUROCONTROL files.
+3. Put the organiser files in place:
+
+   ```bash
+   cp final_ranking.parquet    submission/ranking.parquet        # 1,341,197 movements
+   cp final_submitting.parquet submission/submitting.parquet     # 670,790 departures
+   cp ranking.parquet          submission/ranking_phase1.parquet # ranking file of the first phase
+   ```
+
+4. Build and serve:
+
+   ```bash
+   python -m src_v3.release_final tables                                          # 18 ranking-side tables, about 1.7 h
+   python -m src_v3.release_final serve --also submission/ranking_phase1.parquet  # about 1 h, TabM on the GPU
+   ```
+
+   `tables` deletes each ranking-side table before it rebuilds it, so no table of another file can serve as a
+   cache. `serve` writes `submission/kind-mango_final.parquet` and runs the format checks of the scorer.
+   `--also` gives the timestamp-precision rule the second release of the January and July movements: a take-off
+   time that lies off the minute grid in one release is off the grid (2 more LFPG rows).
+
+Evidence, 2026-10-11 and 2026-10-12, in a copy of the repository:
+
+- With the files of the ranking phase in `submission/`, `tables` rebuilds 14 of the 18 tables equal to the
+  recorded ones. The four ADS-B tables differ on 114 departures of 2026-07-01, because the ADS-B day 2026-06-30
+  is on disk now and the builder reads the evening before. Every training-side file is equal byte for byte.
+- `serve --name kind-mango_v132r` on those tables rebuilds `kind-mango_v132.parquet` except on 116 departures of
+  2026-07-01 (maximum 38.9 s, mean absolute difference 0.002 s). With the recorded tables the difference is 0.0 s.
+- The saved MLP and TabM fits score the recorded feature dump with a difference of 0.0 s from the recorded
+  member files.
+- On the 344,841 departures that both phases share, the final file differs from v132 by 6.6 s on average
+  (median 4.4 s, 99th percentile 38 s; 35 rows above 300 s, 26 of them at LIRF). The organisers drew new noise of
+  up to 6 s on `MVT_TIME_UTC_mvt` and `BLOCK_TIME_UTC_mvt`, so the same flight moves by up to 12 s.
+- No feature column has a higher null share in February and June than in January and July.
+
+The stand table `external/xplane/stands_osm_xplane.parquet` stays as recorded: 39 departures of February and June
+use a stand name that January and July do not have.
