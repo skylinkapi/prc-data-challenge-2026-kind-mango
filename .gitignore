@@ -11,6 +11,7 @@
 training/*.parquet
 submission/ranking.parquet
 submission/submitting.parquet
+submission/final/
 submission/backup_pre_julyfix/
 external/metar/*.csv
 external/eurocontrol/*.xlsx
@@ -103,6 +104,7 @@ models/plan_nm_taxi_*.parquet
 models/runway_queue_*.parquet
 models/nm_clocks_*.parquet
 models/lobt_terms_*.parquet
+models/struct_terms_*.parquet
 models/nm_neighbours_*.parquet
 models/nm_forward_*.parquet
 models/stand_seq_*.parquet
