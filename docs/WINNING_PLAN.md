@@ -626,6 +626,7 @@ Fill one row per lever as it closes.
 | N10 | second network family: TabM with periodic embeddings (`tabm_plr`), averaged with `tabm_v116` | v119 | 242.51 (-0.295) | bundled with J2; full path -83 MSE on the hold-out |
 | J3 | rows with `LOBT` 2 to 4 h before take-off at `MVT - LOBT` minus the band median of `BLOCK - LOBT` | v120 | 242.91 (+0.40) | rejected, closed, with `tabm_j` at the TabM share 0.5 (bundled for rule 12); hold-out -255 and -17 MSE, all of J3 on rows above 3,600 s |
 | J4 | arrival-side `AOBT_3` as a clock for departures without a record | | | closed: +38 to +139 MSE |
+| K7 | ADS-B segments that end up to 3,600 s before `MVT` (`--first-gap`), stack only | v133 | not uploaded | hold-out -1,081 MSE; 14,749 more ranking rows with a track; the stand bound skips them |
 | K6 | OPDI `entry-deicing_pad` events as stack columns | | | open: probe one January day; OSN sees the ground only at LSZH, LEBL, EDDF, EHAM, LEMD |
 | Q3 | price levers by the gain on rows with `y <= 3,600` s and a 2026 importance weight | | | open: backtest on the uploads v105 to v117 first |
 | P1 | LFPG departures with `MVT` off the minute grid raised to `MVT - LOBT` minus 242 s (MODEL_ANALYSIS F20.2) | v121 | 242.03 (-0.49) | accepted, best: bundled with N10 seeds for rule 12; hold-out -250 and +34 MSE, live -235 |

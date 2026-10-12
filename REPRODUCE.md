@@ -345,6 +345,18 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    `kind-mango_v132_base*.parquet`. The anchored members keep the v97 fits and read the v97 ADS-B table. Then the
    v131 chain with `--blend-holdout models/v3/blend_v130_holdout.parquet --base kind-mango_v132_base.parquet`.
 
+   **v133** (candidate) keeps the ADS-B segments that end up to 3,600 s before `MVT` (`ADSB_FIRST_GAP_S`); only
+   the stack reads the new tables:
+
+   ```bash
+   python -m src_v3.build_adsb_clock --stands external/xplane/stands_osm_xplane.parquet \n       --out-dir external/adsblol/v133 --link-flight --first-gap 3600 --keep external/adsblol/v130 --keep-segments
+   cp submission/kind-mango_v132_base.parquet submission/kind-mango_v133_base.parquet
+   python -m src_v3.release_final serve --stack-only --name kind-mango_v133 --stack-adsb external/adsblol/v133
+   ```
+
+   The same `serve --stack-only` command without `--stack-adsb` rebuilds v132 at 0.0 s. For the final files, add
+   `--also submission/ranking_phase1.parquet` and use the name `kind-mango_final133`.
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.

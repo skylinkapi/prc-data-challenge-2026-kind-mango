@@ -85,13 +85,15 @@ def swap_adsb(paths: tuple, old: Path, new: Path) -> tuple:
 
 
 # K8 (v130): the K7 sets with the ADS-B tables in which the departures that no callsign links take their lift-off aircraft
-ADSB_K8 = C.ADSB_DIR / "v130"
-for _name in ("v116", "v120", "v126"):
-    _extra, _blend, _dump = COLUMN_SETS[f"{_name}k7"]
-    COLUMN_SETS[f"{_name}k8"] = (swap_adsb(_extra, ADSB_K7 / "adsb_clock_train.parquet", ADSB_K8 / "adsb_clock_train.parquet"),
-                                 _blend, _dump)
-    RANK_OVERRIDES[f"{_name}k8"] = swap_adsb(RANK_OVERRIDES[f"{_name}k7"], ADSB_K7 / "adsb_clock_rank.parquet",
-                                             ADSB_K8 / "adsb_clock_rank.parquet")
+# K9 (v133): the same sets with the tables whose segments can end up to `ADSB_FIRST_GAP_S` before `MVT`
+ADSB_K8, ADSB_K9 = C.ADSB_DIR / "v130", C.ADSB_DIR / "v133"
+for _k, _adsb in (("k8", ADSB_K8), ("k9", ADSB_K9)):
+    for _name in ("v116", "v120", "v126"):
+        _extra, _blend, _dump = COLUMN_SETS[f"{_name}k7"]
+        COLUMN_SETS[f"{_name}{_k}"] = (swap_adsb(_extra, ADSB_K7 / "adsb_clock_train.parquet", _adsb / "adsb_clock_train.parquet"),
+                                       _blend, _dump)
+        RANK_OVERRIDES[f"{_name}{_k}"] = swap_adsb(RANK_OVERRIDES[f"{_name}k7"], ADSB_K7 / "adsb_clock_rank.parquet",
+                                                   _adsb / "adsb_clock_rank.parquet")
 BLEND_HOLDOUT = COLUMN_SETS["v85"][1]
 PRED_OUT = C.MODELS / "holdout_mlp.parquet"
 RANK_OUT = C.MODELS / "rank_mlp.parquet"

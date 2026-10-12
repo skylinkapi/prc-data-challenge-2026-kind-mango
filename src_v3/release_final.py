@@ -94,12 +94,12 @@ def members(name: str) -> None:
              "--out", str(out_paths(tag)[1])], gpu=True)
 
 
-def stack(name: str, also: list[str]) -> None:
-    """Neural term, stack and the three rules; the last step writes `<name>.parquet`."""
-    run(["-m", "src_v3.tabm_member", "combine", "--tags", *[t for t in TABM for _ in (0, 1)], "--share", "0.65"], gpu=True)
+def stack(name: str, also: list[str], adsb: str, tabm: tuple) -> None:
+    """Neural term, stack and the three rules; the stack reads the ADS-B tables in `adsb`."""
+    run(["-m", "src_v3.tabm_member", "combine", "--tags", *[t for t in tabm for _ in (0, 1)], "--share", "0.65"], gpu=True)
     run(["-m", "src_v3.stack_pushback_v90", "serve", "--sources", "both", "--stand-bound", "--rounds", "400", "--leaves", "15",
-         "--min-data", "100", "--l2", "50", "--coverage-weights", "--adsb-train", f"{A}/v130/adsb_clock_train.parquet",
-         "--adsb-rank", f"{A}/v130/adsb_clock_rank.parquet", "--opdi-train", OPDI_V127[0], "--opdi-rank", OPDI_V127[1],
+         "--min-data", "100", "--l2", "50", "--coverage-weights", "--adsb-train", f"{adsb}/adsb_clock_train.parquet",
+         "--adsb-rank", f"{adsb}/adsb_clock_rank.parquet", "--opdi-train", OPDI_V127[0], "--opdi-rank", OPDI_V127[1],
          "--blend-holdout", "models/v3/blend_v130_holdout.parquet", "--mlp-weight", "0.72", "--mlp-columns", "nn",
          "--base", f"{name}_base.parquet", "--out", f"{name}_stack.parquet"])
     run(["-m", "src_v3.step_a_date", f"{name}_stack.parquet", f"{name}_stepa.parquet"])
@@ -127,13 +127,15 @@ def main() -> None:
     ap.add_argument("--first", type=int, default=0, help="tables: index of the first step to run, after a stopped run.")
     ap.add_argument("--stack-only", action="store_true", help="serve: reuse the base file and the member files.")
     ap.add_argument("--also", nargs="+", default=[], help="serve: other organiser releases of the same movements (P1).")
+    ap.add_argument("--stack-adsb", default=f"{A}/v130", help="serve: folder of the ADS-B tables that the stack reads.")
+    ap.add_argument("--tabm", nargs="+", default=list(TABM), help="serve --stack-only: TabM families of the neural term.")
     args = ap.parse_args()
     if args.stage == "tables":
         tables(args.first)
         return
     if not args.stack_only:
         members(args.name)
-    stack(args.name, args.also)
+    stack(args.name, args.also, args.stack_adsb, tuple(args.tabm))
     check(args.name)
 
 

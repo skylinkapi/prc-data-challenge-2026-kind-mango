@@ -148,7 +148,9 @@ CATBOOST_BY_TAG = {"v67": CATBOOST_PARAMS, "v69": CATBOOST_PARAMS, "v70": CATBOO
                    "v116c": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v116c")},
                    "v116ca": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v116ca")},
                    # v132: the plain member refit on the v130 ADS-B tables (flight-number and lift-off links)
-                   "v130c": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v130c")}}
+                   "v130c": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v130c")},
+                   # v135: the plain member refit on the v133 ADS-B tables (segments that end before the taxi ends)
+                   "v133c": {**CATBOOST_PARAMS, "train_dir": str(CACHE / "catboost_info_v133c")}}
 
 # -- NM clocks, WINNING_PLAN L1 and L2 (track B, 2026-09-26) ----------------
 # 99.9 % of 2025 `MVT - AOBT_3` values lie in 27 to 3,600 s; the clip keeps
@@ -398,6 +400,12 @@ TABM_SPECS = {   # priced and served TabM members: overrides of `tabm_member.Spe
     "tabm_plr_j_k8": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v120k8", "embed": "plr"},
     "tabm_v116_k8": {"epochs": 32, "serve_epoch": 27, "seeds": (42, 43, 44), "columns": "v116k8"},
     "tabm_plr_k8": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v116k8", "embed": "plr"},
+    # v134: the same five families refit on the K9 tables (segments that end before the taxi ends, v133)
+    "tabm_s_k9": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v126k9"},
+    "tabm_j_k9": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v120k9"},
+    "tabm_plr_j_k9": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v120k9", "embed": "plr"},
+    "tabm_v116_k9": {"epochs": 32, "serve_epoch": 27, "seeds": (42, 43, 44), "columns": "v116k9"},
+    "tabm_plr_k9": {"epochs": 32, "serve_epoch": 30, "seeds": (42, 43, 44), "columns": "v116k9", "embed": "plr"},
 }
 TABM_GATE_SPEC = {"width": 256, "epochs": 12, "batch": 512}   # TabM member of the LIRF gate (`tabm_gate.py`)
 TABM_ON_V105 = 0.3                      # share on top of the v105 base; hold-out -214 / -252 / -244 MSE at 0.2 / 0.3 / 0.4
@@ -456,3 +464,6 @@ ADSB_LIFT_OFFSET_S = {"EDDF": -7, "EDDM": 11, "EGLL": 15, "EHAM": -24, "LEBL": -
                       "LFPG": 30, "LIRF": 13, "LSZH": -10, "LTFM": 0}
 ADSB_LIFT_TOL_S = 45                    # largest distance from `MVT` plus the offset
 ADSB_LIFT_GAP_S = 60                    # largest gap from the last ground point to the first airborne point
+# v133: the receivers lose 3.7 % of the scored departures on the last part of the taxi. Their segment ends up to this
+# long before `MVT`; the 2025 hold-out prices 900 s at -390 MSE, 1,800 s at -880 and 3,600 s at -1,081
+ADSB_FIRST_GAP_S = 3600

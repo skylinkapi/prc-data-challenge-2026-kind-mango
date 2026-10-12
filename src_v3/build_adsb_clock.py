@@ -13,6 +13,9 @@ a departure that no callsign links takes the aircraft of its type that lifts off
 many airlines broadcast a callsign that differs from the flight number (`EZY12AB`). With `--keep DIR`, rows with
 an NM callsign take the columns of the tables in DIR, so only the newly linked rows change; `--keep-linked` also
 keeps the rows that have a segment in DIR (v130: the flight-number links of v127 stay).
+The receivers lose many aircraft on the last part of the taxi. With `--first-gap S`, a segment can end up to S
+seconds before `MVT`; `--keep-segments` keeps only the rows with a segment in DIR, so each row without a segment
+is rebuilt, with or without an NM callsign (v133).
 """
 from __future__ import annotations
 
@@ -107,16 +110,21 @@ def link_liftoff(dep: pd.DataFrame, p: pd.DataFrame, linked: pd.DataFrame) -> pd
     return m[["MVT_ID_mvt", "icao"]].merge(dep[["MVT_ID_mvt", "ADEP_mvt", "mvt", "own_lat", "own_lon"]], on="MVT_ID_mvt")
 
 
-def segment(dep: pd.DataFrame, p: pd.DataFrame, use_liftoff: bool = False) -> pd.DataFrame:
-    """Ground points of each linked aircraft in its last taxi segment before `MVT`, time-sorted."""
+def segment(dep: pd.DataFrame, p: pd.DataFrame, use_liftoff: bool = False,
+            first_gap: int = C.ADSB_SEGMENT_GAP_S) -> pd.DataFrame:
+    """Ground points of each linked aircraft in its last taxi segment before `MVT`, time-sorted.
+
+    The silence between the last ground point and `MVT` can last `first_gap` seconds."""
     linked = link(dep, p)
     if use_liftoff:
         linked = pd.concat([linked, link_liftoff(dep, p, linked)], ignore_index=True)
     g = linked.merge(p[p["alt"] == C.ADSB_GROUND], left_on=["icao", "ADEP_mvt"], right_on=["icao", "apt"])
     g["dt"] = (g["mvt"] - g["ts"]).dt.total_seconds()
     g = g[(g["dt"] >= -C.ADSB_AFTER_S) & (g["dt"] <= C.ADSB_LOOKBACK_S)].sort_values(["MVT_ID_mvt", "dt"])
-    gap = g.groupby("MVT_ID_mvt")["dt"].diff().fillna(g["dt"])  # the first gap runs from `MVT`
-    g = g[(gap > C.ADSB_SEGMENT_GAP_S).groupby(g["MVT_ID_mvt"]).cumsum() == 0].copy()
+    step = g.groupby("MVT_ID_mvt")["dt"].diff()
+    gap = step.fillna(g["dt"])  # the first gap runs from `MVT`
+    limit = np.where(step.isna(), first_gap, C.ADSB_SEGMENT_GAP_S)
+    g = g[(gap > limit).groupby(g["MVT_ID_mvt"]).cumsum() == 0].copy()
     g["gap"] = gap.loc[g.index].clip(lower=0)
     return g.iloc[::-1].reset_index(drop=True)
 
@@ -183,7 +191,8 @@ def callsigns(dep: pd.DataFrame, amap: dict) -> pd.Series:
     return dep["CALLSIGN_flt"].str.strip().fillna(fallback)
 
 
-def build(dep: pd.DataFrame, stands=STANDS, use_liftoff: bool = False) -> pd.DataFrame:
+def build(dep: pd.DataFrame, stands=STANDS, use_liftoff: bool = False,
+          first_gap: int = C.ADSB_SEGMENT_GAP_S) -> pd.DataFrame:
     """ADS-B columns for every departure; `adsb_day_loaded` is 0 where the day is not on disk."""
     dep = own_stand(dep.assign(mvt=dep["MVT_TIME_UTC_mvt"].astype("datetime64[us, UTC]"),
                                CALLSIGN_flt=dep["CALLSIGN_flt"].str.strip()), stands)
@@ -191,7 +200,7 @@ def build(dep: pd.DataFrame, stands=STANDS, use_liftoff: bool = False) -> pd.Dat
     parts = []
     for d, rows in dep.groupby(day):
         loaded = (POINTS / f"{d:%Y.%m.%d}.parquet").exists()
-        f = (clock_columns(segment(rows, load_points(d), use_liftoff), stands) if loaded
+        f = (clock_columns(segment(rows, load_points(d), use_liftoff, first_gap), stands) if loaded
              else pd.DataFrame(columns=["MVT_ID_mvt"]))
         parts.append(rows[["MVT_ID_mvt"]].merge(f, on="MVT_ID_mvt", how="left").assign(adsb_day_loaded=int(loaded)))
     out = pd.concat(parts, ignore_index=True)
@@ -209,6 +218,9 @@ def main() -> None:
     ap.add_argument("--link-takeoff", action="store_true", help="link rows that no callsign links by their lift-off (v130).")
     ap.add_argument("--keep", type=Path, help="folder of clock tables whose rows with an NM callsign are kept unchanged.")
     ap.add_argument("--keep-linked", action="store_true", help="with --keep: also keep the rows with a segment in that folder.")
+    ap.add_argument("--keep-segments", action="store_true", help="with --keep: keep only the rows with a segment in that folder.")
+    ap.add_argument("--first-gap", type=int, default=C.ADSB_SEGMENT_GAP_S,
+                    help="largest silence in seconds between the last ground point and `MVT` (v133).")
     args = ap.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
     extra = ["CALLSIGN_flt", "STAND_mvt", "FLIGHT_mvt", "AIRCRAFT_TYPE_mvt"]
@@ -217,15 +229,16 @@ def main() -> None:
     for dep, out in ((train, OUT_TRAIN), (rank, OUT_RANK)):
         has_callsign = dep["CALLSIGN_flt"].notna()
         table = build(dep.assign(CALLSIGN_flt=callsigns(dep, amap)) if args.link_flight else dep, args.stands,
-                      args.link_takeoff)
+                      args.link_takeoff, args.first_gap)
         if args.keep:
             kept = pd.read_parquet(args.keep / out.name)
-            ids = dep.loc[has_callsign, "MVT_ID_mvt"]
+            linked = kept.loc[kept["adsb_seg"].notna(), "MVT_ID_mvt"]
+            ids = linked if args.keep_segments else dep.loc[has_callsign, "MVT_ID_mvt"]
             if args.keep_linked:
-                ids = pd.concat([ids, kept.loc[kept["adsb_seg"].notna(), "MVT_ID_mvt"]])
+                ids = pd.concat([ids, linked])
             table = pd.concat([kept[kept["MVT_ID_mvt"].isin(ids)], table[~table["MVT_ID_mvt"].isin(ids)]], ignore_index=True)
         table.to_parquet(args.out_dir / out.name)
-        log.info("%s: segment on %d rows without an NM callsign", out.name,
+        log.info("%s: segment on %d rows, on %d rows without an NM callsign", out.name, int(table["adsb_seg"].notna().sum()),
                  int(table.loc[table["MVT_ID_mvt"].isin(dep.loc[~has_callsign, "MVT_ID_mvt"]), "adsb_seg"].notna().sum()))
 
 

@@ -82,9 +82,12 @@ def frame(rows: pd.DataFrame, paths: tuple, dep: pd.DataFrame, nb_rows: bool = F
 
 def stand_bound(f: pd.DataFrame) -> np.ndarray:
     """A5: the taxi is at least `MVT` minus the last point at the assigned stand, or minus the move after a later
-    stand stop (a tow), outside LIRF. On 2025 labels 3.3 % of rows fall below it, 0.17 % by more than 300 s."""
+    stand stop (a tow), outside LIRF. On 2025 labels 3.3 % of rows fall below it, 0.17 % by more than 300 s.
+
+    A segment that ends more than `ADSB_SEGMENT_GAP_S` before `MVT` (v133) gives no bound: the aircraft can stay at the
+    stand after its last point. On those hold-out rows the bound costs 2,240 MSE."""
     b = np.fmin(f["adsb_own_last"].values, f["adsb_push"].values)
-    return np.where(f["apt"] != "LIRF", b, np.nan)
+    return np.where((f["apt"] != "LIRF") & (f["adsb_end"] <= C.ADSB_SEGMENT_GAP_S), b, np.nan)
 
 
 def features(f: pd.DataFrame) -> list[str]:
