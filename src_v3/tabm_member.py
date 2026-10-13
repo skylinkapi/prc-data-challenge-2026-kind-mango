@@ -257,7 +257,8 @@ def predict_saved(tag: str, spec: Spec, dump: Path, overrides: list[Path], out: 
 def combine(tags: list[str], share: float) -> float:
     """Write the neural term `nn`: the MLP and the mean of the TabM members `tags` at `share` on top of the v105 base.
 
-    The stack mixes one neural file at one weight; the return value is that weight.
+    The stack mixes one neural file at one weight; the return value is that weight. `d_tabm_mlp` is the TabM mean
+    minus the MLP, a member column of the stack (v137).
     """
     weight = C.MLP_BLEND_W * (1 - share) + share
     for i in (0, 1):
@@ -269,7 +270,7 @@ def combine(tags: list[str], share: float) -> float:
                                      "Rerun both members on the same frame, then retry.")
         tbm = np.mean([m["pred"].values for m in members], axis=0)
         nn_pred = (C.MLP_BLEND_W * (1 - share) * mlp["pred"].values + share * tbm) / weight
-        mlp.assign(pred=nn_pred).to_parquet(out_paths("nn")[i])
+        mlp.assign(pred=nn_pred, d_tabm_mlp=tbm - mlp["pred"].values).to_parquet(out_paths("nn")[i])
     log.info("wrote the nn files; serve them with --mlp-columns nn --mlp-weight %.4f", weight)
     return weight
 

@@ -381,6 +381,16 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    `--trees` names the tag of the plain tree members, their ADS-B folder and the hold-out blend of the stack.
    `python -m src_v3.artefact_manifest check --version 135` checks the 80 trained artefacts of v135.
 
+   **v137** (candidate) is v135 with two member columns in the stack. It reads the artefacts of v135:
+
+   ```bash
+   cp submission/kind-mango_v135_base.parquet submission/kind-mango_v137_base.parquet
+   python -m src_v3.release_final serve --stack-only --name kind-mango_v137 --stack-adsb external/adsblol/v133 \
+       --trees v133 --member-columns --tabm tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9
+   ```
+
+   The same command without `--member-columns` rebuilds v135 at 0.0 s.
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.
@@ -546,14 +556,15 @@ use a stand name that January and July do not have.
 
 ### Candidates of the final file
 
-`kind-mango_final.parquet` is the v132 recipe. Three candidates add the first-gap levers on the same tables
-(`tables` builds `external/adsblol/v133` as its step 12). None of the three final files is uploaded. The ranking-phase twin of the last one, v135, scored 232.45 s on 2026-10-13 (v132: 235.54 s).
+`kind-mango_final.parquet` is the v132 recipe. Four candidates add the first-gap levers on the same tables
+(`tables` builds `external/adsblol/v133` as its step 12). None of the four final files is uploaded. The ranking-phase twin of the last one, v135, scored 232.45 s on 2026-10-13 (v132: 235.54 s).
 
 | File | Recipe | Command after `tables` |
 |---|---|---|
 | `kind-mango_final133.parquet` | v133: the stack reads the v133 tables | `serve --stack-only --name kind-mango_final133 --stack-adsb external/adsblol/v133 --also ...` on a copy of `kind-mango_final_base.parquet` |
 | `kind-mango_final134.parquet` | v134: v133 with the K9 TabM families | `serve --name kind-mango_final134 --stack-adsb external/adsblol/v133 --tabm tabm_*_k9 --also ...` |
 | `kind-mango_final135.parquet` | v135: v134 with the plain tree members of tag `v133` | `serve --name kind-mango_final135 --stack-adsb external/adsblol/v133 --tabm tabm_*_k9 --trees v133 --also ...` |
+| `kind-mango_final137.parquet` | v137: v135 with two member columns in the stack | `serve --stack-only --name kind-mango_final137 --stack-adsb external/adsblol/v133 --tabm tabm_*_k9 --trees v133 --member-columns --also ...` on a copy of `kind-mango_final135_base.parquet` |
 
 `--tabm` takes the five names `tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9`; `--also` takes
 `submission/ranking_phase1.parquet`. The artefacts of the last file are in `models/v135.manifest.json`.

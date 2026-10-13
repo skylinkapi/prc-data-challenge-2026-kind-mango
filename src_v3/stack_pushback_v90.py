@@ -14,6 +14,8 @@ and MS2; `--base` names the served file that the stack moves (v92: the
 v89 recipe with three per-airport seeds, B2). `--stack-rows own` moves only
 rows with a clock at the assigned stand: on the v97 base the stack gains
 41 MSE there and loses 175 on segment rows (third-edition N1).
+`--member-columns` gives the stack two more columns: the neural term minus
+the tree blend, and the TabM mean minus the MLP (v137).
 """
 from __future__ import annotations
 
@@ -169,20 +171,30 @@ def price_loao(f: pd.DataFrame) -> dict:
     return out
 
 
-def mix_mlp(base: pd.DataFrame, mlp_path, weight: float, is_lirf: np.ndarray) -> pd.DataFrame:
+def mixed(base: pd.Series, nn: pd.DataFrame, weight: float, member_columns: bool) -> dict:
+    """Columns of the base with the neural term `nn` at `weight`; `member_columns` adds the member gaps (v137)."""
+    out = {"base": (1 - weight) * base.values + weight * nn["pred"].values}
+    if member_columns:
+        out |= {"d_nn_tree": nn["pred"].values - base.values, "d_tabm_mlp": nn["d_tabm_mlp"].values}
+    return out
+
+
+def mix_mlp(base: pd.DataFrame, mlp_path, weight: float, is_lirf: np.ndarray, member_columns: bool = False) -> pd.DataFrame:
     """`base` with the MLP member blended in at `weight` outside LIRF."""
     if weight == 0:
         return base
-    mlp = base[["MVT_ID_mvt"]].merge(pd.read_parquet(mlp_path), on="MVT_ID_mvt", how="left", validate="1:1")["pred"]
-    if mlp[~is_lirf].isna().any():
+    nn = base[["MVT_ID_mvt"]].merge(pd.read_parquet(mlp_path), on="MVT_ID_mvt", how="left", validate="1:1")
+    if nn.loc[~is_lirf, "pred"].isna().any():
         raise ValueError(f"{mlp_path.name} misses rows outside LIRF. Rerun `python -m src_v3.mlp_member`, then retry.")
-    return base.assign(base=np.where(is_lirf, base["base"], (1 - weight) * base["base"] + weight * mlp))
+    cols = mixed(base["base"], nn, weight, member_columns)
+    return base.assign(**{**cols, "base": np.where(is_lirf, base["base"], cols["base"])})
 
 
 def serve(train: pd.DataFrame, rank_paths: tuple, args: argparse.Namespace) -> None:
     served = pd.read_parquet(C.ROOT / "submission" / args.base).rename(columns={"TAXITIME_SEC_mvt": "base"})
     adep = served[["MVT_ID_mvt"]].merge(load_dep([C.RANK])[["MVT_ID_mvt", "ADEP_mvt"]], on="MVT_ID_mvt", how="left")
-    served = mix_mlp(served, mlp_paths(args.mlp_columns)[1], args.mlp_weight, (adep["ADEP_mvt"].astype(str) == "LIRF").values)
+    served = mix_mlp(served, mlp_paths(args.mlp_columns)[1], args.mlp_weight, (adep["ADEP_mvt"].astype(str) == "LIRF").values,
+                     args.member_columns)
     f = frame(served, rank_paths, load_dep([C.RANK], ["CALLSIGN_flt"]), args.neighbours == "rows")
     if args.coverage_weights:
         train = train.assign(w=coverage_weights(train, f))
@@ -222,6 +234,8 @@ def main() -> None:
     ap.add_argument("--l2", type=float, default=C.STACK_V90_PARAMS["lambda_l2"], help="L2 penalty of the stack leaves.")
     ap.add_argument("--coverage-weights", action="store_true",
                     help="Weight the hold-out clock rows by the 2026 share of their airport and coverage class (v128).")
+    ap.add_argument("--member-columns", action="store_true",
+                    help="Add the neural term minus the tree blend and the TabM mean minus the MLP as stack columns (v137).")
     ap.add_argument("--spec", help="Tag of the ADS-B specialist files to add as a column (v96: v96).")
     ap.add_argument("--blend-holdout", default=str(BLEND_HOLDOUT),
                     help="Out-of-sample hold-out blend the stack learns from; it must match `--base` (v97: blend_v97_holdout).")
@@ -237,7 +251,7 @@ def main() -> None:
         holdout_blend().to_parquet(BLEND_HOLDOUT)
     rows = pd.read_parquet(args.blend_holdout)
     if args.mlp_weight:  # the MLP hold-out file shares the row order of the blend (checked in mlp_member)
-        rows["base"] = (1 - args.mlp_weight) * rows["base"] + args.mlp_weight * pd.read_parquet(mlp_paths(args.mlp_columns)[0])["pred"].values
+        rows = rows.assign(**mixed(rows["base"], pd.read_parquet(mlp_paths(args.mlp_columns)[0]), args.mlp_weight, args.member_columns))
     rows = rows.dropna(subset=["MVT_ID_mvt"])  # 19 hold-out rows carry no id
     train = frame(rows, (NM_TRAIN, *[t for t, _ in use]),
                   load_dep(sorted(C.TRAIN_DIR.glob("training_2025-0[17]-*.parquet")), ["CALLSIGN_flt"]),

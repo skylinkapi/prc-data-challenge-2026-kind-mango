@@ -1,0 +1,47 @@
+{
+ "file": "kind-mango_final137.parquet",
+ "sha256": "77ecd7f7f8670719feb68dc42b46cbc36480429ac3c5d53412e0bb1ac01036dd",
+ "recipe": "v137 on the final organiser files: copy kind-mango_final135_base.parquet to kind-mango_final137_base.parquet; python -m src_v3.release_final serve --stack-only --name kind-mango_final137 --stack-adsb external/adsblol/v133 --tabm tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9 --trees v133 --member-columns --also submission/ranking_phase1.parquet",
+ "rows": 670790,
+ "mean_s": 1015.5,
+ "rows_above_7200_s": 160,
+ "format": {
+  "template_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "holdout_price_mse": {
+  "v137_against_v135": -75.9,
+  "by_month": {
+   "1": -35.2,
+   "7": -40.7
+  },
+  "scale_rows": 344336
+ },
+ "against_final135": {
+  "rows_moved": 416078,
+  "mean_abs_s": 3.94,
+  "rms_s": 11.44,
+  "max_abs_s": 399,
+  "lirf_max_abs_s": 0.0,
+  "mean_abs_s_by_month": {
+   "1": 5.21,
+   "2": 3.42,
+   "6": 3.72,
+   "7": 3.51
+  }
+ },
+ "shared_rows_against_v137": {
+  "rows": 344841,
+  "mean_abs_s": 6.67,
+  "corr_of_moves_with_v137_minus_v135": 0.915
+ },
+ "ranking_twin": {
+  "file": "kind-mango_v137.parquet",
+  "sha256": "0ab36a8ec2ba83669914102323d6133f9913be9bba29c1f31ffae2aae240d530",
+  "control_without_flag_against_v135_max_abs_s": 0.0
+ },
+ "adopt_rule": "v137 replaces v135 for the final only if the live score of kind-mango_v137.parquet is 232.30 s or lower",
+ "uploaded": false
+}
