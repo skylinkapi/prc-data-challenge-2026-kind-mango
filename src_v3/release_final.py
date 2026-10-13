@@ -6,8 +6,8 @@ organiser file with the movements at `submission/ranking.parquet` and the templa
 file and the open data. `serve` scores the members, the stack and the rules, and writes
 `submission/<name>.parquet`. On the files of the ranking phase the two commands rebuild
 `kind-mango_v132.parquet`. `--also` names the ranking file of the first phase for the timestamp-precision rule
-(`mvt_precision --also`). `--stack-adsb`, `--tabm`, `--trees` and `--member-columns` select the candidates
-v133, v134, v135 and v137 (REPRODUCE section 8); their defaults give the v132 recipe. The script does not upload.
+(`mvt_precision --also`). `--stack-adsb`, `--tabm`, `--trees`, `--member-columns` and `--month-level` select the
+candidates v133, v134, v135, v137 and v138 (REPRODUCE section 8); their defaults give the v132 recipe. The script does not upload.
 """
 from __future__ import annotations
 
@@ -103,15 +103,17 @@ def members(name: str, trees: str, tabm: tuple) -> None:
              "--out", str(out_paths(tag)[1])], gpu=True)
 
 
-def stack(name: str, also: list[str], adsb: str, tabm: tuple, trees: str, member_columns: bool) -> None:
-    """Neural term, stack and the three rules; the stack reads the ADS-B tables in `adsb` and the hold-out blend of `trees`."""
+def stack(name: str, also: list[str], adsb: str, tabm: tuple, trees: str, member_columns: bool, month_level: bool) -> None:
+    """Neural term, stack and the rules; the stack reads the ADS-B tables in `adsb` and the hold-out blend of `trees`."""
     run(["-m", "src_v3.tabm_member", "combine", "--tags", *[t for t in tabm for _ in (0, 1)], "--share", "0.65"], gpu=True)
     run(["-m", "src_v3.stack_pushback_v90", "serve", "--sources", "both", "--stand-bound", "--rounds", "400", "--leaves", "15",
          "--min-data", "100", "--l2", "50", "--coverage-weights", "--adsb-train", f"{adsb}/adsb_clock_train.parquet",
          "--adsb-rank", f"{adsb}/adsb_clock_rank.parquet", "--opdi-train", OPDI_V127[0], "--opdi-rank", OPDI_V127[1],
          "--blend-holdout", f"models/v3/blend_{trees}_holdout.parquet", "--mlp-weight", "0.72", "--mlp-columns", "nn",
          "--base", f"{name}_base.parquet", "--out", f"{name}_stack.parquet", *(["--member-columns"] if member_columns else [])])
-    run(["-m", "src_v3.step_a_date", f"{name}_stack.parquet", f"{name}_stepa.parquet"])
+    if month_level:
+        run(["-m", "src_v3.month_level", "serve", f"{name}_stack.parquet", f"{name}_month.parquet"])
+    run(["-m", "src_v3.step_a_date", f"{name}_{'month' if month_level else 'stack'}.parquet", f"{name}_stepa.parquet"])
     run(["-m", "src_v3.lobt_window", f"{name}_stepa.parquet", f"{name}_window.parquet"])
     run(["-m", "src_v3.mvt_precision", "serve", f"{name}_window.parquet", f"{name}.parquet", *(["--also", *also] if also else [])])
 
@@ -140,13 +142,14 @@ def main() -> None:
     ap.add_argument("--tabm", nargs="+", default=list(TABM), help="serve: TabM families of the neural term.")
     ap.add_argument("--trees", default="v130", help="serve: tag of the plain tree members; it names their ADS-B folder too.")
     ap.add_argument("--member-columns", action="store_true", help="serve: the stack reads the two member columns (v137).")
+    ap.add_argument("--month-level", action="store_true", help="serve: shift airport months to the EUROCONTROL level (v138).")
     args = ap.parse_args()
     if args.stage == "tables":
         tables(args.first)
         return
     if not args.stack_only:
         members(args.name, args.trees, tuple(args.tabm))
-    stack(args.name, args.also, args.stack_adsb, tuple(args.tabm), args.trees, args.member_columns)
+    stack(args.name, args.also, args.stack_adsb, tuple(args.tabm), args.trees, args.member_columns, args.month_level)
     check(args.name)
 
 

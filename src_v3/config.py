@@ -469,3 +469,8 @@ ADSB_LIFT_GAP_S = 60                    # largest gap from the last ground point
 # v133: the receivers lose 3.7 % of the scored departures on the last part of the taxi. Their segment ends up to this
 # long before `MVT`; the 2025 hold-out prices 900 s at -390 MSE, 1,800 s at -880 and 3,600 s at -1,081
 ADSB_FIRST_GAP_S = 3600
+# v138: EUROCONTROL monthly taxi-out means (`month_level.py`); an aggregate of the labels, allowed by the organisers
+MONTH_LEVEL_MONTHS = (4, 5, 6, 7, 8, 9, 10)   # in winter the file drops the long departures (EDDM January 2025: 164 s)
+MONTH_LEVEL_MAX_SD_S = 8                # largest spread of the 2025 gaps of an airport; LFPG has 15 s, LTFM 9 s
+MONTH_LEVEL_KEPT_SLACK = 0.02           # a month can keep this much less of its departures than the 2025 months
+MONTH_LEVEL_SKIP = ("LIRF",)            # its served values hold a hedge for labels above `Y_CLEAN_MAX`

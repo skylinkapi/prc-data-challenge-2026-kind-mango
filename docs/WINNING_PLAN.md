@@ -631,6 +631,7 @@ Fill one row per lever as it closes.
 | K7c | plain tree members refit on the first-gap tables (tag `v133`) | v135 | 232.45 (-3.09) | accepted, best: one upload for K7, K7b and K7c, live -1,445 MSE against a hold-out sum of about -1,660; K7c alone: hold-out -58 MSE against v134, below the bar; tree blend alone -1,021 MSE |
 | N15 | two member columns in the stack: neural term minus tree blend, TabM mean minus MLP | v137 | 232.20 (-0.25) | leaderboard best, 0.05 s under the bar: hold-out -76 MSE against v135, live -116; meets the rule for the final (232.30 s or lower) |
 | K10 | OPDI taxiway events as clocks of the rows without a clock (EDDF 2,666 ranking rows) | | | closed: hold-out +5 MSE; -33 on every row (MODEL_ANALYSIS F23.1) |
+| M1 | month level: June and July values of six airports shifted to the EUROCONTROL monthly mean taxi-out (`month_level.py`) | v138 | not uploaded | hold-out -15 MSE (July 2025); 85 MSE on the ranking file if the levels hold; winter months closed (+528 MSE) |
 | N16 | neural weight, TabM share, stack size and a second stack on the rows without a clock, on the v135 path | | | closed: -20 to +231 MSE (MODEL_ANALYSIS F23.2) |
 | K6 | OPDI `entry-deicing_pad` events as stack columns | | | open: probe one January day; OSN sees the ground only at LSZH, LEBL, EDDF, EHAM, LEMD |
 | Q3 | price levers by the gain on rows with `y <= 3,600` s and a 2026 importance weight | | | open: backtest on the uploads v105 to v117 first |

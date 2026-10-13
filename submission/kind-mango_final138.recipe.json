@@ -1,0 +1,64 @@
+{
+ "file": "kind-mango_final138.parquet",
+ "sha256": "a2b1b453b69b774b6505c2a3cd1c9c091fc99fcc0d9e18a7bacf7e567ab85f9c",
+ "recipe": "v138 on the final organiser files: copy kind-mango_final135_base.parquet to kind-mango_final138_base.parquet; python -m src_v3.release_final serve --stack-only --name kind-mango_final138 --stack-adsb external/adsblol/v133 --tabm tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9 --trees v133 --member-columns --month-level",
+ "inputs": "final organiser files only (no --also)",
+ "rows": 670790,
+ "mean_s": 1013.4,
+ "rows_above_7200_s": 160,
+ "format": {
+  "template_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "month_level_shifts_s": {
+  "EDDM": {
+   "6": -15.3,
+   "7": -20.7
+  },
+  "EGLL": {
+   "6": 14.3,
+   "7": 7.5
+  },
+  "EHAM": {
+   "6": -7.0,
+   "7": -1.4
+  },
+  "LEBL": {
+   "6": -30.2,
+   "7": -33.3
+  },
+  "LEMD": {
+   "6": 6.1,
+   "7": 4.3
+  },
+  "LSZH": {
+   "6": -10.7,
+   "7": -10.2
+  }
+ },
+ "holdout_price_mse": {
+  "july_2025_v135_path": -15.4,
+  "scale_rows": 344336
+ },
+ "against_final137_single": {
+  "rows_moved": 212377,
+  "rms_s": 9.08,
+  "max_abs_s": 33.3,
+  "rows_moved_by_month": {
+   "6": 103688,
+   "7": 108689
+  }
+ },
+ "ranking_twin": {
+  "file": "kind-mango_v138.parquet",
+  "sha256": "f8ab685b247cf6a0704eb933ccdd5197be0ee2d5534e37357e0cbb00b98a4563"
+ },
+ "other_candidates": {
+  "kind-mango_final137_single.parquet": "6999d3a676d7d9e275e34090473dc65d4167ed4b18bf3decbba84601fdfb536f",
+  "kind-mango_final137.parquet": "77ecd7f7f8670719feb68dc42b46cbc36480429ac3c5d53412e0bb1ac01036dd"
+ },
+ "adopt_rule": "v138 replaces v137 for the final only if the live score of kind-mango_v138.parquet is at or below 232.2016 s",
+ "uploaded": false
+}
