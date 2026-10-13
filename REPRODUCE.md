@@ -67,12 +67,21 @@ differ from the files that trained the models.
 |---|---|---|---|
 | `airports` | Download of the OurAirports CSV files | `external/airports/airports.csv`, `runways.csv` (16 MB) | 5 s |
 | `metar` | `python -m src_v3.fetch_metar` (IEM ASOS, 2025-01-01 to 2026-07-31) | `external/metar/<ICAO>.csv`, 10 files (30 MB) | 1 min |
-| `eurocontrol` | Download of five Excel files and four CSV files, then `python src/build_eurocontrol_daily.py` | `external/eurocontrol/` (470 MB), `daily_features.parquet` | 6 min |
-| `osm` | `python src/build_osm_stands.py`, `python src/build_osm_taxi_paths.py` (Overpass) | `external/osm/stands.parquet`, `taxi_paths.parquet` | 7 min |
-| `vrs` | `python src/build_vrs_aircraft.py` | `external/vrs/aircraft_types.parquet` | 1 min |
-| `xplane` | `python -m src_v3.build_xplane_stands fetch` | `external/xplane/<ICAO>.dat`, 5 files | 1 min |
-| `opdi` | `python src/fetch_opdi_events.py` (58 chunks of about 245 MB, filtered to the 10 airports), the join to one table, `python src/build_opdi_taxi_v2.py` | `external/opdi/events_all.parquet` (about 400 MB), `taxi_out_v2.parquet` | 50 min |
+| `eurocontrol` | Download of five Excel files and four CSV files, then `python src/build_eurocontrol_daily.py` | `external/eurocontrol/` (470 MB), `daily_features.parquet` | 8 min |
+| `osm` | `python src/build_osm_stands.py`, `python src/build_osm_taxi_paths.py` (Overpass) | `external/osm/stands.parquet`, `taxi_paths.parquet` | 7 min if Overpass answers |
+| `vrs` | `python src/build_vrs_aircraft.py` | `external/vrs/aircraft_types.parquet` | 10 s |
+| `xplane` | `python -m src_v3.build_xplane_stands fetch` | `external/xplane/<ICAO>.dat`, 5 files | 5 s |
+| `opdi` | `python src/fetch_opdi_events.py` (59 chunks of 10 days, about 245 MB each, filtered to the 10 airports), the join to one table, `python src/build_opdi_taxi_v2.py` | `external/opdi/events_all.parquet` (about 400 MB), `taxi_out_v2.parquet` | 50 min |
 | `adsb` | `python -m src_v3.fetch_adsb_days` on the ranges of `ADSB_FINAL_RANGES` | `external/adsblol/points/<day>.parquet` | See below |
+
+The public Overpass servers limit their load. If a server does not answer for an airport, the OSM step stops
+with an error and writes no table. Run the command again: it keeps the airports on disk. On 2026-10-13 the
+main server answered with HTTP 504 for most queries.
+
+A run on a clean clone on 2026-10-13 gave these results. The X-Plane files, the VRS table, the METAR file of
+LIRF, the two `taxi_out_additional_time` files and the OurAirports rows of the 10 airports equal the team
+copies byte for byte or row for row. The join of the OPDI chunks rebuilds the team copy of
+`events_all.parquet` (17,757,855 rows). The EUROCONTROL daily table differs on July 2026 (section 6).
 
 The X-Plane step stores the `apt.dat` files. `python -m src_v3.build_xplane_stands build` then writes
 `external/xplane/stands_osm_xplane.parquet`; it needs the organiser files of section 2. The older OPDI chunks of

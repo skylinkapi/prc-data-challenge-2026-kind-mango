@@ -184,13 +184,15 @@ def main():
                              "rwy_lon": row[lon_c]})
     rwy_df = pd.DataFrame(rwy_rows).drop_duplicates(subset=["ADEP_mvt", "rwy_ident"])
 
-    out_rows = []
+    out_rows, failed = [], []
     for _, row in coords.iterrows():
         icao = row["ADEP_mvt"]
         print(f"\n=== {icao} ===", flush=True)
         ways = fetch_taxi_ways(icao, row["latitude_deg"], row["longitude_deg"])
         if not ways:
             print(f"  [{icao}] no ways; skipping", flush=True)
+            if not os.path.exists(os.path.join(RAW_DIR, f"{icao}.json")):
+                failed.append(icao)
             continue
         G = build_graph(ways)
         # Restrict to largest connected component
@@ -230,6 +232,10 @@ def main():
                 pairs_done += 1
         print(f"  [{icao}] computed {pairs_done} paths in {time.time()-t0:.1f}s", flush=True)
 
+    if failed:
+        # a table without these airports would pass as complete in every later step
+        raise RuntimeError(f"The taxiway download failed for {', '.join(failed)}. Overpass did not answer. "
+                           "Run the script again; it skips the airports on disk.")
     out = pd.DataFrame(out_rows)
     out_path = os.path.join(OSM_DIR, "taxi_paths.parquet")
     out.to_parquet(out_path)

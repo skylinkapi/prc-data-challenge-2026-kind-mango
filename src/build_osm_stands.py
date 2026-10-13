@@ -90,7 +90,7 @@ out center tags;
 
 def main():
     coords = airport_coords()
-    all_rows = []
+    all_rows, failed = [], []
     for _, r in coords.iterrows():
         icao = r["ADEP_mvt"]
         cache = os.path.join(OSM_DIR, f"stands_{icao}.json")
@@ -106,8 +106,13 @@ def main():
             except Exception as e:
                 print(f"  FAIL: {e}")
                 rows = []
+                failed.append(icao)
             time.sleep(3)   # polite delay for Overpass
         all_rows.extend(rows)
+    if failed:
+        # a table without these airports would pass as complete in every later step
+        raise RuntimeError(f"The stand download failed for {', '.join(failed)}. Overpass did not answer. "
+                           "Run the script again; it skips the airports on disk.")
 
     df = pd.DataFrame(all_rows)
     out = os.path.join(OSM_DIR, "stands.parquet")
