@@ -53,7 +53,11 @@
  },
  "ranking_twin": {
   "file": "kind-mango_v138.parquet",
-  "sha256": "f8ab685b247cf6a0704eb933ccdd5197be0ee2d5534e37357e0cbb00b98a4563"
+  "sha256": "f8ab685b247cf6a0704eb933ccdd5197be0ee2d5534e37357e0cbb00b98a4563",
+  "live_score_s": 232.0274,
+  "live_against_v137_s": -0.1742,
+  "live_against_v137_mse": -80.9,
+  "scored": "2026-10-13T09:45:03.827174Z"
  },
  "other_candidates": {
   "kind-mango_final137_single.parquet": "6999d3a676d7d9e275e34090473dc65d4167ed4b18bf3decbba84601fdfb536f",
