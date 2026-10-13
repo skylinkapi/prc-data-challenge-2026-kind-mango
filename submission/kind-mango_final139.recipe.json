@@ -34,8 +34,12 @@
  "ranking_twin": {
   "file": "kind-mango_v139.parquet",
   "sha256": "34cfbbc0cd5e9936ab54e9442e7e79817f68631cfb4ee778caeb93b087a1f9c4",
-  "control_constant_mode_against_v138_max_abs_s": 0.0
+  "control_constant_mode_against_v138_max_abs_s": 0.0,
+  "live_score_s": 231.9003,
+  "live_against_v138_s": -0.1271,
+  "live_against_v138_mse": -59.0
  },
  "adopt_rule": "v139 replaces v138 for the final only if the live score of kind-mango_v139.parquet is at or below 232.0274 s",
- "uploaded": false
+ "uploaded": false,
+ "final_file": "copied to submission/kind-mango_final.parquet on 2026-10-13 (same sha256); the v132-recipe file is kept as kind-mango_final132.parquet"
 }

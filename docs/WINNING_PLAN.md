@@ -632,7 +632,7 @@ Fill one row per lever as it closes.
 | N15 | two member columns in the stack: neural term minus tree blend, TabM mean minus MLP | v137 | 232.20 (-0.25) | leaderboard best, 0.05 s under the bar: hold-out -76 MSE against v135, live -116; meets the rule for the final (232.30 s or lower) |
 | K10 | OPDI taxiway events as clocks of the rows without a clock (EDDF 2,666 ranking rows) | | | closed: hold-out +5 MSE; -33 on every row (MODEL_ANALYSIS F23.1) |
 | M1 | month level: June and July values of six airports shifted to the EUROCONTROL monthly mean taxi-out (`month_level.py`) | v138 | 232.03 (-0.17) | leaderboard best, under the bar: live -81 MSE of 85 from the shifts; hold-out -15 MSE (July 2025); winter months closed (+528 MSE) |
-| M1b | month-level gap fit on the kept share of the EUROCONTROL file; LFPG enters (+32 s in July 2026) | v139 | not uploaded | hold-out -15.8 MSE against -15.4 for M1; 64 MSE on the ranking file if the level holds |
+| M1b | month-level gap fit on the kept share of the EUROCONTROL file; LFPG enters (+32 s in July 2026) | v139 | 231.90 (-0.13) | leaderboard best, under the bar: live -59 MSE of 64 from the LFPG shift; hold-out -15.8 MSE against -15.4 for M1 |
 | N16 | neural weight, TabM share, stack size and a second stack on the rows without a clock, on the v135 path | | | closed: -20 to +231 MSE (MODEL_ANALYSIS F23.2) |
 | K6 | OPDI `entry-deicing_pad` events as stack columns | | | open: probe one January day; OSN sees the ground only at LSZH, LEBL, EDDF, EHAM, LEMD |
 | Q3 | price levers by the gain on rows with `y <= 3,600` s and a 2026 importance weight | | | open: backtest on the uploads v105 to v117 first |
