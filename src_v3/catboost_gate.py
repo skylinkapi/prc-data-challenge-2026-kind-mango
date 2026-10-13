@@ -77,12 +77,14 @@ def score(model_file: str, frame: pd.DataFrame, feat: list[str]) -> np.ndarray:
 
 
 def gate_frame() -> tuple[pd.DataFrame, list[str]]:
+    """Frame of the LIRF gate with the G3 columns, and the G3 feature list."""
     dep, _ = load_gate_frame()
     dep = dep.merge(pd.read_parquet(G3_EXTRA), on="MVT_ID_mvt", how="left", validate="m:1")
     return dep, [x for x in G3_FEATURES.read_text().splitlines() if x]
 
 
 def score_oof_cat(dep: pd.DataFrame, feat: list[str], rounds: int) -> np.ndarray:
+    """Out-of-fold probability of the CatBoost gate over `C.FOLDS`, at a fixed number of rounds."""
     oof = np.full(len(dep), np.nan)
     for hold in C.FOLDS:
         h = dep["month"].isin(hold).values
@@ -106,6 +108,7 @@ def mixture(dep: pd.DataFrame, arms: dict) -> dict:
 
 
 def price() -> None:
+    """Price the CatBoost gate and its blends against the LightGBM gate on the out-of-fold rows."""
     dep, feat = gate_frame()
     rounds = fit(dep[dep["month"].isin(FIT_MONTHS)], feat, stop=dep[dep["month"].isin(STOP_MONTHS)]).get_best_iteration() + 1
     log.info("CatBoost gate: %d rounds at the early stop", rounds)

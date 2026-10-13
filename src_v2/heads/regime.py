@@ -34,6 +34,7 @@ def _training_frame(dep: pd.DataFrame, airport: str) -> pd.DataFrame:
 
 
 def train(dep: pd.DataFrame) -> dict:
+    """Fit one regime classifier per airport of `FALLBACK_AIRPORTS`."""
     feats = F.regime_feature_list()
     cats = [c for c in ("ADEP_mvt", "AIRCRAFT_OPERATOR_flt", "flt_prefix",
                         "stand_prefix", "AIRCRAFT_TYPE_mvt") if c in feats]

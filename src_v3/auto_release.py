@@ -81,6 +81,7 @@ def gates(out: str, ref: str) -> dict:
 
 
 def minio_client():
+    """MinIO client of the OSN endpoint and the name of the team bucket, from `.osn_credentials.txt`."""
     from minio import Minio
     kv = dict(line.split(" = ", 1) for line in (C.ROOT / ".osn_credentials.txt").read_text().splitlines() if " = " in line)
     return Minio("s3.opensky-network.org", access_key=kv["access_key"], secret_key=kv["secret_key"], secure=True), \

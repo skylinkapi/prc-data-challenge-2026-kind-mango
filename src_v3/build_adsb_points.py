@@ -43,6 +43,7 @@ class Chain:
 
 
 def load_boxes() -> list[tuple]:
+    """One box per target airport: the OurAirports reference point plus and minus `ADSB_BOX_DEG`."""
     a = pd.read_csv(AIRPORTS, usecols=["ident", "latitude_deg", "longitude_deg"])
     a = a[a["ident"].isin(C.TARGETS)]
     dlat, dlon = C.ADSB_BOX_DEG
@@ -81,6 +82,7 @@ def parse_trace(raw: bytes) -> list[tuple] | None:
 
 
 def members(parts: list[Path]):
+    """Yield the bytes of each `trace_full` member of a day archive; the archive streams across its parts."""
     with tarfile.open(fileobj=Chain(parts), mode="r|") as tar:
         for m in tar:
             if m.isfile() and "trace_full" in m.name:

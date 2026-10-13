@@ -47,6 +47,7 @@ def fit_encoders(train: pd.DataFrame) -> dict:
 
 
 def apply_encoders(df: pd.DataFrame, encoders: dict) -> pd.DataFrame:
+    """Join each operator encoder table to the rows on its keys."""
     out = df.copy()
     out["_hour_bin"] = _hour_bin(out["hour"])
     for name, val in encoders.items():

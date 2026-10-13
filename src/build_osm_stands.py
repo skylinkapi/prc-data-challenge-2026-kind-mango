@@ -25,6 +25,7 @@ OVERPASS_MIRRORS = [
 
 
 def airport_coords() -> pd.DataFrame:
+    """Reference point of each target airport from OurAirports."""
     ap = pd.read_csv(os.path.join(ROOT, "external", "airports", "airports.csv"),
                      low_memory=False)
     ap = ap[ap["ident"].isin(TARGET_ICAOS)][["ident", "latitude_deg", "longitude_deg"]]
@@ -39,6 +40,7 @@ def bbox(lat: float, lon: float, half_km: float = 3.5) -> tuple:
 
 
 def fetch_stands(icao: str, lat: float, lon: float) -> list:
+    """Query Overpass for the `parking_position` nodes and ways in a box of 3.5 km around the airport."""
     import math
     dlat = 3.5 / 111.0
     dlon = 3.5 / (111.0 * max(math.cos(math.radians(lat)), 0.3))

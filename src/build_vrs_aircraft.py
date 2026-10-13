@@ -19,6 +19,7 @@ LETTERS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 
 def fetch_csv(letter: str) -> pd.DataFrame:
+    """Download the type table of one first letter; three attempts."""
     url = f"{BASE}/{letter}.csv"
     for attempt in range(3):
         try:

@@ -52,6 +52,7 @@ def median_offset(rows: pd.DataFrame) -> float:
 
 
 def measure() -> None:
+    """Price the rule on the 2025 hold-out with the offset of the other months and write the report."""
     from src_v3.measure_nm_join import lobt_terms, outside_lirf, project
     paths = sorted(C.TRAIN_DIR.glob("training_2025-*.parquet"))
     f = flagged(paths, label=True)
@@ -76,6 +77,7 @@ def measure() -> None:
 
 
 def serve(src: str, out: str, also: list[str]) -> None:
+    """Raise each flagged row of `src` to `MVT - LOBT` minus the 2025 offset and write `out`."""
     offset = median_offset(flagged(sorted(C.TRAIN_DIR.glob("training_2025-*.parquet")), label=True))
     sub = pd.read_parquet(C.ROOT / "submission" / src)
     known = flagged([C.ROOT / p for p in also])["MVT_ID_mvt"] if also else None

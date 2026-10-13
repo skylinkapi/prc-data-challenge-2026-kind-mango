@@ -40,6 +40,7 @@ def daily() -> pd.DataFrame:
 
 
 def columns(dep: pd.DataFrame, d: pd.DataFrame) -> pd.DataFrame:
+    """Join the slot columns of the airport and the UTC day of the take-off to each departure."""
     dep = dep.assign(day=dep["MVT_TIME_UTC_mvt"].dt.tz_convert("UTC").dt.date)
     out = dep[["MVT_ID_mvt", "ADEP_mvt", "day"]].merge(d, on=["ADEP_mvt", "day"], how="left", validate="m:1")
     log.info("slot coverage %.3f", out["slot_dep"].notna().mean())

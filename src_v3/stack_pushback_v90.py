@@ -93,6 +93,7 @@ def stand_bound(f: pd.DataFrame) -> np.ndarray:
 
 
 def features(f: pd.DataFrame) -> list[str]:
+    """Stack columns: each column of the frame except the keys, the label, the flags, the weight and four NM terms."""
     drop = {"MVT_ID_mvt", "y", "ADEP_mvt", "MVT_TIME_UTC_mvt", "has_clock", "adsb_day_loaded", "w",
             "aobt3_eobt1", "aobt3_sched", "mvt_lobt", "lobt_aobt3"}
     return [c for c in f.columns if c not in drop]
@@ -100,6 +101,7 @@ def features(f: pd.DataFrame) -> list[str]:
 
 def fit(f: pd.DataFrame, feat: list[str], params: dict = C.STACK_V90_PARAMS,
         rounds: int = C.STACK_V90_ROUNDS, res_clip: int = C.STACK_V90_RES_CLIP_S) -> lgb.Booster:
+    """LightGBM on `y - base`, clipped at `res_clip`; it uses the row weights `w` if the frame has them."""
     d = lgb.Dataset(f[feat], (f["y"] - f["base"]).clip(-res_clip, res_clip), weight=f.get("w"))
     return lgb.train(params, d, rounds)
 
@@ -191,6 +193,7 @@ def mix_mlp(base: pd.DataFrame, mlp_path, weight: float, is_lirf: np.ndarray, me
 
 
 def serve(train: pd.DataFrame, rank_paths: tuple, args: argparse.Namespace) -> None:
+    """Fit the stack on the hold-out rows with a clock, move the ranking rows with a clock, write the file."""
     served = pd.read_parquet(C.ROOT / "submission" / args.base).rename(columns={"TAXITIME_SEC_mvt": "base"})
     adep = served[["MVT_ID_mvt"]].merge(load_dep([C.RANK])[["MVT_ID_mvt", "ADEP_mvt"]], on="MVT_ID_mvt", how="left")
     served = mix_mlp(served, mlp_paths(args.mlp_columns)[1], args.mlp_weight, (adep["ADEP_mvt"].astype(str) == "LIRF").values,

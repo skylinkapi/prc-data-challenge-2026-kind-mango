@@ -71,6 +71,7 @@ def _quantiles_group(frame: pd.DataFrame, keys: tuple[str, ...],
 
 
 def build(path: str, out: str) -> None:
+    """Write the six percentile columns of the frame `path` to `out`; a file on disk is a cache hit."""
     if os.path.exists(out):
         log.info("cache hit: %s", out)
         return

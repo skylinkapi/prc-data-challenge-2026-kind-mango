@@ -475,3 +475,13 @@ MONTH_LEVEL_MAX_ERR_S = 8               # largest leave-one-month-out error of t
 MONTH_LEVEL_MIN_KEPT_RANGE = 0.05       # v139: below this range of the 2025 kept share, the gap stays a constant
 MONTH_LEVEL_KEPT_SLACK = 0.02           # a month can leave the 2025 range of the kept share by this much
 MONTH_LEVEL_SKIP = ("LIRF",)            # its served values hold a hedge for labels above `Y_CLEAN_MAX`
+# `fetch_external.py`: the open files that a plain HTTP GET delivers, and the ranges of the final recipe
+OURAIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/{}.csv"
+OURAIRPORTS_FILES = ("airports", "runways")
+EC_XLS_URL = "https://www.eurocontrol.int/performance/data/download/xls/{}.xlsx"
+EC_XLS_FILES = ("ATC_Pre-Departure_Delay", "All_Pre-Departure_Delay", "ATFM_Slot_Adherence",
+                "Airport_Arrival_ATFM_Delay", "Airport_Traffic")   # the inputs of `src/build_eurocontrol_daily.py`
+EC_CSV_FILES = ("atfm_slot_adherence", "taxi_out_additional_time")
+OPDI_FIRST_CHUNK = "flight_events_20241226"   # first 10-day chunk of `src/fetch_opdi_events.py`; older chunks are not served
+# every 2025 day (stack and members), the four scored months of 2026 and the day before June for the 6 h lookback
+ADSB_FINAL_RANGES = (("2025-01-01", "2025-12-31"), ("2026-01-01", "2026-02-28"), ("2026-05-31", "2026-07-31"))

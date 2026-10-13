@@ -132,6 +132,7 @@ class Prep:
 
 
 class Net(nn.Module):
+    """MLP on the scaled numeric columns and one embedding per categorical column; one output."""
     def __init__(self, n_num: int, cards: list[int]):
         super().__init__()
         self.emb = nn.ModuleList([nn.Embedding(n + 1, min(C.MLP_EMB_MAX, (n + 2) // 2)) for n in cards])
@@ -148,6 +149,7 @@ class Net(nn.Module):
 
 
 def predict(net: Net, num: torch.Tensor, cat: torch.Tensor) -> np.ndarray:
+    """Predicted seconds of `net`, scored in batches and clipped at 0."""
     net.eval()
     with torch.no_grad():
         out = [net(num[i:i + C.MLP_BATCH * 4], cat[i:i + C.MLP_BATCH * 4]) for i in range(0, len(num), C.MLP_BATCH * 4)]
@@ -190,6 +192,7 @@ def train(prep: Prep, fit_rows: pd.DataFrame, stop_rows: pd.DataFrame | None, se
 
 
 def measure(columns: str) -> None:
+    """Fit on the fit months, score the 2025 hold-out, write the member and its price against the saved blend."""
     extra, blend_path, _ = COLUMN_SETS[columns]
     pred_out, _, report_out = out_paths(columns)
     dep, feat = load_frame(extra)

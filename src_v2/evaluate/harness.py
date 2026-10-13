@@ -15,6 +15,7 @@ from src_v2.labels import classify
 
 def score(pred: np.ndarray, y: np.ndarray, sd: np.ndarray,
           adep: np.ndarray) -> dict:
+    """RMSE and the MSE share of each label class, in total and per airport."""
     y = np.asarray(y, dtype=float)
     sd = np.asarray(sd, dtype=float)
     pred = np.asarray(pred, dtype=float)
@@ -46,6 +47,7 @@ def score(pred: np.ndarray, y: np.ndarray, sd: np.ndarray,
 
 
 def format_report(res: dict) -> str:
+    """Text table of a `score` result."""
     lines = [
         f"n={res['n']:,}  FULL={res['full_rmse']:.3f}  CLEAN={res['clean_rmse']:.3f}",
         "class MSE (per-row share of the FULL):",

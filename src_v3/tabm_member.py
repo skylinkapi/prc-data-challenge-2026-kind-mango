@@ -99,6 +99,7 @@ class Prep:
 
 
 class Net(nn.Module):
+    """TabM: numeric embeddings (piecewise linear or periodic), categorical embeddings, a backbone with `k` heads."""
     def __init__(self, bins: list[torch.Tensor], cards: list[int], spec: Spec):
         super().__init__()
         self.num = (rne.PiecewiseLinearEmbeddings(bins, spec.d_num, activation=False, version="B") if spec.embed == "ple"
@@ -179,6 +180,7 @@ def price(pred: np.ndarray, ref: pd.DataFrame, mlp: np.ndarray) -> dict:
 
 
 def measure(tag: str, spec: Spec) -> None:
+    """Fit one seed on the fit months, score the 2025 hold-out, write the member and its price against the blend."""
     extra, blend_path, _ = COLUMN_SETS[spec.columns]
     pred_out, _, report_out = out_paths(tag)
     dep, feat = load_frame(extra)

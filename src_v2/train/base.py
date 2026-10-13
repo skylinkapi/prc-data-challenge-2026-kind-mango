@@ -43,6 +43,7 @@ def build_vocab(dep: pd.DataFrame) -> dict[str, list]:
 
 
 def train(dep: pd.DataFrame) -> dict:
+    """Fit the base boosters on the clean rows of the fit months."""
     fit = dep[dep["month"].isin(C.FIT_MONTHS)].copy()
     cls = L.classify(fit["TAXITIME_SEC_mvt"], fit["sd"]).values
     clean = cls == "clean"
@@ -88,6 +89,7 @@ def train(dep: pd.DataFrame) -> dict:
 
 
 def load() -> tuple[list[lgb.Booster], list[str], dict[str, list]]:
+    """Saved base boosters, their feature list and the category vocabulary."""
     with open(C.MODELS / "base.features.json") as f:
         meta = json.load(f)
     boosters = [lgb.Booster(model_file=str(C.MODELS / f"base_s{s}.txt"))
@@ -98,6 +100,7 @@ def load() -> tuple[list[lgb.Booster], list[str], dict[str, list]]:
 
 
 def predict(dep: pd.DataFrame) -> np.ndarray:
+    """Mean prediction of the base boosters."""
     boosters, feats, vocab = load()
     dep = _categorify(dep.copy(), vocab)
     preds = np.mean([b.predict(dep[feats]) for b in boosters], axis=0)

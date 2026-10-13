@@ -273,6 +273,7 @@ def compute_route_medians(dep: pd.DataFrame) -> pd.Series:
 
 
 def add_plan_residual(dep: pd.DataFrame, route_medians: pd.Series) -> pd.DataFrame:
+    """Planned block time minus the median of its route, clipped at 3,600 s."""
     plan_block = (dep["mvt_ts"] - dep["arvt1_ts"]).dt.total_seconds()
     route = dep["ADEP_mvt"].astype(str) + "_" + dep["ADES_mvt"].astype(str)
     med = route.map(route_medians)
@@ -282,6 +283,7 @@ def add_plan_residual(dep: pd.DataFrame, route_medians: pd.Series) -> pd.DataFra
 
 
 def add_weather(df: pd.DataFrame) -> pd.DataFrame:
+    """Join the METAR report nearest to the take-off, at most 45 min away, to each row."""
     icaos = pd.Series(df["ADEP_mvt"].unique()).dropna().tolist()
     frames = []
     for icao in icaos:
@@ -323,6 +325,7 @@ def add_weather(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_year(source: str, out_path: Path) -> pd.DataFrame:
+    """Build the frame of `source` (`train` or `rank`) and write it; a file on disk is a cache hit."""
     if out_path.exists():
         log.info("cache hit: %s", out_path)
         return pd.read_parquet(out_path)

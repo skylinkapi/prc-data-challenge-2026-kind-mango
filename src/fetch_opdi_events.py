@@ -74,6 +74,7 @@ def parse_info_batch(info_series: pd.Series) -> pd.DataFrame:
 
 
 def fetch_and_filter(a: date, b: date, retries: int = 3) -> None:
+    """Download one 10-day chunk, keep the target airports and the ground events, delete the raw file."""
     fname = chunk_filename(a, b)
     out_path = os.path.join(OUT_DIR, fname)
     if os.path.exists(out_path) and os.path.getsize(out_path) > 500:

@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 
 
 def load_pred(path: str) -> pd.DataFrame:
+    """Read a submission file; fail if the value column is not float64."""
     df = pd.read_parquet(path)
     if df["TAXITIME_SEC_mvt"].dtype != np.float64:
         raise RuntimeError(f"{path}: dtype is {df['TAXITIME_SEC_mvt'].dtype}, the scorer needs float64")
@@ -27,6 +28,7 @@ def load_pred(path: str) -> pd.DataFrame:
 
 
 def check(cand_path: str, ref_path: str) -> dict:
+    """Label-free gates of a candidate file against a reference file."""
     cand, ref = load_pred(cand_path), load_pred(ref_path)
     meta = pd.read_parquet(FRAME_RANK, columns=["MVT_ID_mvt", "ADEP_mvt", "month"])
     m = meta.merge(cand.rename(columns={"TAXITIME_SEC_mvt": "new"}), on="MVT_ID_mvt", how="left",

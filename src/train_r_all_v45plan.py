@@ -25,6 +25,7 @@ log = logging.getLogger(__name__)
 
 
 def load_frame() -> tuple[pd.DataFrame, list[str]]:
+    """Cached training frame with the tempo, percentile and plan columns, and its feature list."""
     with open(CACHE + ".feat.txt") as f:
         feat = f.read().split()
     dep = pd.read_parquet(CACHE)
@@ -40,6 +41,7 @@ def load_frame() -> tuple[pd.DataFrame, list[str]]:
 
 
 def train_members(train, stop, test, feat, tag):
+    """Fit one linear-leaf LightGBM per seed with an early stop; return the test predictions and the rounds."""
     dt = lgb.Dataset(train[feat], label=train["TAXITIME_SEC_mvt"].values,
                      categorical_feature=CAT_COLS)
     dv = lgb.Dataset(stop[feat], label=stop["TAXITIME_SEC_mvt"].values,

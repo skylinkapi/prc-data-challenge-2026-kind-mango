@@ -41,6 +41,7 @@ def canon(s: str) -> str:
 
 
 def fetch() -> None:
+    """Download the `apt.dat` of each airport in `XPLANE_SCENERY` and store it unchanged."""
     C.XPLANE_DIR.mkdir(parents=True, exist_ok=True)
     for apt, scenery in C.XPLANE_SCENERY.items():
         pack = json.load(urllib.request.urlopen(C.XPLANE_API.format(scenery), timeout=120))["scenery"]
@@ -70,6 +71,7 @@ def fill(apt: str, values: pd.Series, osm_keys: set) -> pd.DataFrame:
 
 
 def build() -> None:
+    """Write the OSM stands plus one X-Plane position for each stand value that OSM lacks."""
     osm = pd.read_parquet(STANDS)
     dep = load_dep([*sorted(C.TRAIN_DIR.glob("training_*.parquet")), C.RANK], ["STAND_mvt"])
     parts = [osm]

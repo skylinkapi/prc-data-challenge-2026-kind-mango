@@ -45,6 +45,7 @@ def published() -> pd.DataFrame:
 
 
 def keyed(rows: pd.DataFrame) -> pd.DataFrame:
+    """Add the keys `apt`, `year` and `month` of each row."""
     t = rows["MVT_TIME_UTC_mvt"].dt
     return rows.assign(apt=rows["ADEP_mvt"].astype(str), year=t.year, month=t.month)
 
@@ -94,6 +95,7 @@ def moved(served: pd.DataFrame, s: pd.DataFrame) -> np.ndarray:
 
 
 def departures(paths: list, label: bool = False) -> pd.DataFrame:
+    """Departure rows of the given movement files."""
     d = pd.concat([pd.read_parquet(p, columns=COLS + ["TAXITIME_SEC_mvt"] * label) for p in paths], ignore_index=True)
     return d[d["PHASE_mvt"] == "DEP"]
 
@@ -103,6 +105,7 @@ def labels_2025() -> pd.DataFrame:
 
 
 def serve(src: str, out: str, kept_fit: bool) -> None:
+    """Shift the reliable airport months of the file `src` and write `out`; log each shift."""
     sub = pd.read_parquet(C.ROOT / "submission" / src)
     served = sub.rename(columns={"TAXITIME_SEC_mvt": "pred"}).merge(
         departures([C.RANK]).drop_duplicates("MVT_ID_mvt"), on="MVT_ID_mvt", how="left", validate="1:1")

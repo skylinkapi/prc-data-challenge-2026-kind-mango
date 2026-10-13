@@ -39,6 +39,7 @@ OVERPASS_MIRRORS = [
 
 
 def haversine_m(lat1, lon1, lat2, lon2):
+    """Great-circle distance in metres."""
     r = 6371000.0
     p1 = math.radians(lat1); p2 = math.radians(lat2)
     dp = p2 - p1
@@ -126,6 +127,7 @@ def snap_to_graph(G: nx.Graph, lat: float, lon: float) -> tuple | None:
 
 
 def path_length_and_turns(G: nx.Graph, src, dst) -> tuple:
+    """Length in metres and number of turns of the shortest path; `(None, None)` without a path."""
     try:
         nodes = nx.shortest_path(G, src, dst, weight="weight")
     except nx.NetworkXNoPath:

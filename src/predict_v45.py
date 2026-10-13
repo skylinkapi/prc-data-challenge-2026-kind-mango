@@ -22,6 +22,7 @@ PLAN_RANK = os.path.join(MODELS, "plan_taxi_res_rank.parquet")
 
 
 def build_extra() -> pd.DataFrame:
+    """Tempo, percentile and plan columns of the ranking rows, keyed on `MVT_ID_mvt`."""
     tempo = pd.read_parquet(RANK_FRAME, columns=["MVT_ID_mvt", *TEMPO_COLS])
     p2575 = pd.read_parquet(P2575_RANK, columns=["MVT_ID_mvt", *EOBT_P2575])
     plan = pd.read_parquet(PLAN_RANK, columns=["MVT_ID_mvt", *PLAN_COLS])

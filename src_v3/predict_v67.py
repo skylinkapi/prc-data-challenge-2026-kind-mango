@@ -86,6 +86,7 @@ def with_adsb(dump: pd.DataFrame, path: str) -> pd.DataFrame:
 
 
 def load_catboost(tag: str) -> tuple[CatBoostRegressor, list[str]]:
+    """Saved CatBoost member `tag` and its feature list."""
     model_path, _, meta_path = paths(tag)
     model = CatBoostRegressor()
     model.load_model(str(model_path))

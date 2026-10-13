@@ -50,32 +50,33 @@ mc cp osn/prc-2026-datasets/submitting.parquet submission/
 
 ## 3. Open data
 
-Each command writes to its folder under `external/`. The attribution and
-the licence of each source are in the `README.md` data-source table.
+One command gets each open source and writes it to its folder under `external/`. The attribution and the
+licence of each source are in the `README.md` data-source table.
 
 ```bash
-python -m src_v3.fetch_metar              # IEM ASOS METAR, 10 CSVs in external/metar/, about 2 min
-
-mkdir -p external/airports
-curl -o external/airports/runways.csv  https://davidmegginson.github.io/ourairports-data/runways.csv
-curl -o external/airports/airports.csv https://davidmegginson.github.io/ourairports-data/airports.csv
-
-python src/build_eurocontrol_daily.py     # EUROCONTROL daily features, about 5 min
-python src/build_osm_stands.py            # OSM stands via Overpass, about 2 min
-python src/build_osm_taxi_paths.py        # OSM taxiway graph and shortest paths, about 5 min
-python src/fetch_opdi_events.py           # OPDI ADS-B events, about 50 min
-python -c "
-import pandas as pd, glob
-files = sorted(glob.glob('external/opdi/filtered/*.parquet'))
-ev = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
-ev['event_time'] = pd.to_datetime(ev['event_time'], utc=True, errors='coerce').astype('datetime64[us, UTC]')
-ev['osn_flight_id'] = ev['osn_flight_id'].astype(str).str.strip().str.upper()
-ev['osm_airport'] = ev['osm_airport'].astype(str).str.upper().str.strip()
-ev = ev.dropna(subset=['event_time']).sort_values(['osm_airport', 'event_time']).reset_index(drop=True)
-ev.to_parquet('external/opdi/events_all.parquet')
-"
-python src/build_opdi_taxi_v2.py          # OPDI per-flight taxi records
+python -m src_v3.fetch_external           # every source except the ADS-B days, about 1 h
+python -m src_v3.fetch_external --list    # each step, its outputs and its state
+python -m src_v3.fetch_external opdi vrs  # only the named sources
 ```
+
+A step runs only if one of its outputs is missing. So a stopped run resumes, and a file on disk is never
+replaced. Delete an output to fetch it again. OSM and X-Plane serve their current state: a download today can
+differ from the files that trained the models.
+
+| Source | Steps | Output | Time |
+|---|---|---|---|
+| `airports` | Download of the OurAirports CSV files | `external/airports/airports.csv`, `runways.csv` (16 MB) | 5 s |
+| `metar` | `python -m src_v3.fetch_metar` (IEM ASOS, 2025-01-01 to 2026-07-31) | `external/metar/<ICAO>.csv`, 10 files (30 MB) | 1 min |
+| `eurocontrol` | Download of five Excel files and four CSV files, then `python src/build_eurocontrol_daily.py` | `external/eurocontrol/` (470 MB), `daily_features.parquet` | 6 min |
+| `osm` | `python src/build_osm_stands.py`, `python src/build_osm_taxi_paths.py` (Overpass) | `external/osm/stands.parquet`, `taxi_paths.parquet` | 7 min |
+| `vrs` | `python src/build_vrs_aircraft.py` | `external/vrs/aircraft_types.parquet` | 1 min |
+| `xplane` | `python -m src_v3.build_xplane_stands fetch` | `external/xplane/<ICAO>.dat`, 5 files | 1 min |
+| `opdi` | `python src/fetch_opdi_events.py` (58 chunks of about 245 MB, filtered to the 10 airports), the join to one table, `python src/build_opdi_taxi_v2.py` | `external/opdi/events_all.parquet` (about 400 MB), `taxi_out_v2.parquet` | 50 min |
+| `adsb` | `python -m src_v3.fetch_adsb_days` on the ranges of `ADSB_FINAL_RANGES` | `external/adsblol/points/<day>.parquet` | See below |
+
+The X-Plane step stores the `apt.dat` files. `python -m src_v3.build_xplane_stands build` then writes
+`external/xplane/stands_osm_xplane.parquet`; it needs the organiser files of section 2. The older OPDI chunks of
+2022 to 2024 (`src/fetch_opdi_events_hist.py`) are not an input of a served file.
 
 ADSB.lol `globe_history` days (ODbL 1.0). A day is about 4 GB and takes
 about 8 minutes on an 8 MB/s link. The script keeps the points near the
@@ -83,7 +84,9 @@ about 8 minutes on an 8 MB/s link. The script keeps the points near the
 stopped run resumes at the first missing day.
 
 ```bash
-python -m src_v3.fetch_adsb_days --start 2026-01-01 --end 2026-01-31   # ranking days
+python -m src_v3.fetch_external adsb     # the 471 released days of the final recipe, about 2 days
+
+python -m src_v3.fetch_adsb_days --start 2026-01-01 --end 2026-01-31   # v92 only: ranking days
 python -m src_v3.fetch_adsb_days --start 2026-07-01 --end 2026-07-31
 python -m src_v3.fetch_adsb_days --start 2025-01-15 --end 2025-01-15   # the 7 training days of v92
 python -m src_v3.fetch_adsb_days --start 2025-07-01 --end 2025-07-05
@@ -506,6 +509,10 @@ stack runs with `deterministic` and 4 threads.
 - `eval_v33_holdout.py --rebuild-lirf` writes the LIRF cache first, then scores the
   v33 stack, which needs boosters that Tier 2 does not build. On a clean clone the
   scoring step can fail after the cache exists; the cache is the only output v92 needs.
+- EUROCONTROL revises its daily Excel files. A download on 2026-10-13 equals the team copy of 2026-09-03 on each
+  airport day up to 2026-05-31. It differs on 5 airport days of June 2026 and on the 310 airport days of July
+  2026. These columns feed the LIRF gate and one base column, so a rebuild from a new download is not bit-exact
+  on the July 2026 rows. OSM and the X-Plane Scenery Gateway also serve their current state.
 - The ADSB.lol archive is a third-party release. If a day disappears from
   it, the clock table of that day cannot be rebuilt.
 - v90 and v91 are not reproducible bit for bit: v91 read the clock table of
@@ -533,6 +540,7 @@ February, June and July 2026). `src_v3/release_final.py` holds every command. No
    saved fits if they are missing.
 2. Get the open data for the two new months (section 3): `python -m src_v3.fetch_adsb_days --start 2026-02-01 --end
    2026-02-28` and `--start 2026-05-31 --end 2026-06-30`, the OPDI events, the METAR files and the EUROCONTROL files.
+   On a clean clone, `python -m src_v3.fetch_external` and `python -m src_v3.fetch_external adsb` get all of them.
 3. Put the organiser files in place:
 
    ```bash

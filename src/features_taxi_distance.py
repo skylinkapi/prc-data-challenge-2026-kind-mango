@@ -32,6 +32,7 @@ def _pad(s: str) -> str:
 
 
 def load_stand_coords() -> pd.DataFrame:
+    """Mean OSM position per airport and stand."""
     st = pd.read_parquet(STANDS_PARQUET)
     st["stand_ref"] = st["stand_ref"].astype(str).str.upper().str.strip()
     # Average across duplicate OSM refs for the same stand at an airport
@@ -39,6 +40,7 @@ def load_stand_coords() -> pd.DataFrame:
 
 
 def load_runway_thresholds() -> pd.DataFrame:
+    """Threshold position and heading of each open runway end, from OurAirports."""
     r = pd.read_csv(RUNWAYS_CSV, low_memory=False)
     r = r[r["airport_ident"].isin(TARGET_ICAOS) & (r["closed"] == 0)]
     rows = []
@@ -61,6 +63,7 @@ def load_runway_thresholds() -> pd.DataFrame:
 
 
 def haversine_m(lat1, lon1, lat2, lon2):
+    """Great-circle distance in metres."""
     r = 6371000.0
     p1 = np.radians(lat1); p2 = np.radians(lat2)
     dp = p2 - p1
@@ -70,6 +73,7 @@ def haversine_m(lat1, lon1, lat2, lon2):
 
 
 def add_taxi_distance(dep: pd.DataFrame) -> pd.DataFrame:
+    """Add the straight distance from the assigned stand to the threshold of the runway."""
     stands = load_stand_coords()
     rwys = load_runway_thresholds()
     out = dep.copy()

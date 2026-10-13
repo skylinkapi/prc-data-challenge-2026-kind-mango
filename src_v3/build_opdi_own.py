@@ -27,12 +27,14 @@ log = logging.getLogger(__name__)
 
 
 def load_events() -> pd.DataFrame:
+    """OPDI runway entries and stand exits of the event table."""
     e = pd.read_parquet(EVENTS, columns=["flight_id", "type", "event_time", "osm_airport", "osn_flight_id", "osm_ref"])
     e = e[e["type"].isin(["entry-runway", "exit-parking_position"])]
     return e.assign(event_time=e["event_time"].astype("datetime64[us, UTC]"))
 
 
 def link(dep: pd.DataFrame, e: pd.DataFrame) -> pd.DataFrame:
+    """Link each departure to the latest OPDI runway entry of its callsign in the window around `MVT`."""
     rw = e.loc[e["type"] == "entry-runway", ["flight_id", "event_time", "osm_airport", "osn_flight_id"]]
     m = dep.merge(rw.rename(columns={"event_time": "rwy"}), left_on=["ADEP_mvt", "CALLSIGN_flt"],
                   right_on=["osm_airport", "osn_flight_id"])

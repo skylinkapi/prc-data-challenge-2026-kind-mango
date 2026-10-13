@@ -36,6 +36,7 @@ def coverage_monitor(train: pd.DataFrame, rank: pd.DataFrame,
 
 
 def label_free(pred: np.ndarray, dep: pd.DataFrame) -> dict:
+    """Summary of a prediction without labels: mean and quantiles per airport, counts of long values."""
     adep = dep["ADEP_mvt"].astype(str).values
     out = {"per_airport": {}, "over_7200": 0, "over_80000": 0}
     for a in np.unique(adep):

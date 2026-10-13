@@ -21,6 +21,7 @@ European airports. The metric is the RMSE against the times that the airports re
 | File | Content |
 |---|---|
 | `README.md` | This summary: the model, the results, the data, the layout |
+| `docs/MODEL.md` | The model description: each part, its data, its fit and the reason for each design decision |
 | `REPRODUCE.md` | The commands that rebuild the served files. Section 8 builds the final file |
 | `RECAP.md` | One row per upload: the mechanism, the hold-out price and the live score |
 | `docs/MODEL_ANALYSIS.md` | 23 audit passes: where the error sits, the findings, the closed levers |
@@ -31,6 +32,7 @@ European airports. The metric is the RMSE against the times that the airports re
 ## How the model works
 
 Seven steps build the final file. `python -m src_v3.release_final` runs them (`REPRODUCE.md` section 8).
+`docs/MODEL.md` describes each step in full: the columns, the parameters, the blend and the design decisions.
 
 | Step | What it does | Code |
 |---|---|---|
@@ -113,23 +115,31 @@ new weights, new parameters and each change of the LIRF head after v105 did not
 
 ```bash
 pip install -r requirements.txt                 # Python 3.13, pinned versions
+python -m src_v3.fetch_external                 # the open data except the ADS-B days, about 1 h
+python -m src_v3.fetch_external adsb            # the ADS-B days, about 4 GB a day (see below)
 python -m src_v3.release_final tables           # the 19 ranking-side tables, about 1.5 h
 python -m src_v3.release_final serve --name kind-mango_final139 --stack-adsb external/adsblol/v133 \
     --trees v133 --member-columns --month-level kept \
     --tabm tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9
 ```
 
+`fetch_external` gets each open source of the data-source table. It skips a file that is on disk, so a
+stopped run resumes. `python -m src_v3.fetch_external --list` shows each step and its state.
+
 The two `release_final` commands need three things on disk. None of them is in git:
 
 - the organiser files in `training/` and `submission/` (`REPRODUCE.md` section 2);
-- the open data in `external/` (`REPRODUCE.md` section 3; the ADSB.lol days take about 9 h);
+- the open data in `external/` (`python -m src_v3.fetch_external`; `REPRODUCE.md` section 3). The final recipe
+  reads 471 ADSB.lol days. A day is a download of about 4 GB and takes 6 to 8 min; about 15 MB of it stay on
+  disk. The 471 days take about 2 days;
 - the 80 trained artefacts of `models/v135.manifest.json`, 14 GB. `REPRODUCE.md` gives the fit command of each
   artefact; the full retrain takes about 20 h on a 16-thread CPU plus about 10 h on a GPU for the TabM families.
   This repo has no download bundle of the artefacts.
 
 | Stage | Command |
 |---|---|
-| Fetch the data | `REPRODUCE.md` sections 2 and 3 |
+| Fetch the organiser data | `REPRODUCE.md` section 2 (needs an OSN account) |
+| Fetch the open data | `python -m src_v3.fetch_external`, then `python -m src_v3.fetch_external adsb` |
 | Fit the members | `REPRODUCE.md` Tier 2 and the v130 to v135 paragraphs |
 | Build the tables and serve | `python -m src_v3.release_final tables`, then `serve` |
 | Price a change on the hold-out | `python -m src_v3.stack_pushback_v90 price ...`, `python -m src_v3.month_level measure FILE` |
@@ -188,6 +198,9 @@ value from a leaderboard score.
 
 ## Data sources (all open)
 
+`python -m src_v3.fetch_external` downloads each source of this table into `external/` (`REPRODUCE.md`
+section 3). The organiser data need an OSN account (`REPRODUCE.md` section 2).
+
 | Source | Data | Licence |
 |---|---|---|
 | PRC / OpenSky Network | Movements at 10 EU airports (2025 train, 2026 ranking) | Challenge data licence |
@@ -197,7 +210,7 @@ value from a leaderboard score.
 | Eurocontrol NM | Daily ATC pre-dep delay, ATFM slot adherence, airport traffic | Open (non-commercial-use clause; challenge use confirmed by organiser, 2026-09-17) |
 | OPDI (PRC + OSN) | Flight events (entry-runway, entry-taxiway, exit-parking, …) | Open (CC-BY 4.0, confirmed by organiser) |
 | VRS StandingData | Aircraft-type metadata | Open |
-| X-Plane Scenery Gateway | `apt.dat` of EDDM (scenery 111124) and EHAM (111943): stand positions (row 1300) where OSM has no position for the assigned stand; `python -m src_v3.build_xplane_stands fetch` and `build` (v115 on). The `apt.dat` files are kept unchanged with their copyright header in `external/xplane/`. | GPL v2 or later |
+| X-Plane Scenery Gateway | `apt.dat` of EDDM (scenery 111124), EHAM (111943), LEMD (99851), LEBL (102255) and LFPG (111022): stand positions (row 1300) where OSM has no position for the assigned stand; `python -m src_v3.build_xplane_stands fetch` and `build` (v115 on). The `apt.dat` files are kept unchanged with their copyright header in `external/xplane/`. | GPL v2 or later |
 | EUROCONTROL `atfm_slot_adherence` (ansperformance.eu CSV) | Departures, regulated departures and departures before, inside and after the slot window, per airport and UTC day, 2025 and 2026; `python -m src_v3.build_atfm_slot` (v115 on). Take-off times only, no off-block time. (c) EUROCONTROL. | Open, with attribution; same family as the daily files confirmed by the organiser, 2026-09-17 |
 | EUROCONTROL `taxi_out_additional_time` (ansperformance.eu CSV) | Reference and additional taxi-out time per airport and month, 2025 and 2026; `python -m src_v3.month_level` (v138, v139) downloads the two files. The sum per departure is the monthly mean taxi-out, an aggregate of the labels. (c) EUROCONTROL. | Open, with attribution; the organisers confirmed the use for the scored months on Discord, 2026-10-08 |
 | ADSB.lol `globe_history` | Daily ADS-B traces; `src_v3/fetch_adsb_days.py` keeps the low points near the 10 airports and deletes the raw archive. Used for the pushback clock of the scored flight (v91 on). Data (c) ADSB.lol contributors. | ODbL 1.0. The derived tables stay out of git (share-alike). |
@@ -211,7 +224,7 @@ value from a leaderboard score.
 | `src/` | The first pipeline (v1 to v47): feature modules and LIRF fits that the served chain still calls |
 | `models/` | Small records of the fits: JSON reports, feature lists, manifests. The trained artefacts are not in git |
 | `submission/` | Per upload: the score (`.result.json`), the gate report (`.check.json`) and the recipe (`.recipe.json`). The parquet files are not in git |
-| `docs/` | The analysis, the plan, the history and the challenge brief |
+| `docs/` | The model description, the analysis, the plan, the history and the challenge brief |
 | `training/`, `external/`, `logs/` | Organiser data, open data and run logs; not in git |
 
 The block below lists the files of each directory.
@@ -273,6 +286,7 @@ src/
 
 src_v3/                         # current pipeline (v48 on), constants in config.py
   predict_v67.py                # base outside LIRF and the LIRF head; release_v97.py builds the best file
+  fetch_external.py             # one command for the open data: OurAirports, METAR, EUROCONTROL, OSM, VRS, X-Plane, OPDI and the ADS-B days
   release_final.py              # final phase: `tables` rebuilds the ranking-side tables, `serve` writes the final file (v132 recipe by default; the flags of v139 in REPRODUCE section 8)
   build_gate_g3.py              # column table of the LIRF gate g3: G1 shares, v83 arrival link, operator shares
   stack_pushback_v90.py         # OPDI and ADS-B pushback stack and the A5 stand bound
@@ -282,7 +296,7 @@ src_v3/                         # current pipeline (v48 on), constants in config
   measure_nm_join.py            # J1, J2: hold-out price of the LOBT window rules on the v115 path (nineteenth pass)
   lobt_window.py                # J1 to J3 serve steps: LIRF copy tests for the gate, J3 anchor, LOBT window last (v118 on)
   mvt_precision.py              # P1: LFPG departures with MVT off the minute grid, raised to MVT - LOBT minus 242 s (v121)
-  month_level.py                # June and July values of six airports shifted to the EUROCONTROL monthly mean (v138, v139)
+  month_level.py                # June and July values of seven airports (six in v138) shifted to the EUROCONTROL monthly mean (v138, v139)
   build_lobt_terms.py           # unclipped MVT - LOBT and SCHED - LOBT for the TabM member tabm_j (v120)
   build_arr_artefact.py         # G1: airline arrival artefact shares for the LIRF gate (v101 on)
   train_p_fb_v83.py             # LIRF gate refit with added columns, `--tag g3 --extra ...` (v104, v105)
@@ -303,7 +317,7 @@ training/                       # organiser-provided 2025 monthly parquets (giti
 submission/                     # ranking.parquet, submitting.parquet, kind-mango_v*.parquet
 models/                         # trained boosters + encoders + JSON config
 .gpu_site/                      # CUDA build of torch and the TabM packages for tabm_member.py (gitignored)
-docs/                           # MODEL_ANALYSIS.md (23 audit passes), WINNING_PLAN.md (levers and their final state), HISTORY.md (earlier README text), the challenge brief, the audit prompt
+docs/                           # MODEL.md (the model description), MODEL_ANALYSIS.md (23 audit passes), WINNING_PLAN.md (levers and their final state), HISTORY.md (earlier README text), the challenge brief, the audit prompt
 RECAP.md                        # session log for every attempt, submissions and scores
 requirements.txt                # pinned library versions
 ```

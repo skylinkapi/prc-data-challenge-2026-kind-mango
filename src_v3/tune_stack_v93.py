@@ -23,6 +23,7 @@ log = logging.getLogger(__name__)
 
 def frame(mlp_weight: float, neighbours: bool, extra: tuple = (), adsb_train=sp.ADSB_TRAIN,
           blend_path=sp.BLEND_HOLDOUT, mlp_holdout=sp.MLP_HOLDOUT) -> pd.DataFrame:
+    """Hold-out frame of the stack; `mlp_weight` mixes the neural member into `base`."""
     rows = pd.read_parquet(blend_path)
     if mlp_weight:
         rows["base"] = (1 - mlp_weight) * rows["base"] + mlp_weight * pd.read_parquet(mlp_holdout)["pred"].values

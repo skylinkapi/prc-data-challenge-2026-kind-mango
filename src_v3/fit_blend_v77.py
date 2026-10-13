@@ -26,10 +26,12 @@ log = logging.getLogger(__name__)
 
 
 def blend(p: dict, w: float, a: float, b: float) -> np.ndarray:
+    """Blend of the four members: `w` is the CatBoost share; `a` and `b` are the anchored shares of each class."""
     return (1 - w) * ((1 - a) * p["lgb"] + a * p["lgb_anchor"]) + w * ((1 - b) * p["cat"] + b * p["cat_anchor"])
 
 
 def best_weights(p: dict, y: np.ndarray, m: np.ndarray) -> tuple:
+    """Triple `(w, a, b)` of `BLEND_V77_GRID` with the lowest MSE on the rows of mask `m`."""
     grid = itertools.product(C.BLEND_V77_GRID, repeat=3)
     return min(grid, key=lambda g: float(np.mean((blend(p, *g)[m] - y[m]) ** 2)))
 

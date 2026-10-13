@@ -61,6 +61,7 @@ log = logging.getLogger(__name__)
 
 
 def run(cmd: list[str], gpu: bool = False) -> None:
+    """Run a module or a script with this Python from the repository root; `gpu` puts `GPU_SITE` on the path."""
     env = {**os.environ, "PYTHONPATH": f"{C.GPU_SITE}{os.pathsep}{C.ROOT}"} if gpu else None
     log.info("run %s", " ".join(cmd))
     subprocess.run([sys.executable, *cmd], check=True, cwd=C.ROOT, env=env)

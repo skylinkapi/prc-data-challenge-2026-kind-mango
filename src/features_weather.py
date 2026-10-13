@@ -18,6 +18,7 @@ TARGET_ICAOS = ["EDDF", "EDDM", "EGLL", "EHAM", "LEBL", "LEMD",
 
 
 def load_metar_all() -> pd.DataFrame:
+    """METAR reports of the target airports as one table with numeric columns."""
     frames = []
     for icao in TARGET_ICAOS:
         p = os.path.join(METAR_DIR, f"{icao}.csv")
@@ -83,6 +84,7 @@ def lookup_heading(apt: pd.Series, rwy: pd.Series, table: dict) -> np.ndarray:
 
 
 def parse_wx_flags(wx: pd.Series) -> pd.DataFrame:
+    """Flags for precipitation, snow, thunder and freezing from the METAR weather codes."""
     s = wx.fillna("").astype(str).str.upper()
     return pd.DataFrame({
         "wx_precip": s.str.contains(r"RA|DZ|SN|SG|GR|GS|PL|IC", regex=True).astype(np.int8),

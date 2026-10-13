@@ -37,6 +37,7 @@ def _configure_logging():
 
 
 def cmd_build():
+    """Build the frames of the training files and of the ranking file, or read them from the cache."""
     for src in ("train", "rank"):
         t0 = time.time()
         f = F.load_or_build(src)
@@ -71,6 +72,7 @@ def _add_plan_and_encoders(train_dep: pd.DataFrame, rank_dep: pd.DataFrame,
 
 
 def cmd_fit():
+    """Fit the encoders, the base model and the heads of the v39 rewrite."""
     train_dep = F.load_or_build("train")
     rank_dep = F.load_or_build("rank")
     train_dep, rank_dep = _add_plan_and_encoders(train_dep, rank_dep, refit=True)
@@ -95,6 +97,7 @@ def cmd_fit():
 
 
 def cmd_holdout():
+    """Score the v39 rewrite on the hold-out months."""
     train_dep = F.load_or_build("train")
     rank_dep = F.load_or_build("rank")
     train_dep, _ = _add_plan_and_encoders(train_dep, rank_dep)
@@ -112,6 +115,7 @@ def cmd_holdout():
 
 
 def cmd_predict(out_name: str):
+    """Write the submission file `out_name` of the v39 rewrite."""
     train_dep = F.load_or_build("train")
     rank_dep = F.load_or_build("rank")
     _, rank_dep = _add_plan_and_encoders(train_dep, rank_dep)
@@ -165,6 +169,7 @@ def cmd_coverage():
 
 
 def cmd_report(out_name: str):
+    """Print the types, the row count and the summary of a submission file."""
     df = pd.read_parquet(C.ROOT / "submission" / out_name)
     print(df.dtypes)
     print("n rows", len(df))
@@ -223,6 +228,7 @@ def cmd_full(out_name: str):
 
 
 def cmd_upload(out_name: str):
+    """Upload a file of `submission/` to the team bucket."""
     creds = (C.ROOT / ".osn_credentials.txt").read_text().splitlines()
     kv = dict(line.split(" = ", 1) for line in creds if " = " in line)
     endpoint = kv.get("endpoint", "https://s3.opensky-network.org:443")

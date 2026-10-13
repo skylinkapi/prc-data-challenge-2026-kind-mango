@@ -44,6 +44,7 @@ def load_frame() -> tuple[pd.DataFrame, list[str]]:
 
 
 def classify(y: np.ndarray, sd: np.ndarray) -> np.ndarray:
+    """Label class of each row: `clean`, `fallback` (label equals the schedule delay), `tail`, `24h`, `invalid`."""
     fb = np.abs(y - sd) <= FB_TOL
     out = np.full(len(y), "invalid", dtype=object)
     out[(y >= 30) & (y <= 7200) & ~fb] = "clean"

@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 
 
 def url(icao: str, start: pd.Timestamp, end: pd.Timestamp) -> str:
+    """Request URL of the IEM archive for one station and the days `[start, end)`."""
     query = [("station", icao), *[("data", c) for c in C.METAR_COLUMNS],
              ("year1", start.year), ("month1", start.month), ("day1", start.day),
              ("year2", end.year), ("month2", end.month), ("day2", end.day),

@@ -94,6 +94,7 @@ def score(model_file: str, frame: pd.DataFrame, feat: list[str]) -> np.ndarray:
 
 
 def price() -> None:
+    """Price the TabM gate against the G3 gate on the out-of-fold rows."""
     dep, feat = gate_frame()
     _, _, curve = fit(dep[dep["month"].isin(FIT_MONTHS)], feat, SPEC.epochs - 1, stop=dep[dep["month"].isin(STOP_MONTHS)])
     last = int(np.argmin(curve))

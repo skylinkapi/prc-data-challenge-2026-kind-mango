@@ -45,6 +45,7 @@ log = logging.getLogger(__name__)
 
 
 def space(trial: optuna.Trial) -> dict:
+    """Search space of the v76 parameter study."""
     return {
         "learning_rate": trial.suggest_float("learning_rate", 0.015, 0.08, log=True),
         "num_leaves": trial.suggest_int("num_leaves", 64, 1024, log=True),

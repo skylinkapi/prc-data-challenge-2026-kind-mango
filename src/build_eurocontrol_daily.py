@@ -27,6 +27,7 @@ FILES = {
 
 
 def load_one(fname: str, keep_cols: list) -> pd.DataFrame:
+    """Read one EUROCONTROL Excel file: target airports, 2025 and 2026, metric columns with the file prefix."""
     p = os.path.join(SRC, fname)
     df = pd.read_excel(p, sheet_name="DATA")
     df["FLT_DATE"] = pd.to_datetime(df["FLT_DATE"], errors="coerce").dt.date

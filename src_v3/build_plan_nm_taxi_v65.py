@@ -33,6 +33,7 @@ def load_plan(path) -> pd.DataFrame:
 
 
 def residual(f: pd.DataFrame, medians: pd.Series) -> pd.DataFrame:
+    """Planned block time minus the median of its key, clipped at `CLIP`; one row per departure."""
     res = (f["plan_block"] - f["key"].map(medians)).clip(-CLIP, CLIP)
     log.info("coverage %.3f on %d rows", res.notna().mean(), len(f))
     return pd.DataFrame({"MVT_ID_mvt": f["MVT_ID_mvt"].values, "plan_nm_taxi": res.values})
