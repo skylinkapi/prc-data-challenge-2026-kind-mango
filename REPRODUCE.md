@@ -562,3 +562,6 @@ Evidence, 2026-10-13: on the 344,841 shared departures each final-frame file dif
 (v133, v134, v135) by 6.6 to 6.8 s on average, the size of the new timestamp noise. LIRF is equal in the four
 files. The moves of `kind-mango_final135` against `kind-mango_final` correlate 0.990 with `v135 - v132`. The
 first-gap rows are 27,282 (January 7,562, February 7,281, June 5,243, July 7,196).
+
+A second run of the full `serve` command for `kind-mango_final135` (base, MLP, TabM, stack and rules from the
+saved fits, 53 min) wrote a file with the same SHA-256, 7fdd4b6a....

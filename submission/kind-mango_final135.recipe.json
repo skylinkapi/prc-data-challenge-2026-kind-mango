@@ -49,5 +49,10 @@
   "kind-mango_final133.parquet": "ea04d65356c6a11259d312aba6624f84d28a8ee0f3f9f4f6d4f20cc0f5212391",
   "kind-mango_final.parquet": "055c3eb833d0bf999a18019c7286d2327a6f4e18d01d85d6742fcfed796c8346"
  },
- "uploaded": false
+ "uploaded": false,
+ "full_serve_rerun": {
+  "date": "2026-10-13",
+  "same_sha256": true,
+  "max_abs_diff_s": 0.0
+ }
 }
