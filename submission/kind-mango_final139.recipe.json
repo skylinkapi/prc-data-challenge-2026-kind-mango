@@ -1,0 +1,41 @@
+{
+ "file": "kind-mango_final139.parquet",
+ "sha256": "30caf372022b0b68ea57cde2037ac6af82d14d42355dd8ab0caddd1db823c781",
+ "recipe": "v139 on the final organiser files: copy kind-mango_final135_base.parquet to kind-mango_final139_base.parquet; python -m src_v3.release_final serve --stack-only --name kind-mango_final139 --stack-adsb external/adsblol/v133 --tabm tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9 --trees v133 --member-columns --month-level kept",
+ "inputs": "final organiser files only (no --also)",
+ "rows": 670790,
+ "mean_s": 1014.9,
+ "rows_above_7200_s": 160,
+ "format": {
+  "template_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "against_final138": {
+  "rows_moved": 85244,
+  "rms_s": 6.55,
+  "max_abs_s": 32.0,
+  "mean_shift_s": {
+   "LFPG": {
+    "6": 17.72,
+    "7": 31.98
+   },
+   "EHAM": {
+    "6": -1.33,
+    "7": 0.12
+   }
+  }
+ },
+ "holdout_price_mse": {
+  "july_2025_v135_path": -15.8,
+  "scale_rows": 344336
+ },
+ "ranking_twin": {
+  "file": "kind-mango_v139.parquet",
+  "sha256": "34cfbbc0cd5e9936ab54e9442e7e79817f68631cfb4ee778caeb93b087a1f9c4",
+  "control_constant_mode_against_v138_max_abs_s": 0.0
+ },
+ "adopt_rule": "v139 replaces v138 for the final only if the live score of kind-mango_v139.parquet is at or below 232.0274 s",
+ "uploaded": false
+}

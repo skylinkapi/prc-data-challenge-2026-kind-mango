@@ -1,7 +1,7 @@
 {
  "file": "kind-mango_final138.parquet",
  "sha256": "a2b1b453b69b774b6505c2a3cd1c9c091fc99fcc0d9e18a7bacf7e567ab85f9c",
- "recipe": "v138 on the final organiser files: copy kind-mango_final135_base.parquet to kind-mango_final138_base.parquet; python -m src_v3.release_final serve --stack-only --name kind-mango_final138 --stack-adsb external/adsblol/v133 --tabm tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9 --trees v133 --member-columns --month-level",
+ "recipe": "v138 on the final organiser files: copy kind-mango_final135_base.parquet to kind-mango_final138_base.parquet; python -m src_v3.release_final serve --stack-only --name kind-mango_final138 --stack-adsb external/adsblol/v133 --tabm tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9 --trees v133 --member-columns --month-level constant",
  "inputs": "final organiser files only (no --also)",
  "rows": 670790,
  "mean_s": 1013.4,
