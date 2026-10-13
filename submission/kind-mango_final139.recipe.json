@@ -40,6 +40,12 @@
   "live_against_v138_mse": -59.0
  },
  "adopt_rule": "v139 replaces v138 for the final only if the live score of kind-mango_v139.parquet is at or below 232.0274 s",
- "uploaded": false,
- "final_file": "copied to submission/kind-mango_final.parquet on 2026-10-13 (same sha256); the v132-recipe file is kept as kind-mango_final132.parquet"
+ "uploaded": true,
+ "final_file": "copied to submission/kind-mango_final.parquet on 2026-10-13 (same sha256); the v132-recipe file is kept as kind-mango_final132.parquet",
+ "upload": {
+  "object": "kind-mango_final.parquet",
+  "bucket": "prc-2026-kind-mango",
+  "size_bytes": 8671196,
+  "last_modified": "2026-10-13T09:54:37Z"
+ }
 }
