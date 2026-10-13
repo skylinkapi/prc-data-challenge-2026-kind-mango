@@ -1,6 +1,6 @@
 # PRC Data Challenge 2026 — team `kind-mango`
 
-Solo entry. The model predicts the **taxi-out time in seconds** (`TAXITIME_SEC_mvt`) of departures at 10
+Entry of a team of two. The model predicts the **taxi-out time in seconds** (`TAXITIME_SEC_mvt`) of departures at 10
 European airports. The metric is the RMSE against the times that the airports report.
 
 - **Challenge home:** https://ansperformance.eu/study/data-challenge/dc2026/
