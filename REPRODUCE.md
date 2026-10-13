@@ -71,17 +71,21 @@ differ from the files that trained the models.
 | `osm` | `python src/build_osm_stands.py`, `python src/build_osm_taxi_paths.py` (Overpass) | `external/osm/stands.parquet`, `taxi_paths.parquet` | 7 min if Overpass answers |
 | `vrs` | `python src/build_vrs_aircraft.py` | `external/vrs/aircraft_types.parquet` | 10 s |
 | `xplane` | `python -m src_v3.build_xplane_stands fetch` | `external/xplane/<ICAO>.dat`, 5 files | 5 s |
-| `opdi` | `python src/fetch_opdi_events.py` (59 chunks of 10 days, about 245 MB each, filtered to the 10 airports), the join to one table, `python src/build_opdi_taxi_v2.py` | `external/opdi/events_all.parquet` (about 400 MB), `taxi_out_v2.parquet` | 50 min |
+| `opdi` | `python src/fetch_opdi_events.py` (59 chunks of 10 days, about 245 MB each, filtered to the 10 airports; the archive has 58 of them), the join to one table, `python src/build_opdi_taxi_v2.py` | `external/opdi/events_all.parquet` (about 400 MB), `taxi_out_v2.parquet` | 50 min |
 | `adsb` | `python -m src_v3.fetch_adsb_days` on the ranges of `ADSB_FINAL_RANGES` | `external/adsblol/points/<day>.parquet` | See below |
 
-The public Overpass servers limit their load. If a server does not answer for an airport, the OSM step stops
-with an error and writes no table. Run the command again: it keeps the airports on disk. On 2026-10-13 the
-main server answered with HTTP 504 for most queries.
+The public Overpass servers limit their load. If no server answers for an airport, the OSM step stops with an
+error and writes no table. Run the command again: it keeps the airports on disk. On 2026-10-13 the main
+server answered with HTTP 504 for about two of three queries. The first run stopped at two airports and the
+second run completed the table.
 
-A run on a clean clone on 2026-10-13 gave these results. The X-Plane files, the VRS table, the METAR file of
-LIRF, the two `taxi_out_additional_time` files and the OurAirports rows of the 10 airports equal the team
-copies byte for byte or row for row. The join of the OPDI chunks rebuilds the team copy of
-`events_all.parquet` (17,757,855 rows). The EUROCONTROL daily table differs on July 2026 (section 6).
+A run of each source except `adsb` on a clean clone on 2026-10-13 gave these results:
+
+- The OPDI tables `events_all.parquet` (17,757,855 rows) and `taxi_out_v2.parquet` equal the team copies row
+  for row.
+- The X-Plane files, the VRS table, the METAR file of LIRF, the two `taxi_out_additional_time` files and the
+  OurAirports rows of the 10 airports equal the team copies.
+- The EUROCONTROL daily table and the OSM stands of LFPG differ from the team copies (section 6).
 
 The X-Plane step stores the `apt.dat` files. `python -m src_v3.build_xplane_stands build` then writes
 `external/xplane/stands_osm_xplane.parquet`; it needs the organiser files of section 2. The older OPDI chunks of
@@ -521,7 +525,13 @@ stack runs with `deterministic` and 4 threads.
 - EUROCONTROL revises its daily Excel files. A download on 2026-10-13 equals the team copy of 2026-09-03 on each
   airport day up to 2026-05-31. It differs on 5 airport days of June 2026 and on the 310 airport days of July
   2026. These columns feed the LIRF gate and one base column, so a rebuild from a new download is not bit-exact
-  on the July 2026 rows. OSM and the X-Plane Scenery Gateway also serve their current state.
+  on the July 2026 rows.
+- OSM changes with each edit. A download on 2026-10-13 has the stand names of the team copy of 2026-09-03 at
+  eight airports, 5 new names at EDDF and one changed name at EHAM. At LFPG, 93 of the 412 names are gone and
+  115 names are new. A rebuild from a new download changes the stand clocks and the taxi paths at LFPG.
+- The OPDI archive has no chunk for 2025-10-02 to 2025-10-12 (HTTP 404 on 2026-09-07 and on 2026-10-13). The
+  2025 departures of those 10 days have no OPDI clock and no OPDI activity count. The fetch script logs the
+  chunk and continues; each other failed download stops it.
 - The ADSB.lol archive is a third-party release. If a day disappears from
   it, the clock table of that day cannot be rebuilt.
 - v90 and v91 are not reproducible bit for bit: v91 read the clock table of

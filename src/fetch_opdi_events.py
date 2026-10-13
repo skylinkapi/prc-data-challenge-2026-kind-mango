@@ -99,11 +99,15 @@ def fetch_and_filter(a: date, b: date, retries: int = 3) -> None:
             print(f"[dl]   {fname}: {dl_mb:.1f} MB in {time.time()-t0:.1f}s", flush=True)
             break
         except (urllib.error.URLError, TimeoutError) as e:
+            if getattr(e, "code", None) == 404:
+                # the archive has no chunk for 2025-10-02 to 2025-10-12; a retry does not help
+                print(f"[none] {fname}: not in the archive (HTTP 404)", flush=True)
+                return
             print(f"[warn] {fname} attempt {attempt}: {e}", flush=True)
             time.sleep(10 * attempt)
     else:
-        print(f"[FAIL] {fname}: gave up", flush=True)
-        return
+        raise RuntimeError(f"The download of {fname} failed {retries} times. Check the network, "
+                           "then run the script again; it skips the chunks on disk.")
 
     t0 = time.time()
     df = pd.read_parquet(raw_path)

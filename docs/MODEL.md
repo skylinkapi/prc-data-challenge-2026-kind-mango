@@ -282,7 +282,8 @@ Three of them explain the structure:
 ## 13. Limits
 
 - **Coverage.** LTFM has no open ground track. LFPG has one on 18 % of its departures. EDDF has none from
-  2026-01-29 to 2026-02-28 (10,367 February departures of the final file).
+  2026-01-29 to 2026-02-28 (10,367 February departures of the final file). The OPDI archive has no events for
+  2025-10-02 to 2025-10-12, so the training rows of those days have no OPDI clock.
 - **Stack data.** The stack learns on two months of 2025.
 - **Airport-specific parts.** The LIRF head, Step A and the LFPG rule model how an airport fills its off-block
   time. They do not transfer to another airport.
