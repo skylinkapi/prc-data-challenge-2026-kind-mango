@@ -557,7 +557,7 @@ use a stand name that January and July do not have.
 ### Candidates of the final file
 
 `kind-mango_final.parquet` is the v132 recipe. Four candidates add the first-gap levers on the same tables
-(`tables` builds `external/adsblol/v133` as its step 12). None of the four final files is uploaded. The ranking-phase twin of the last one, v135, scored 232.45 s on 2026-10-13 (v132: 235.54 s).
+(`tables` builds `external/adsblol/v133` as its step 12). None of the four final files is uploaded. The ranking-phase twins v135 and v137 scored 232.45 s and 232.20 s on 2026-10-13 (v132: 235.54 s).
 
 | File | Recipe | Command after `tables` |
 |---|---|---|

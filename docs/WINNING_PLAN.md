@@ -629,7 +629,7 @@ Fill one row per lever as it closes.
 | K7 | ADS-B segments that end up to 3,600 s before `MVT` (`--first-gap`), stack only | v133 | not uploaded | live inside v135; hold-out -1,081 MSE; 14,749 more ranking rows with a track; the stand bound skips them |
 | K7b | TabM families refit on the first-gap tables (`tabm_*_k9`) | v134 | not uploaded | live inside v135; hold-out -523 MSE against v133; member RMSE 265.3 to 261.8 s (`tabm_s`) |
 | K7c | plain tree members refit on the first-gap tables (tag `v133`) | v135 | 232.45 (-3.09) | accepted, best: one upload for K7, K7b and K7c, live -1,445 MSE against a hold-out sum of about -1,660; K7c alone: hold-out -58 MSE against v134, below the bar; tree blend alone -1,021 MSE |
-| N15 | two member columns in the stack: neural term minus tree blend, TabM mean minus MLP | v137 | not uploaded | hold-out -76 MSE against v135 (January -35, July -41), below the bar; adopt for the final at 232.30 s or lower |
+| N15 | two member columns in the stack: neural term minus tree blend, TabM mean minus MLP | v137 | 232.20 (-0.25) | leaderboard best, 0.05 s under the bar: hold-out -76 MSE against v135, live -116; meets the rule for the final (232.30 s or lower) |
 | K10 | OPDI taxiway events as clocks of the rows without a clock (EDDF 2,666 ranking rows) | | | closed: hold-out +5 MSE; -33 on every row (MODEL_ANALYSIS F23.1) |
 | N16 | neural weight, TabM share, stack size and a second stack on the rows without a clock, on the v135 path | | | closed: -20 to +231 MSE (MODEL_ANALYSIS F23.2) |
 | K6 | OPDI `entry-deicing_pad` events as stack columns | | | open: probe one January day; OSN sees the ground only at LSZH, LEBL, EDDF, EHAM, LEMD |

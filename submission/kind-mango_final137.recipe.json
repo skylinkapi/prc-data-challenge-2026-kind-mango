@@ -40,7 +40,11 @@
  "ranking_twin": {
   "file": "kind-mango_v137.parquet",
   "sha256": "0ab36a8ec2ba83669914102323d6133f9913be9bba29c1f31ffae2aae240d530",
-  "control_without_flag_against_v135_max_abs_s": 0.0
+  "control_without_flag_against_v135_max_abs_s": 0.0,
+  "live_score_s": 232.2016,
+  "live_against_v135_s": -0.2496,
+  "live_against_v135_mse": -116.0,
+  "scored": "2026-10-13T09:24:02Z"
  },
  "adopt_rule": "v137 replaces v135 for the final only if the live score of kind-mango_v137.parquet is 232.30 s or lower",
  "uploaded": false
