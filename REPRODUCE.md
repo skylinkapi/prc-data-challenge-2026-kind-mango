@@ -357,6 +357,30 @@ against the tracked SHA-256 list in `models/v92.manifest.json`.
    The same `serve --stack-only` command without `--stack-adsb` rebuilds v132 at 0.0 s. For the final files, add
    `--also submission/ranking_phase1.parquet` and use the name `kind-mango_final133`.
 
+   **v134** (candidate) refits the five TabM families on the v133 tables. **v135** (candidate) refits the plain
+   tree members on them too. Run one heavy fit at a time on a machine with 32 GB of RAM:
+
+   ```bash
+   for t in tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9; do
+     python -m src_v3.tabm_member measure --tag $t && python -m src_v3.tabm_member serve --tag $t   # GPU, about 2 h each
+   done
+   cp submission/kind-mango_v132_base.parquet submission/kind-mango_v134_base.parquet
+   python -m src_v3.release_final serve --stack-only --name kind-mango_v134 --stack-adsb external/adsblol/v133 \
+       --tabm tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9
+   ```
+
+   For v135, run the v132 fit commands above with the tag `v133` (CatBoost tag `v133c`) and
+   `external/adsblol/v133/adsb_clock_train.parquet` as the ADS-B table, then:
+
+   ```bash
+   python -m src_v3.measure_adsb_base_v97 price --tag v133 --pa-guard --keep-v97 lgb_anchor cat_anchor
+   python -m src_v3.release_final serve --name kind-mango_v135 --stack-adsb external/adsblol/v133 --trees v133 \
+       --tabm tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9
+   ```
+
+   `--trees` names the tag of the plain tree members, their ADS-B folder and the hold-out blend of the stack.
+   `python -m src_v3.artefact_manifest check --version 135` checks the 80 trained artefacts of v135.
+
    `python -m src_v3.test_parity --version 67` rebuilds v67 the same way.
    `src_v3/test_parity.py` holds the served commands of each recorded
    version. The hashes are in `submission/kind-mango_v<N>.parity.json`.
@@ -494,7 +518,7 @@ February, June and July 2026). `src_v3/release_final.py` holds every command. No
 4. Build and serve:
 
    ```bash
-   python -m src_v3.release_final tables                                          # 18 ranking-side tables, about 1.7 h
+   python -m src_v3.release_final tables                                          # 19 ranking-side tables, about 1.8 h
    python -m src_v3.release_final serve --also submission/ranking_phase1.parquet  # about 1 h, TabM on the GPU
    ```
 
@@ -519,3 +543,22 @@ Evidence, 2026-10-11 and 2026-10-12, in a copy of the repository:
 
 The stand table `external/xplane/stands_osm_xplane.parquet` stays as recorded: 39 departures of February and June
 use a stand name that January and July do not have.
+
+### Candidates of the final file
+
+`kind-mango_final.parquet` is the v132 recipe. Three candidates add the first-gap levers on the same tables
+(`tables` builds `external/adsblol/v133` as its step 12). None is uploaded.
+
+| File | Recipe | Command after `tables` |
+|---|---|---|
+| `kind-mango_final133.parquet` | v133: the stack reads the v133 tables | `serve --stack-only --name kind-mango_final133 --stack-adsb external/adsblol/v133 --also ...` on a copy of `kind-mango_final_base.parquet` |
+| `kind-mango_final134.parquet` | v134: v133 with the K9 TabM families | `serve --name kind-mango_final134 --stack-adsb external/adsblol/v133 --tabm tabm_*_k9 --also ...` |
+| `kind-mango_final135.parquet` | v135: v134 with the plain tree members of tag `v133` | `serve --name kind-mango_final135 --stack-adsb external/adsblol/v133 --tabm tabm_*_k9 --trees v133 --also ...` |
+
+`--tabm` takes the five names `tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9`; `--also` takes
+`submission/ranking_phase1.parquet`. The artefacts of the last file are in `models/v135.manifest.json`.
+
+Evidence, 2026-10-13: on the 344,841 shared departures each final-frame file differs from its ranking-phase twin
+(v133, v134, v135) by 6.6 to 6.8 s on average, the size of the new timestamp noise. LIRF is equal in the four
+files. The moves of `kind-mango_final135` against `kind-mango_final` correlate 0.990 with `v135 - v132`. The
+first-gap rows are 27,282 (January 7,562, February 7,281, June 5,243, July 7,196).

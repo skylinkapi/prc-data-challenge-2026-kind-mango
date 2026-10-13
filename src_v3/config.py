@@ -291,6 +291,8 @@ SERVED_ARTEFACTS[132] = (
     "external/xplane/stands_osm_xplane.parquet", "models/v3/blend_v130_holdout.parquet",
     "models/v3/holdout_mlp_v97.parquet", "models/v3/holdout_mlp_tabm_*_k8.parquet",
     "models/v3/mlp_v97.prep.pkl", "models/v3/mlp_v97_s*.pt", "models/v3/tabm_tabm_*_k8.prep.pkl", "models/v3/tabm_tabm_*_k8_s*.pt")
+# v135 (candidate) and `kind-mango_final135.parquet`: first-gap tables, K9 TabM families, plain tree members of tag v133
+SERVED_ARTEFACTS[135] = tuple(p.replace("_k8", "_k9").replace("v130", "v133") for p in SERVED_ARTEFACTS[132])
 # v93 stack study (`tune_stack_v93.py`): more 2025 ADS-B days give the stack about 9 times more rows
 STACK_V93_MLP_WEIGHTS = (0.0, 0.1, 0.2)   # MLP hold-out: -190 at 0.1, -213 at 0.2, -69 at 0.3
 STACK_V93_LEAVES = (31, 63)

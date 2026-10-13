@@ -1,0 +1,53 @@
+{
+ "file": "kind-mango_final135.parquet",
+ "sha256": "7fdd4b6a109ab485c37d6d5522a312f56a6d73c3f006208fc31ab0433fbe2447",
+ "recipe": "v135 on the final organiser files; python -m src_v3.release_final tables; serve --name kind-mango_final135 --stack-adsb external/adsblol/v133 --tabm tabm_s_k9 tabm_j_k9 tabm_plr_j_k9 tabm_v116_k9 tabm_plr_k9 --trees v133 --also submission/ranking_phase1.parquet",
+ "rows": 670790,
+ "mean_s_by_month": {
+  "1": 1086.9,
+  "2": 987.4,
+  "6": 985.1,
+  "7": 1006.1
+ },
+ "rows_above_7200_s": 160,
+ "format": {
+  "template_ids": true,
+  "float64": true,
+  "no_nan": true,
+  "non_negative": true
+ },
+ "holdout_price_mse": {
+  "v133_against_v132": -1081,
+  "v134_against_v133": -523.0,
+  "v135_against_v134": -57.6,
+  "v135_against_v133": -580.6,
+  "scale_rows": 344336,
+  "v135_against_v133_by_month": {
+   "1": -189.2,
+   "7": -391.4
+  },
+  "on_first_gap_rows": -526.5
+ },
+ "against_fallback_final": {
+  "mean_shift_s": 0.526,
+  "mean_abs_s": 11.0,
+  "rms_s": 36.47,
+  "max_abs_s": 2261,
+  "lirf_max_abs_s": 0.0,
+  "first_gap_rows": 27282,
+  "first_gap_mean_abs_s": 101.84
+ },
+ "shared_rows_against_v135": {
+  "rows": 344841,
+  "mean_abs_s": 6.56,
+  "median_abs_s": 4.42,
+  "p99_abs_s": 36.9,
+  "rows_over_300_s": 32
+ },
+ "other_candidates": {
+  "kind-mango_final134.parquet": "8cb6e56c7589299ebb8ac24d4cddb9d2f6fe4815e4be175bd3fa2c870493a748",
+  "kind-mango_final133.parquet": "ea04d65356c6a11259d312aba6624f84d28a8ee0f3f9f4f6d4f20cc0f5212391",
+  "kind-mango_final.parquet": "055c3eb833d0bf999a18019c7286d2327a6f4e18d01d85d6742fcfed796c8346"
+ },
+ "uploaded": false
+}
