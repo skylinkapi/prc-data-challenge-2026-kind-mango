@@ -25,6 +25,11 @@ external/opdi/**
 external/adsblol/**
 external/vrs/*.parquet
 
+# Out-of-fold probability tables of the first pipeline, 35 MB (src/train_dq_classifier.py and
+# src/train_tail_oof_lite.py rebuild them)
+models/p_dq_*.parquet
+models/p_tail_*.parquet
+
 # Model artifacts (regeneratable; too big for git)
 models/**/*.txt
 models/**/*.pkl
@@ -67,6 +72,12 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# Tool caches and local agent state
+.claude/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
 
 # IDE / OS
 .vscode/

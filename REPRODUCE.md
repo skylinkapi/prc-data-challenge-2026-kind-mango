@@ -1,9 +1,12 @@
 # Reproduction guide
 
-This guide rebuilds `submission/kind-mango_v92.parquet`, the current team
-file (WINNING_PLAN second edition, C1). It also keeps the path to v67, the
-last file before the NM clocks. Section 8 builds the file of the final phase,
-`kind-mango_final.parquet` (the v132 recipe). Two tiers exist:
+This guide rebuilds the served files. Sections 1 to 7 rebuild
+`submission/kind-mango_v92.parquet` in two tiers and then each later file up
+to v139, the best file of the ranking phase (231.90 s). The guide also keeps
+the path to v67, the last file before the NM clocks. Section 8 builds the file
+of the final phase, `kind-mango_final.parquet`: its subsection "Candidates of
+the final file" gives the command of the uploaded file,
+`kind-mango_final139.parquet`. Two tiers exist:
 
 - **Tier 1** serves v92 from the trained artefacts in `models/`. It takes
   about 15 minutes after the feature builds. A parity test checks the
