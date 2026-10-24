@@ -16,6 +16,8 @@ scipy==1.16.1
 urllib3==2.2.2
 # ADSB.lol trace parsing (src_v3/build_adsb_points.py): a day holds about 60,000 JSON traces
 orjson==3.11.4
+# Figures of the JOAS paper (paper/make_figures.py)
+matplotlib==3.10.7
 # MLP member priced on the hold-out (src_v3/mlp_member.py); v92 does not serve it.
 # CPU wheel: pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
 # TabM member (src_v3/tabm_member.py) trains on an NVIDIA GPU. Install the CUDA build and two Apache-2.0

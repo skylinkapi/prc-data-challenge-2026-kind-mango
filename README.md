@@ -15,6 +15,8 @@ European airports. The metric is the RMSE against the times that the airports re
 - **Ranking phase:** the best score is **231.90 s RMSE** (`kind-mango_v139.parquet`, 2026-10-13), team rank 21 of
   246, on the 344,841 departures of January and July 2026.
 - **Path:** 430.45 s (v13) to 231.90 s (v139) in 139 versions. The Results section lists the steps.
+- **Paper:** `paper/main.tex` is a draft for the Journal of Open Aviation Science (JOAS). The author names, the CRediT
+  roles and the score of the final phase are open; `TODO(authors)` marks each open item.
 
 ## Where to read
 
@@ -22,6 +24,7 @@ European airports. The metric is the RMSE against the times that the airports re
 |---|---|
 | `README.md` | This summary: the model, the results, the data, the layout |
 | `docs/MODEL.md` | The model description: each part, its data, its fit and the reason for each design decision |
+| `paper/main.tex` | The JOAS paper draft: the data, the model, the results and the limits |
 | `REPRODUCE.md` | The commands that rebuild the served files. Section 8 builds the final file |
 | `RECAP.md` | One row per upload: the mechanism, the hold-out price and the live score |
 | `docs/MODEL_ANALYSIS.md` | 23 audit passes: where the error sits, the findings, the closed levers |
@@ -145,6 +148,7 @@ The two `release_final` commands need three things on disk. None of them is in g
 | Price a change on the hold-out | `python -m src_v3.stack_pushback_v90 price ...`, `python -m src_v3.month_level measure FILE` |
 | Check a file before an upload | `python src/check_submission_2026.py FILE --ref BEST` (label-free gates) |
 | Check the rebuild of an old file | `python -m src_v3.test_parity --version 92` (bit for bit) |
+| Build the paper | `python paper/make_figures.py`, then `latexmk -pdf -cd paper/main.tex` (TeX Live with biber) |
 
 ## Stance on the NM clocks, later departures, trajectory data and the monthly means
 
@@ -225,6 +229,7 @@ section 3). The organiser data need an OSN account (`REPRODUCE.md` section 2).
 | `models/` | Small records of the fits: JSON reports, feature lists, manifests. The trained artefacts are not in git |
 | `submission/` | Per upload: the score (`.result.json`), the gate report (`.check.json`) and the recipe (`.recipe.json`). The parquet files are not in git |
 | `docs/` | The model description, the analysis, the plan, the history and the challenge brief |
+| `paper/` | The JOAS paper: `main.tex`, `reference.bib`, the figures, the figure data and the JOAS class |
 | `training/`, `external/`, `logs/` | Organiser data, open data and run logs; not in git |
 
 The block below lists the files of each directory.
@@ -318,6 +323,11 @@ submission/                     # ranking.parquet, submitting.parquet, kind-mang
 models/                         # trained boosters + encoders + JSON config
 .gpu_site/                      # CUDA build of torch and the TabM packages for tabm_member.py (gitignored)
 docs/                           # MODEL.md (the model description), MODEL_ANALYSIS.md (23 audit passes), WINNING_PLAN.md (levers and their final state), HISTORY.md (earlier README text), the challenge brief, the audit prompt
+paper/                          # JOAS paper draft; the JOAS template asks for these file names
+  main.tex, reference.bib       # the manuscript and its references
+  make_figures.py               # draws figures/*.pdf from data/*.csv
+  data/                         # live score of each upload; ADS-B coverage per airport (MODEL_ANALYSIS 22.1)
+  extra/                        # joas.cls (LPPL 1.3c) and joas-logo.pdf, unchanged from github.com/open-aviation/joas-template
 RECAP.md                        # session log for every attempt, submissions and scores
 requirements.txt                # pinned library versions
 ```
