@@ -27,7 +27,7 @@ European airports. The metric is the RMSE against the times that the airports re
 |---|---|
 | `README.md` | This summary: the model, the results, the data, the layout |
 | `docs/MODEL.md` | The model description: each part, its data, its fit and the reason for each design decision |
-| `paper/main.tex` | The JOAS paper draft: the data, the model, the results and the limits |
+| `paper/main.pdf` | The JOAS paper draft (built from `paper/main.tex`): the data, the model, the results and the limits |
 | `REPRODUCE.md` | The commands that rebuild the served files. Section 8 builds the final file |
 | `RECAP.md` | One row per upload: the mechanism, the hold-out price and the live score |
 | `docs/MODEL_ANALYSIS.md` | 23 audit passes: where the error sits, the findings, the closed levers |
@@ -328,6 +328,7 @@ models/                         # trained boosters + encoders + JSON config
 docs/                           # MODEL.md (the model description), MODEL_ANALYSIS.md (23 audit passes), WINNING_PLAN.md (levers and their final state), HISTORY.md (earlier README text), the challenge brief, the audit prompt
 paper/                          # JOAS paper draft; the JOAS template asks for these file names
   main.tex, reference.bib       # the manuscript and its references
+  main.pdf                      # the built paper; GitHub shows it in the browser
   make_figures.py               # draws figures/*.pdf from data/*.csv
   data/                         # live score of each upload (leaderboard API); ADS-B coverage per airport (MODEL_ANALYSIS 22.1)
   extra/                        # joas.cls (LPPL 1.3c) and joas-logo.pdf, unchanged from github.com/open-aviation/joas-template
