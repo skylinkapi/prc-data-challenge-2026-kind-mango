@@ -138,3 +138,8 @@ external/xplane/
 # EUROCONTROL daily CSVs
 external/eurocontrol/*.csv
 models/atfm_slot_*.parquet
+
+# Build files of the paper; `latexmk -pdf -cd paper/main.tex` writes them
+paper/main.*
+!paper/main.tex
+!paper/main.pdf
