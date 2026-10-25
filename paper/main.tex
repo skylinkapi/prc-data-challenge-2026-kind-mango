@@ -20,13 +20,14 @@
 
 \title{Post-Operational Taxi-Out Time Estimation from Open Ground Tracks and Flight Records}
 
-% TODO(authors): names, ORCID iDs, affiliations and the e-mail of the corresponding author.
-\author{First Author \orcid{0000-0000-0000-0000}}
-\affiliation{Institution, City, Country}
-\email{correspondence@email.domain}
+% Names and affiliations from the team page: https://ansperformance.eu/study/data-challenge/dc2026/teams/kind-mango.html
+% The ORCID registry holds no iD for either name (25 October 2026), so the authors have no \orcid entry.
+\author{Sergio Nicolini}
+\affiliation{SkyLink API (independent), Italy}
 
-\author{Second Author \orcid{0000-0000-0000-0000}}
-\affiliation{Institution, City, Country}
+\author{David Schnaider}
+\affiliation{SkyLink API (independent), Italy}
+\email{david.a.schnaider@gmail.com}
 
 \keywords{taxi-out time; ADS-B; gradient boosting; tabular deep learning; airport operations}
 
@@ -44,7 +45,7 @@
 \begin{document}
 
 \begin{abstract}
-Taxi-out time is the time from off-block to take-off. It drives the fuel burn and the emissions of an aircraft on the ground. The 2026 data challenge of the EUROCONTROL Performance Review Commission asked teams to estimate the taxi-out time of departures at ten European airports from open data. This paper describes the model of team kind-mango. The model works after the flight: it reads the take-off time, the flight records of the NM and the ADS-B ground track of the flight. Two facts set its structure. First, the label is a report of the airport, not a measurement. At Rome Fiumicino, part of the departures report the scheduled time as the off-block time, so a separate head estimates the probability of this practice. Second, the best predictor is an independent measurement of the off-block event. Open ADS-B traces of ADSB.lol and flight events of OPDI give such a clock for 68\% of the scored departures outside Rome Fiumicino. Gradient-boosted trees and tabular neural networks give a base estimate, and a stacked model learns when to trust each clock. The model scores 231.90~s RMSE on the January and July 2026 ranking set. The first model with unfiltered labels scored 430.45~s. The coverage of the ground tracks sets the error: on the 2025 hold-out, departures with a clock at the assigned stand have an RMSE of 93~s, and departures with no clock have 217~s. Rome Fiumicino and the labels above two hours hold 48\% of the remaining squared error. A log of 106 scored uploads shows that new measurements of the off-block transferred from the hold-out to the leaderboard, but parameter tuning, seed averages and derived columns often did not. The code is open under the GNU GPLv3.
+Taxi-out time is the time from off-block to take-off. It drives the fuel burn and the emissions of an aircraft on the ground. The 2026 data challenge of the EUROCONTROL Performance Review Commission asked teams to estimate the taxi-out time of departures at ten European airports from open data. This paper describes the model of team kind-mango. The model works after the flight: it reads the take-off time, the flight records of the NM and the ADS-B ground track of the flight. Two facts set its structure. First, the label is a report of the airport, not a measurement. At Rome Fiumicino, part of the departures report the scheduled time as the off-block time, so a separate head estimates the probability of this practice. Second, the best predictor is an independent measurement of the off-block event. Open ADS-B traces of ADSB.lol and flight events of OPDI give such a clock for 68\% of the scored departures outside Rome Fiumicino. Gradient-boosted trees and tabular neural networks give a base estimate, and a stacked model learns when to trust each clock. The model scores 231.90~s RMSE on the January and July 2026 ranking set. The first model with unfiltered labels scored 430.45~s. The coverage of the ground tracks sets the error: on the 2025 hold-out, departures with a clock at the assigned stand have an RMSE of 93~s, and departures with no clock have 217~s. Rome Fiumicino and the labels above two hours hold 48\% of the remaining squared error. A log of 117 scored uploads shows that new measurements of the off-block transferred from the hold-out to the leaderboard, but parameter tuning, seed averages and derived columns often did not. The code is open under the GNU GPLv3.
 \end{abstract}
 
 
@@ -61,7 +62,7 @@ This paper makes four contributions:
   \item We show that the label is a report with airport-specific regimes. At Rome Fiumicino (LIRF), part of the departures report the scheduled time as the off-block time. A regime head estimates the probability of this practice from the arrival reports of the same airline.
   \item We extract an independent off-block clock from open ADS-B traces and OPDI flight events. Three links (callsign, flight number, lift-off time and aircraft type) attach a ground track to 68\% of the scored departures outside LIRF.
   \item We describe a blend of gradient-boosted trees and TabM networks, and a stacked model that learns when to trust each clock. The final model scores 231.90~s RMSE.
-  \item We report the full upload log: 106 scored uploads, each with its hold-out price where one exists. The log separates the changes that transferred to the leaderboard from those that did not.
+  \item We report the full upload log: 117 scored uploads, with the hold-out price where one exists. The log separates the changes that transferred to the leaderboard from those that did not.
 \end{enumerate}
 
 Section~\ref{sec:data} describes the data. Section~\ref{sec:method} describes the model. Section~\ref{sec:results} gives the results. Section~\ref{sec:discussion} discusses the limits and the parts of the model that model the data set rather than the taxi.
@@ -307,13 +308,13 @@ Three rules set single rows. Each follows from a fact of the 2025 data, not from
 
 \subsection{Leaderboard path}
 
-Figure~\ref{fig:path} shows the live RMSE of the 106 scored uploads. Table~\ref{tb:path} in the appendix lists the uploads that added a new mechanism. The final recipe, v139, scores 231.90~s. On 13 October 2026, at the end of the ranking phase, this was rank 21 of 246 teams; the best team scored 212.85~s.
-% TODO(authors): add the final-phase RMSE and rank after the organisers publish them (OpenSky Symposium, 29-30 October 2026).
+Figure~\ref{fig:path} shows the live RMSE of the 117 scored uploads. Table~\ref{tb:path} in the appendix lists the uploads that added a new mechanism. The final recipe, v139, scores 231.90~s. The ranking phase closed on 14 October 2026 at 10:00~UTC. At the close, 249 teams had a scored upload; v139 held rank 22, and the best team scored 208.11~s.
+% TODO(authors): add the final-phase RMSE and rank; the organisers announce them at the OpenSky Symposium, 29-30 October 2026.
 
 \begin{figure}[htbp!]
   \centering
   \includegraphics[width=\textwidth]{figures/score_path.pdf}
-  \caption{Live RMSE of each scored upload on the January and July 2026 ranking set. Uploads v1 to v10 scored 560.91~s to 562.44~s with filtered labels and are not shown.}
+  \caption{Live RMSE of each scored upload on the January and July 2026 ranking set. The uploads before v13 scored 560.91~s to 562.44~s with filtered labels and are not shown. v15, a hard swap to a tail model, scored 625.34~s and lies above the plot.}
   \label{fig:path}
 \end{figure}
 
@@ -361,7 +362,7 @@ Table~\ref{tb:transfer} compares the hold-out price of nine uploads with their l
   \midrule
   v32 & Seven seeds in the base mean & $-1{,}204$ & $+79$ \\
   v37 & Five seeds in the LIRF gate & $-151$ & $+393$ \\
-  v46 & Three base changes with a new parameter study & $-1{,}864$ & $-102$ \\
+  v98 & Blend weights chosen on the hold-out & about $-120$ & $+181$ \\
   v96 & ADS-B specialist model as a stack column & $-302$ & $+265$ \\
   v73 & NM clocks of the flight & $-5{,}652$ & $-6{,}237$ \\
   v97 & ADS-B columns in each base member & $-983$ & $-746$ \\
@@ -372,7 +373,7 @@ Table~\ref{tb:transfer} compares the hold-out price of nine uploads with their l
   \end{tabular}
 \end{table}
 
-Two patterns appear. Seed averages, parameter studies and derived columns gained on the hold-out and lost on the leaderboard. New row-level measurements transferred at 0.76 to 1.10 of their price. Neural members gained 1.5 to 2.7 times their price.
+Two patterns appear. Seed averages, weights chosen on the hold-out and derived columns gained on the hold-out and lost on the leaderboard. New row-level measurements transferred at 0.76 to 1.10 of their price. Neural members gained 1.5 to 2.7 times their price.
 
 \subsection{Changes that failed}
 
@@ -405,7 +406,7 @@ The month level reads an aggregate of the labels of the scored months. It gave 0
 
 \subsection{Reuse of the leaderboard}
 
-The team scored 106 uploads against one ranking set. Each use of a fixed test set adapts the model to it and biases the score down \cite{blum2015ladder,dwork2015reusable}. Three controls limited this effect. Every change had a hold-out price before the upload. The acceptance bar of 0.3~s was twice the noise of a refit. No row value came from a score. Near the deadline the team accepted three uploads below the bar (v137 to v139); it wrote the acceptance rule of each before the upload. Table~\ref{tb:transfer} shows that the hold-out and the leaderboard disagreed often enough to make the leaderboard a second validation set in practice. The final phase added two unseen months for this reason. Its score is the fair test of the recipe.
+The team scored 117 uploads against one ranking set. Each use of a fixed test set adapts the model to it and biases the score down \cite{blum2015ladder,dwork2015reusable}. Three controls limited this effect. Every change had a hold-out price before the upload. The acceptance bar of 0.3~s was twice the noise of a refit. No row value came from a score. Near the deadline the team accepted three uploads below the bar (v137 to v139); it wrote the acceptance rule of each before the upload. Table~\ref{tb:transfer} shows that the hold-out and the leaderboard disagreed often enough to make the leaderboard a second validation set in practice. The final phase added two unseen months for this reason. Its score is the fair test of the recipe.
 
 \subsection{Limits}
 
@@ -473,24 +474,24 @@ We thank the EUROCONTROL Performance Review Commission and the OpenSky Network f
 The authors used an AI coding assistant (Claude Code, Anthropic) to write and audit parts of the code and to draft this manuscript. The authors checked the content and take full responsibility for it.
 
 \section*{Author contributions}
-% TODO(authors): assign the CRediT roles.
+% Roles from the team page (David supports the team and does the paperwork) and the git history (Sergio wrote 122 of
+% the 124 commits). TODO(authors): confirm the roles.
 \begin{itemize}
-  \item First Author: Conceptualization, Methodology, Software, Validation, Writing (Original Draft).
-  \item Second Author: Data Curation, Software, Investigation, Writing (Review and Editing).
+  \item Sergio Nicolini: Conceptualization, Data Curation, Formal Analysis, Investigation, Methodology, Software, Validation, Writing (Review and Editing).
+  \item David Schnaider: Formal Analysis, Project Administration, Visualization, Writing (Original Draft).
 \end{itemize}
 
 \section*{Funding statement}
-% TODO(authors): confirm.
+% The team page lists the team as independent. TODO(authors): confirm.
 This research received no external funding.
 
 \section*{Open data statement}
 The challenge data belong to the EUROCONTROL Performance Review Commission and the OpenSky Network. Registered teams received them during the challenge. The organisers plan to publish them as open data together with a data paper in JOAS.
-% TODO(authors): cite the DOI of the challenge data set when it is published.
-Each other source of Table~\ref{tb:sources} is open, and the command \texttt{python -m src\_v3.fetch\_external} of the repository downloads it. The tables derived from ADSB.lol stay out of the repository because of the share-alike clause of the ODbL; the same command rebuilds them. The data of the figures are in \texttt{paper/data} of the repository.
+% TODO(authors): cite the DOI of the challenge data set; the organisers plan to publish it by the end of Q1 2027.
+Each other source of Table~\ref{tb:sources} is open, and the command \texttt{python -m src\_v3.fetch\_external} of the repository downloads it. The tables derived from ADSB.lol stay out of the repository because of the share-alike clause of the ODbL; the same command rebuilds them. The data of the figures are in \texttt{paper/data} of the repository. The live scores come from the leaderboard API of the challenge, read on 25 October 2026.
 
 \section*{Reproducibility statement}
-The source code is public under the GNU GPLv3 \cite{kindmango2026repo}.
-% TODO(authors): add the tag or the commit of the paper version, and a Zenodo DOI of the repository if you archive it.
+The source code is public under the GNU GPLv3 \cite{kindmango2026repo}. The organisers forked the repository to \url{https://github.com/prc-data-challenge-2026/kind-mango} and tagged the evaluated commit as \texttt{PRC2026\_v1.0.0} (commit \texttt{1e9d2dd}, 13 October 2026). That commit holds the code of the final file; this paper and its figure code came later.
 \texttt{REPRODUCE.md} gives the commands that rebuild the final file: \texttt{python -m src\_v3.release\_final tables}, then \texttt{serve} with the flags of v139. A second run of \texttt{serve} rebuilt the final file of v135 with the same SHA-256. \texttt{python -m src\_v3.test\_parity --version 92} rebuilds the file of v92 bit for bit from the saved fits. \texttt{RECAP.md} records the price and the live score of each upload. The script \texttt{paper/make\_figures.py} draws each figure of this paper from the data in \texttt{paper/data}. The repository does not host the 80 trained artefacts (14~GB); \texttt{REPRODUCE.md} gives the fit command of each.
 
 \printbibliography

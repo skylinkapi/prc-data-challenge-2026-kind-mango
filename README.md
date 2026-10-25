@@ -12,11 +12,14 @@ European airports. The metric is the RMSE against the times that the airports re
 - **Final file:** `kind-mango_final.parquet`, uploaded on 2026-10-13 at 09:54 UTC. It holds the 670,790 departures
   of January, February, June and July 2026. Its recipe is v139 (next section). The record is
   `submission/kind-mango_final139.recipe.json`.
-- **Ranking phase:** the best score is **231.90 s RMSE** (`kind-mango_v139.parquet`, 2026-10-13), team rank 21 of
-  246, on the 344,841 departures of January and July 2026.
+- **Ranking phase:** the best score is **231.90 s RMSE** (`kind-mango_v139.parquet`, 2026-10-13), on the 344,841
+  departures of January and July 2026. At the close (2026-10-14, 10:00 UTC) this was team rank 22 of 249; the best
+  team scored 208.11 s (leaderboard API, read 2026-10-25). The organisers tagged the evaluated commit `1e9d2dd` as
+  `PRC2026_v1.0.0` in their fork `prc-data-challenge-2026/kind-mango`.
 - **Path:** 430.45 s (v13) to 231.90 s (v139) in 139 versions. The Results section lists the steps.
-- **Paper:** `paper/main.tex` is a draft for the Journal of Open Aviation Science (JOAS). The author names, the CRediT
-  roles and the score of the final phase are open; `TODO(authors)` marks each open item.
+- **Paper:** `paper/main.tex` is a draft for the Journal of Open Aviation Science (JOAS). The score of the final phase
+  and the DOI of the challenge data set are not published yet. The authors must confirm the CRediT roles and the
+  statements on generative AI and funding. `TODO(authors)` marks each open item.
 
 ## Where to read
 
@@ -326,7 +329,7 @@ docs/                           # MODEL.md (the model description), MODEL_ANALYS
 paper/                          # JOAS paper draft; the JOAS template asks for these file names
   main.tex, reference.bib       # the manuscript and its references
   make_figures.py               # draws figures/*.pdf from data/*.csv
-  data/                         # live score of each upload; ADS-B coverage per airport (MODEL_ANALYSIS 22.1)
+  data/                         # live score of each upload (leaderboard API); ADS-B coverage per airport (MODEL_ANALYSIS 22.1)
   extra/                        # joas.cls (LPPL 1.3c) and joas-logo.pdf, unchanged from github.com/open-aviation/joas-template
 RECAP.md                        # session log for every attempt, submissions and scores
 requirements.txt                # pinned library versions
